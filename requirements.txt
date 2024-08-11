@@ -1,3 +1,4 @@
-openai
+openai~=1.40.3
 python-telegram-bot
-aiosqlite
+aiosqlite~=0.19.0
+loguru~=0.7.2
