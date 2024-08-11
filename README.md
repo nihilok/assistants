@@ -1,6 +1,6 @@
-# AI Assistant Project
+# Assistants Framework
 
-Welcome to the AI Assistant Project! This repository contains the foundational code for a versatile AI assistant capable of interacting through various front-end interfaces and utilizing interchangeable data layers. The goal is to create a powerful yet flexible assistant that can adapt to different user needs and environments.
+Welcome to the AI Assistants Framework! This repository contains the foundational code for a versatile AI assistant capable of interacting through various front-end interfaces and utilizing interchangeable data layers. The goal is to create a powerful yet flexible assistants framework that can adapt to different user needs and environments.
 
 ## Table of Contents
 
@@ -58,7 +58,7 @@ To get started with the AI Assistant Project, follow these steps:
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/yourusername/ai-assistant.git
+   git clone https://github.com/nihilok/assistants.git
    cd ai-assistant
    ```
 
@@ -84,14 +84,12 @@ To run the AI assistant, use the following command:
 python main.py
 ```
 
-You can customize the behavior of the assistant by modifying the configuration in the respective front-end modules or adjusting the AI logic in `assistant.py`.
-
 ### Command Line Interface
 
 To interact with the assistant through the CLI, simply run:
 
 ```bash
-python cli.py
+python -m bot.cli
 ```
 
 ### Telegram Bot
@@ -101,6 +99,8 @@ To set up the Telegram bot, ensure you have the necessary API tokens configured 
 ```bash
 python -m bot.telegram_ui.tg_bot
 ```
+
+You can customize the behavior of the assistant by modifying the `ASSISTANT_INSTRUCTIONS` environment variable, which defaults to `"You are a helpful assistant."`
 
 ## Contributing
 
