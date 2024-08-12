@@ -31,9 +31,11 @@ def cli():
             "quit",
         }:
             print(TerminalColours.ENDC, end="")
-            message = assistant.converse(user_input, last_message.thread_id)
+            message = assistant.converse(
+                user_input, last_message.thread_id if last_message else None
+            )
 
-            if message.id == last_message.id:
+            if last_message and message.id == last_message.id:
                 raise NoResponseError
 
             last_message = message
