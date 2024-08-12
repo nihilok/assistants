@@ -1,28 +1,43 @@
-import asyncio
+import sys
 
 from bot.ai.assistant import Assistant
+from bot.config.environment import DEFAULT_MODEL, ASSISTANT_INSTRUCTIONS
 from bot.exceptions import NoResponseError
+
+
+class TerminalColours:
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKCYAN = "\033[96m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
 
 
 def cli():
     assistant = Assistant(
-        "default-assistant", "gpt-4o-mini", "You are a helpful assistant."
+        "AI Assistant",
+        DEFAULT_MODEL,
+        ASSISTANT_INSTRUCTIONS,
+        tools=[{"type": "code_interpreter"}],
     )
-    thread_id = None
-    last_message_id = None
-    while (user_input := input(">>> ")).lower() not in {"q", "quit"}:
-        if thread_id is None:
-            run, message = asyncio.run(assistant.prompt(user_input))
-            thread_id = run.thread_id
-        else:
-            run, message = asyncio.run(assistant.prompt(user_input, thread_id))
+    last_message = None
+    try:
+        while (user_input := input(TerminalColours.OKGREEN + ">>> ")).lower() not in {
+            "q",
+            "quit",
+        }:
+            print(TerminalColours.ENDC, end="")
+            message = assistant.converse(user_input, last_message.thread_id)
 
-        messages = assistant.client.beta.threads.messages.list(
-            thread_id=run.thread_id, order="asc"
-        ).data
+            if message.id == last_message.id:
+                raise NoResponseError
 
-        if messages[-1].id == last_message_id:
-            raise NoResponseError
+            last_message = message
+            print(message.content[0].text.value, end="\n\n")
 
-        last_message_id = messages[-1].id
-        print(messages[-1].content[0].text.value)
+    except (EOFError, KeyboardInterrupt):
+        sys.exit(0)

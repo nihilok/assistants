@@ -10,6 +10,7 @@ except KeyError as e:
     logger.error(error)
     raise ConfigError(error) from e
 
+DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL", "gpt-4o-mini")
 ASSISTANT_INSTRUCTIONS = os.environ.get(
     "ASSISTANT_INSTRUCTIONS", "You are a helpful assistant."
 )
