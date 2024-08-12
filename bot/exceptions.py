@@ -4,3 +4,7 @@ class BotException(Exception):
 
 class ConfigError(BotException):
     pass
+
+
+class NoResponseError(BotException):
+    pass

@@ -5,7 +5,7 @@ import openai
 from openai._types import NotGiven
 from openai.types.beta import Thread
 from openai.types.beta.thread_create_and_run_params import ThreadMessage
-from openai.types.beta.threads import Run
+from openai.types.beta.threads import Run, Message
 
 from ..config.environment import OPENAI_API_KEY
 
@@ -55,9 +55,7 @@ class Assistant:
     def _get_thread(self, thread_id: str) -> Thread:
         return self.client.beta.threads.retrieve(thread_id)
 
-    async def prompt(
-        self, prompt: str, thread_id: Optional[str] = None
-    ) -> tuple[Run, ThreadMessage]:
+    async def prompt(self, prompt: str, thread_id: Optional[str] = None) -> Run:
         if thread_id is None:
             thread, message = self.start_thread(prompt)
             run = self.run_thread(thread)
@@ -73,3 +71,21 @@ class Assistant:
             )
             await asyncio.sleep(0.5)
         return run, message
+
+    def converse(
+        self, user_input: str, thread_id: Optional[str] = None
+    ) -> Message | None:
+        if not user_input:
+            return
+
+        if thread_id is None:
+            run = asyncio.run(self.prompt(user_input))
+            thread_id = run.thread_id
+        else:
+            asyncio.run(self.prompt(user_input, thread_id))
+
+        messages = self.client.beta.threads.messages.list(
+            thread_id=thread_id, order="asc"
+        ).data
+
+        return messages[-1]
