@@ -2,7 +2,7 @@ import asyncio
 from typing import Optional
 
 import openai
-from openai._types import NotGiven
+from openai._types import NOT_GIVEN
 from openai.types.beta import Thread
 from openai.types.beta.thread_create_and_run_params import ThreadMessage
 from openai.types.beta.threads import Run, Message
@@ -11,17 +11,21 @@ from ..config.environment import OPENAI_API_KEY
 
 
 class Assistant:
-    def __init__(self, name: str, model: str, instructions: str):
+    def __init__(
+        self,
+        name: str,
+        model: str,
+        instructions: str,
+        tools: Optional[list] = NOT_GIVEN,
+    ):
         self.client = openai.OpenAI(
             api_key=OPENAI_API_KEY, default_headers={"OpenAI-Beta": "assistants=v2"}
         )
         self.assistant = self.client.beta.assistants.create(
-            name=name,
-            instructions=instructions,
-            model=model,
+            name=name, instructions=instructions, model=model, tools=tools
         )
 
-    def _create_thread(self, messages=NotGiven()) -> Thread:
+    def _create_thread(self, messages=NOT_GIVEN) -> Thread:
         return self.client.beta.threads.create(messages=messages)
 
     def new_thread(self) -> Thread:
