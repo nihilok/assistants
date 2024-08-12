@@ -4,7 +4,6 @@ from typing import Optional
 import openai
 from openai._types import NOT_GIVEN
 from openai.types.beta import Thread
-from openai.types.beta.thread_create_and_run_params import ThreadMessage
 from openai.types.beta.threads import Run, Message
 
 from ..config.environment import OPENAI_API_KEY
@@ -32,16 +31,16 @@ class Assistant:
         thread = self._create_thread()
         return thread
 
-    def start_thread(self, prompt: str) -> tuple[Thread, ThreadMessage]:
+    def start_thread(self, prompt: str) -> Thread:
         thread = self.new_thread()
-        message = self.client.beta.threads.messages.create(
+        self.client.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
             content=prompt,
         )
-        return thread, message
+        return thread
 
-    def continue_thread(self, prompt: str, thread_id: str) -> ThreadMessage:
+    def continue_thread(self, prompt: str, thread_id: str) -> Message:
         message = self.client.beta.threads.messages.create(
             thread_id=thread_id,
             role="user",
@@ -61,12 +60,12 @@ class Assistant:
 
     async def prompt(self, prompt: str, thread_id: Optional[str] = None) -> Run:
         if thread_id is None:
-            thread, message = self.start_thread(prompt)
+            thread = self.start_thread(prompt)
             run = self.run_thread(thread)
             thread_id = thread.id
         else:
             thread = self._get_thread(thread_id)
-            message = self.continue_thread(prompt, thread_id)
+            self.continue_thread(prompt, thread_id)
             run = self.run_thread(thread)
         while run.status == "queued" or run.status == "in_progress":
             run = self.client.beta.threads.runs.retrieve(
@@ -74,7 +73,7 @@ class Assistant:
                 run_id=run.id,
             )
             await asyncio.sleep(0.5)
-        return run, message
+        return run
 
     def converse(
         self, user_input: str, thread_id: Optional[str] = None
