@@ -16,9 +16,10 @@ class Assistant:
         model: str,
         instructions: str,
         tools: Optional[list] = NOT_GIVEN,
+        api_key: str = OPENAI_API_KEY,
     ):
         self.client = openai.OpenAI(
-            api_key=OPENAI_API_KEY, default_headers={"OpenAI-Beta": "assistants=v2"}
+            api_key=api_key, default_headers={"OpenAI-Beta": "assistants=v2"}
         )
         self.assistant = self.client.beta.assistants.create(
             name=name, instructions=instructions, model=model, tools=tools
@@ -77,7 +78,7 @@ class Assistant:
 
     def converse(
         self, user_input: str, thread_id: Optional[str] = None
-    ) -> Message | None:
+    ) -> Optional[Message]:
         if not user_input:
             return
 
