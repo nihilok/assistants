@@ -21,6 +21,7 @@ class Assistant:
         self.client = openai.OpenAI(
             api_key=api_key, default_headers={"OpenAI-Beta": "assistants=v2"}
         )
+        # TODO: get or create assistant by name (save map of name to id in local FS)
         self.assistant = self.client.beta.assistants.create(
             name=name, instructions=instructions, model=model, tools=tools
         )

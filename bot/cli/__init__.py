@@ -1,4 +1,3 @@
-import argparse
 import os
 import re
 import sys
@@ -6,22 +5,11 @@ import sys
 import pyperclip
 
 from bot.ai.assistant import Assistant
+from bot.cli.arg_parser import get_args
+from bot.cli.terminal import clear_screen, ANSIEscapeSequence
 from bot.config.environment import DEFAULT_MODEL, ASSISTANT_INSTRUCTIONS
 from bot.exceptions import NoResponseError
 from bot.helpers import get_text_from_default_editor
-
-
-class TerminalColours:
-    HEADER = "\033[95m"
-    OKBLUE = "\033[94m"
-    OKCYAN = "\033[96m"
-    OKGREEN = "\033[92m"
-    WARNING = "\033[93m"
-    FAIL = "\033[91m"
-    ENDC = "\033[0m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
-
 
 PERSISTENT_THREAD_ID_FILE = f"{os.environ.get('HOME', '.')}/.assistant-last-thread-id"
 
@@ -31,38 +19,9 @@ def cli():
     initial_input = ""
     last_message = None
 
-    parser = argparse.ArgumentParser(description="CLI for AI Assistant")
+    args = get_args()
 
-    parser.add_argument(
-        "-e", action="store_true", help="Open the default editor to compose a prompt."
-    )
-    parser.add_argument(
-        "-f",
-        metavar="INPUT_FILE",
-        type=str,
-        help="Read the initial prompt from a file (e.g., 'input.txt').",
-    )
-    parser.add_argument(
-        "-s",
-        metavar="INSTRUCTIONS",
-        type=str,
-        help="Read the initial system message / instructions from a specified file "
-        "(if not provided, defaults will be used).",
-    )
-    parser.add_argument(
-        "-t",
-        action="store_true",
-        help="Continue previous thread.",
-    )
-    parser.add_argument(
-        "positional_args",
-        nargs="*",
-        help="Positional arguments to concatenate into a single prompt. E.g. ./cli.py This is a single prompt.",
-    )
-
-    args = parser.parse_args()
-
-    instructions = args.s if args.s else ASSISTANT_INSTRUCTIONS
+    instructions = args.instructions if args.instructions else ASSISTANT_INSTRUCTIONS
 
     thread_id = None
     if args.t:
@@ -74,7 +33,7 @@ def cli():
                 "Warning: could not read last thread id from ~/.assistant-last-thread-id - starting new thread..."
             )
 
-    if args.e:
+    if args.editor:
         # Open the default editor to compose formatted prompt
         if args.positional_args:
             # If text was provided as positional args alongside the `-e` option, concatenate to a single string and
@@ -83,7 +42,7 @@ def cli():
         else:
             initial_cli_input = None
         initial_input = get_text_from_default_editor(initial_cli_input)
-    elif args.f:
+    elif args.input_file:
         # Read the initial prompt from a file
         try:
             with open(args.f, "r") as file:
@@ -105,10 +64,10 @@ def cli():
     # IO Loop
     try:
         while initial_input or (
-            user_input := input(TerminalColours.OKGREEN + ">>> ")
+            user_input := input(ANSIEscapeSequence.OKGREEN + ">>> ")
         ).lower() not in {"q", "quit", "exit"}:
             if initial_input:
-                print(TerminalColours.OKGREEN + ">>> " + initial_input)
+                print(ANSIEscapeSequence.OKGREEN + ">>> " + initial_input)
                 user_input = initial_input
 
             if not user_input.strip():
@@ -123,21 +82,21 @@ def cli():
             elif user_input.lower() == "-c":
                 if not last_message:
                     print(
-                        TerminalColours.WARNING
+                        ANSIEscapeSequence.WARNING
                         + "No previous message to copy from."
-                        + TerminalColours.ENDC
+                        + ANSIEscapeSequence.ENDC
                     )
                     continue
                 previous_response = last_message.content[0].text.value
                 pyperclip.copy(previous_response)
-                print(TerminalColours.OKBLUE + "Copied response to clipboard")
+                print(ANSIEscapeSequence.OKBLUE + "Copied response to clipboard")
                 continue
             elif user_input.lower() == "-cb":
                 if not last_message:
                     print(
-                        TerminalColours.WARNING
+                        ANSIEscapeSequence.WARNING
                         + "No previous message to copy from."
-                        + TerminalColours.ENDC
+                        + ANSIEscapeSequence.ENDC
                     )
                     continue
                 previous_response = last_message.content[0].text.value
@@ -152,18 +111,23 @@ def cli():
 
                 if not code_only:
                     print(
-                        TerminalColours.WARNING
+                        ANSIEscapeSequence.WARNING
                         + "No codeblocks in previous message."
-                        + TerminalColours.ENDC
+                        + ANSIEscapeSequence.ENDC
                     )
                     continue
 
                 all_code = "\n\n".join(code_only)
                 pyperclip.copy(all_code)
-                print(TerminalColours.OKBLUE + "Copied code blocks to clipboard")
+                print(ANSIEscapeSequence.OKBLUE + "Copied code blocks to clipboard")
+                continue
+            elif user_input.lower().strip() in {"-n", "clear"}:
+                thread_id = None
+                last_message = None
+                clear_screen()
                 continue
 
-            print(TerminalColours.ENDC, end="")
+            print(ANSIEscapeSequence.ENDC, end="")
             message = assistant.converse(
                 initial_input or user_input,
                 last_message.thread_id if last_message else thread_id,
