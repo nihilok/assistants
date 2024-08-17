@@ -31,16 +31,18 @@ class Assistant:
     async def load_or_create_assistant(self):
         existing_id = await get_assistant_id(self.name)
         if existing_id:
-            self.assistant = self.client.beta.assistants.retrieve(existing_id)
-        else:
-            self.assistant = self.client.beta.assistants.create(
-                name=self.name,
-                instructions=self.instructions,
-                model=self.model,
-                tools=self.tools,
-            )
-            await save_assistant_id(self.name, self.assistant.id)
-        return self.assistant
+            try:
+                return self.client.beta.assistants.retrieve(existing_id)
+            except openai.NotFoundError:
+                pass
+        assistant = self.client.beta.assistants.create(
+            name=self.name,
+            instructions=self.instructions,
+            model=self.model,
+            tools=self.tools,
+        )
+        await save_assistant_id(self.name, assistant.id)
+        return assistant
 
     def _create_thread(self, messages=NOT_GIVEN) -> Thread:
         return self.client.beta.threads.create(messages=messages)
