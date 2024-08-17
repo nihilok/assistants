@@ -94,7 +94,7 @@ def cli():
                 except pyperclip.PyperclipException:
                     print(
                         ANSIEscapeSequence.FAIL
-                        + "Error copying code to clipboard; this feature doesn't seem to be "
+                        + "Error copying to clipboard; this feature doesn't seem to be "
                         "available in the current terminal environment."
                         + ANSIEscapeSequence.ENDC
                     )
