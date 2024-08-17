@@ -28,8 +28,11 @@ class MockMessage:
         return str(random.randint(10000, 99999))
 
 
+@patch("bot.cli.arg_parser.get_args", MagicMock())
+@patch("bot.ai.assistant.get_assistant_id", autospec=True)
+@patch("bot.ai.assistant.save_assistant_id", autospec=True)
 @pytest.mark.parametrize("exit_keyword", ["q", "Q", "quit", "QUIT", "Quit", "quiT"])
-def test_exit_keywords_exit_the_program(exit_keyword):
+def test_exit_keywords_exit_the_program(mock_get, mock_save, exit_keyword):
     with patch(
         "bot.ai.assistant.Assistant.converse",
         return_value=MockMessage(thread_id="123"),
