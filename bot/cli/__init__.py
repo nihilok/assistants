@@ -88,7 +88,18 @@ def cli():
                     )
                     continue
                 previous_response = last_message.content[0].text.value
-                pyperclip.copy(previous_response)
+
+                try:
+                    pyperclip.copy(previous_response)
+                except pyperclip.PyperclipException:
+                    print(
+                        ANSIEscapeSequence.FAIL
+                        + "Error copying code to clipboard; this feature doesn't seem to be "
+                        "available in the current terminal environment."
+                        + ANSIEscapeSequence.ENDC
+                    )
+                    continue
+
                 print(ANSIEscapeSequence.OKBLUE + "Copied response to clipboard")
                 continue
             elif user_input.lower() == "-cb":
@@ -118,7 +129,18 @@ def cli():
                     continue
 
                 all_code = "\n\n".join(code_only)
-                pyperclip.copy(all_code)
+
+                try:
+                    pyperclip.copy(all_code)
+                except pyperclip.PyperclipException:
+                    print(
+                        ANSIEscapeSequence.FAIL
+                        + "Error copying code to clipboard; this feature doesn't seem to be "
+                        "available in the current terminal environment."
+                        + ANSIEscapeSequence.ENDC
+                    )
+                    continue
+
                 print(ANSIEscapeSequence.OKBLUE + "Copied code blocks to clipboard")
                 continue
             elif user_input.lower().strip() in {"-n", "clear"}:
