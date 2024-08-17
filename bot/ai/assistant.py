@@ -7,6 +7,7 @@ from openai.types.beta import Thread
 from openai.types.beta.threads import Run, Message
 
 from ..config.environment import OPENAI_API_KEY
+from ..user_data.sqlite_backend.assistants import get_assistant_id, save_assistant_id
 
 
 class Assistant:
@@ -21,10 +22,27 @@ class Assistant:
         self.client = openai.OpenAI(
             api_key=api_key, default_headers={"OpenAI-Beta": "assistants=v2"}
         )
-        # TODO: get or create assistant by name (save map of name to id in local FS)
-        self.assistant = self.client.beta.assistants.create(
-            name=name, instructions=instructions, model=model, tools=tools
+        self.instructions = instructions
+        self.tools = tools
+        self.model = model
+        self.name = name
+        self.assistant = asyncio.run(self.load_or_create_assistant())
+
+    async def load_or_create_assistant(self):
+        existing_id = await get_assistant_id(self.name)
+        if existing_id:
+            try:
+                return self.client.beta.assistants.retrieve(existing_id)
+            except openai.NotFoundError:
+                pass
+        assistant = self.client.beta.assistants.create(
+            name=self.name,
+            instructions=self.instructions,
+            model=self.model,
+            tools=self.tools,
         )
+        await save_assistant_id(self.name, assistant.id)
+        return assistant
 
     def _create_thread(self, messages=NOT_GIVEN) -> Thread:
         return self.client.beta.threads.create(messages=messages)
