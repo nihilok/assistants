@@ -3,10 +3,12 @@ import os
 from bot.exceptions import ConfigError
 from bot.log import logger
 
+ASSISTANTS_API_KEY_NAME = os.environ.get("ASSISTANTS_API_KEY_NAME", "OPENAI_API_KEY")
+
 try:
-    OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+    OPENAI_API_KEY = os.environ[ASSISTANTS_API_KEY_NAME]
 except KeyError as e:
-    error = "Missing required OPENAI_API_KEY environment variable"
+    error = f"Missing required {ASSISTANTS_API_KEY_NAME} environment variable"
     logger.error(error)
     raise ConfigError(error) from e
 
