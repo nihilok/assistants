@@ -5,6 +5,7 @@ import sys
 import pyperclip
 
 from bot.ai.assistant import Assistant
+from bot.cli import output
 from bot.cli.arg_parser import get_args
 from bot.cli.terminal import clear_screen, ANSIEscapeSequence
 from bot.config.environment import DEFAULT_MODEL, ASSISTANT_INSTRUCTIONS
@@ -29,8 +30,8 @@ def cli():
             with open(PERSISTENT_THREAD_ID_FILE, "r") as f:
                 thread_id = f.read().strip("\n")
         except FileNotFoundError:
-            print(
-                "Warning: could not read last thread id from ~/.assistant-last-thread-id - starting new thread..."
+            output.warn(
+                f"Warning: could not read last thread id from '{PERSISTENT_THREAD_ID_FILE}' - starting new thread..."
             )
 
     if args.editor:
@@ -48,7 +49,7 @@ def cli():
             with open(args.f, "r") as file:
                 initial_input = file.read()
         except FileNotFoundError:
-            print(f"Error: The file '{args.f}' was not found.")
+            output.fail(f"Error: The file '{args.f}' was not found.")
             sys.exit(1)
     elif args.positional_args:
         initial_input = " ".join(args.positional_args)
@@ -66,8 +67,9 @@ def cli():
         while initial_input or (
             user_input := input(ANSIEscapeSequence.OKGREEN + ">>> ")
         ).lower() not in {"q", "quit", "exit"}:
+            output.reset()
             if initial_input:
-                print(ANSIEscapeSequence.OKGREEN + ">>> " + initial_input)
+                output.user_input(initial_input)
                 user_input = initial_input
 
             if not user_input.strip():
@@ -78,37 +80,27 @@ def cli():
 
             if user_input.lower() == "-e":
                 user_input = get_text_from_default_editor()
-                print(user_input)
+                output.user_input(user_input)
             elif user_input.lower() == "-c":
                 if not last_message:
-                    print(
-                        ANSIEscapeSequence.WARNING
-                        + "No previous message to copy from."
-                        + ANSIEscapeSequence.ENDC
-                    )
+                    output.warn("No previous message to copy from.")
                     continue
                 previous_response = last_message.content[0].text.value
 
                 try:
                     pyperclip.copy(previous_response)
                 except pyperclip.PyperclipException:
-                    print(
-                        ANSIEscapeSequence.FAIL
-                        + "Error copying to clipboard; this feature doesn't seem to be "
+                    output.fail(
+                        "Error copying to clipboard; this feature doesn't seem to be "
                         "available in the current terminal environment."
-                        + ANSIEscapeSequence.ENDC
                     )
                     continue
 
-                print(ANSIEscapeSequence.OKBLUE + "Copied response to clipboard")
+                output.inform("Copied response to clipboard")
                 continue
             elif user_input.lower() == "-cb":
                 if not last_message:
-                    print(
-                        ANSIEscapeSequence.WARNING
-                        + "No previous message to copy from."
-                        + ANSIEscapeSequence.ENDC
-                    )
+                    output.warn("No previous message to copy from!")
                     continue
                 previous_response = last_message.content[0].text.value
                 code_blocks = re.split(
@@ -121,11 +113,7 @@ def cli():
                 ]
 
                 if not code_only:
-                    print(
-                        ANSIEscapeSequence.WARNING
-                        + "No codeblocks in previous message."
-                        + ANSIEscapeSequence.ENDC
-                    )
+                    output.warn("No codeblocks in previous message!")
                     continue
 
                 all_code = "\n\n".join(code_only)
@@ -133,15 +121,13 @@ def cli():
                 try:
                     pyperclip.copy(all_code)
                 except pyperclip.PyperclipException:
-                    print(
-                        ANSIEscapeSequence.FAIL
-                        + "Error copying code to clipboard; this feature doesn't seem to be "
+                    output.fail(
+                        "Error copying code to clipboard; this feature doesn't seem to be "
                         "available in the current terminal environment."
-                        + ANSIEscapeSequence.ENDC
                     )
                     continue
 
-                print(ANSIEscapeSequence.OKBLUE + "Copied code blocks to clipboard")
+                output.inform("Copied code blocks to clipboard")
                 continue
             elif user_input.lower().strip() in {"-n", "clear"}:
                 thread_id = None
@@ -149,7 +135,6 @@ def cli():
                 clear_screen()
                 continue
 
-            print(ANSIEscapeSequence.ENDC, end="")
             message = assistant.converse(
                 initial_input or user_input,
                 last_message.thread_id if last_message else thread_id,
@@ -161,7 +146,8 @@ def cli():
             if last_message and message.id == last_message.id:
                 raise NoResponseError
 
-            print(message.content[0].text.value, end="\n\n")
+            output.default(message.content[0].text.value)
+            output.new_line(2)
             last_message = message
 
             if not thread_id:
