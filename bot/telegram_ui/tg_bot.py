@@ -121,8 +121,23 @@ async def new_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @restricted_access
+async def toggle_auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_history = await context.bot.get_chat_history(update.effective_chat.id)
+    result = "OFF" if chat_history.auto_reply else "ON"
+    await user_data.set_auto_reply(
+        update.effective_chat.id, not chat_history.auto_reply
+    )
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, text=f"Auto reply is {result}"
+    )
+
+
+@restricted_access
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     existing_chat = await user_data.get_chat_history(update.effective_chat.id)
+    if not existing_chat.auto_reply and not update.message.reply_to_message:
+        return
+
     response_message = await assistant.converse(
         update.message.text, existing_chat.thread_id
     )
@@ -147,6 +162,7 @@ def build_bot(token: str) -> Application:
     application.add_handler(CommandHandler("promote", promote_user))
     application.add_handler(CommandHandler("demote", demote_user))
     application.add_handler(CommandHandler("new_thread", new_thread))
+    application.add_handler(CommandHandler("auto_reply", toggle_auto_reply))
     application.add_handler(MessageHandler(filters.TEXT, message_handler))
     return application
 

@@ -15,6 +15,7 @@ class NotAuthorized(ValueError):
 class ChatHistory(BaseModel):
     chat_id: int
     thread_id: Optional[str] = None
+    auto_reply: bool
 
 
 class UserData(ABC):

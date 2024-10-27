@@ -41,12 +41,14 @@ class SqliteUserData(UserData):
     async def get_chat_history(self, chat_id: int) -> ChatHistory:
         async with aiosqlite.connect(self.DB) as db:
             async with await db.execute(
-                f"SELECT thread_id FROM chat_history WHERE chat_id = {chat_id};"
+                f"SELECT thread_id, auto_reply FROM chat_history WHERE chat_id = {chat_id};"
             ) as cursor:
                 result = await cursor.fetchone()
                 if result:
-                    if thread_id := result[0]:
-                        return ChatHistory(chat_id=chat_id, thread_id=thread_id)
+                    thread_id, auto_reply = result
+                    return ChatHistory(
+                        chat_id=chat_id, thread_id=thread_id, auto_reply=auto_reply
+                    )
             await db.execute(f"REPLACE INTO chat_history VALUES ({chat_id}, NULL);")
             await db.commit()
             return ChatHistory(chat_id=chat_id, thread_id=None)
@@ -122,4 +124,11 @@ class SqliteUserData(UserData):
     async def clear_last_thread_id(self, chat_id: int):
         async with aiosqlite.connect(self.DB) as db:
             await db.execute(f"REPLACE INTO chat_history VALUES ({chat_id}, NULL);")
+            await db.commit()
+
+    async def set_auto_reply(self, chat_id: int, auto_reply: bool):
+        async with aiosqlite.connect(self.DB) as db:
+            await db.execute(
+                f"UPDATE chat_history SET auto_reply = {json.dumps(auto_reply)} WHERE chat_id = {chat_id};"
+            )
             await db.commit()
