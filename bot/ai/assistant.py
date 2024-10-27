@@ -26,7 +26,8 @@ class Assistant:
         self.tools = tools
         self.model = model
         self.name = name
-        self.assistant = asyncio.run(self.load_or_create_assistant())
+        loop = asyncio.get_event_loop()
+        self.assistant = loop.run_until_complete(self.load_or_create_assistant())
 
     async def load_or_create_assistant(self):
         existing_id = await get_assistant_id(self.name)
@@ -95,17 +96,17 @@ class Assistant:
             await asyncio.sleep(0.5)
         return run
 
-    def converse(
+    async def converse(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[Message]:
         if not user_input:
             return
 
         if thread_id is None:
-            run = asyncio.run(self.prompt(user_input))
+            run = await self.prompt(user_input)
             thread_id = run.thread_id
         else:
-            asyncio.run(self.prompt(user_input, thread_id))
+            await self.prompt(user_input, thread_id)
 
         messages = self.client.beta.threads.messages.list(
             thread_id=thread_id, order="asc"

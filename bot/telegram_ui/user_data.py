@@ -1,5 +1,6 @@
 import os
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -13,7 +14,7 @@ class NotAuthorized(ValueError):
 
 class ChatHistory(BaseModel):
     chat_id: int
-    history: list[dict[str, str]]
+    thread_id: Optional[str] = None
 
 
 class UserData(ABC):
@@ -32,7 +33,23 @@ class UserData(ABC):
         pass
 
     @abstractmethod
+    async def check_user_authorised(self, user_id: int):
+        pass
+
+    @abstractmethod
+    async def check_superuser(self, user_id: int):
+        pass
+
+    @abstractmethod
     async def authorise_user(self, user_id: int):
+        pass
+
+    @abstractmethod
+    async def promote_superuser(self, user_id: int):
+        pass
+
+    @abstractmethod
+    async def demote_superuser(self, user_id: int):
         pass
 
     @abstractmethod

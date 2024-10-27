@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 import sys
@@ -135,9 +136,11 @@ def cli():
                 clear_screen()
                 continue
 
-            message = assistant.converse(
-                initial_input or user_input,
-                last_message.thread_id if last_message else thread_id,
+            message = asyncio.run(
+                assistant.converse(
+                    initial_input or user_input,
+                    last_message.thread_id if last_message else thread_id,
+                )
             )
 
             initial_input = ""  # Only relevant for first iteration (comes from initial command line),

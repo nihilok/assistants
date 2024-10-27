@@ -16,7 +16,7 @@ class SqliteUserData(UserData):
                 f"""
                 CREATE TABLE IF NOT EXISTS chat_history (
                     chat_id INTEGER,
-                    history TEXT,
+                    thread_id TEXT,
                     PRIMARY KEY (chat_id),
                     FOREIGN KEY (chat_id) REFERENCES authorised_chats(chat_id)
                 );
@@ -40,23 +40,20 @@ class SqliteUserData(UserData):
     async def get_chat_history(self, chat_id: int) -> ChatHistory:
         async with aiosqlite.connect(self.DB) as db:
             async with await db.execute(
-                f"SELECT history FROM chat_history WHERE chat_id = {chat_id};"
+                f"SELECT thread_id FROM chat_history WHERE chat_id = {chat_id};"
             ) as cursor:
                 result = await cursor.fetchone()
                 if result:
-                    if history := result[0]:
-                        return ChatHistory(
-                            **json.loads(urllib.parse.unquote_plus(history))
-                        )
+                    if thread_id := result[0]:
+                        return ChatHistory(chat_id=chat_id, thread_id=thread_id)
             await db.execute(f"REPLACE INTO chat_history VALUES ({chat_id}, NULL);")
             await db.commit()
-            return ChatHistory(chat_id=chat_id, history=[])
+            return ChatHistory(chat_id=chat_id, thread_id=None)
 
     async def save_chat_history(self, history: ChatHistory):
-        encoded = urllib.parse.quote_plus(json.dumps(history.history))
         async with aiosqlite.connect(self.DB) as db:
             await db.execute(
-                f"REPLACE INTO chat_history VALUES ({history.chat_id}, '{encoded}');"
+                f"REPLACE INTO chat_history VALUES ({history.chat_id}, '{history.thread_id}');"
             )
             await db.commit()
 
@@ -64,6 +61,16 @@ class SqliteUserData(UserData):
         async with aiosqlite.connect(self.DB) as db:
             async with await db.execute(
                 f"SELECT user_id FROM authorised_users WHERE user_id = {user_id};"
+            ) as cursor:
+                result = await cursor.fetchone()
+                if result and result[0]:
+                    return True
+        raise NotAuthorized(str(user_id))
+
+    async def check_superuser(self, user_id: int):
+        async with aiosqlite.connect(self.DB) as db:
+            async with await db.execute(
+                f"SELECT user_id FROM superusers WHERE user_id = {user_id};"
             ) as cursor:
                 result = await cursor.fetchone()
                 if result and result[0]:
@@ -83,6 +90,17 @@ class SqliteUserData(UserData):
     async def authorise_user(self, user_id: int):
         async with aiosqlite.connect(self.DB) as db:
             await db.execute(f"REPLACE INTO authorised_users VALUES ({user_id});")
+            await db.commit()
+
+    async def promote_superuser(self, user_id: int):
+        await self.authorise_user(user_id)
+        async with aiosqlite.connect(self.DB) as db:
+            await db.execute(f"REPLACE INTO superusers VALUES ({user_id});")
+            await db.commit()
+
+    async def demote_superuser(self, user_id: int):
+        async with aiosqlite.connect(self.DB) as db:
+            await db.execute(f"DELETE FROM superusers WHERE user_id = {user_id};")
             await db.commit()
 
     async def authorise_chat(self, chat_id: int):
