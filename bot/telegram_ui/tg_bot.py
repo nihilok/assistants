@@ -135,21 +135,20 @@ async def toggle_auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @restricted_access
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     existing_chat = await user_data.get_chat_history(update.effective_chat.id)
+    message_text = update.message.text
     if not existing_chat.auto_reply:
         bot_id = context.bot.id
         bot_username = context.bot.username
-        if bot_username not in update.message.text and (
+        if bot_username not in message_text and (
             not update.message.reply_to_message
             or update.message.reply_to_message.from_user.id != bot_id
         ):
             return
-        update.message.text = update.message.text.replace(
+        message_text = message_text.replace(
             bot_username, os.getenv("ASSISTANT_NAME", "[ASSISTANT NAME]")
         )
 
-    response_message = await assistant.converse(
-        update.message.text, existing_chat.thread_id
-    )
+    response_message = await assistant.converse(message_text, existing_chat.thread_id)
 
     if not existing_chat.thread_id:
         await user_data.save_chat_history(
