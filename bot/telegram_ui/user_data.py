@@ -17,7 +17,6 @@ class ChatHistory(BaseModel):
 
 
 class UserData(ABC):
-
     DB = DB
 
     @abstractmethod
@@ -30,4 +29,20 @@ class UserData(ABC):
 
     @abstractmethod
     async def save_chat_history(self, history: ChatHistory):
+        pass
+
+    @abstractmethod
+    async def authorise_user(self, user_id: int):
+        pass
+
+    @abstractmethod
+    async def authorise_chat(self, chat_id: int):
+        pass
+
+    @abstractmethod
+    async def deauthorise_user(self, user_id: int):
+        pass
+
+    @abstractmethod
+    async def deauthorise_chat(self, chat_id: int):
         pass

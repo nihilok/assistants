@@ -12,15 +12,19 @@ from telegram.ext import (
 )
 
 from bot.telegram_ui.sqlite_user_data import SqliteUserData
+from bot.telegram_ui.user_data import NotAuthorized
 
 user_data = SqliteUserData()
 
 
 def restricted_access(f):
-
     @wraps(f)
     async def wrapper(update: Update, *args, **kwargs):
-        await user_data.check_user_authorised(update.effective_user.id)
+        try:
+            await user_data.check_chat_authorised(update.effective_chat.id)
+        except NotAuthorized:
+            await user_data.check_user_authorised(update.effective_user.id)
+
         return await f(update, *args, **kwargs)
 
     return wrapper
