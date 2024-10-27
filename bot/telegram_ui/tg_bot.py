@@ -162,13 +162,20 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     response = response_message.content[0].text.value
 
-    escaped_response = helpers.escape_markdown(response)
+    response_parts = response.split("```")
 
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=escaped_response,
-        parse_mode=ParseMode.MARKDOWN,
-    )
+    for i, part in enumerate(response_parts):
+        if i % 2:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"```{part}```",
+                parse_mode=ParseMode.MARKDOWN_V2,
+            )
+        else:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=part,
+            )
 
 
 def build_bot(token: str) -> Application:
