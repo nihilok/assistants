@@ -5,7 +5,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-DB = os.environ.get("TG_USER_DATA", "tg_user_data.db")
+DB = os.environ.get("TG_USER_DATA")
 
 
 class NotAuthorized(ValueError):

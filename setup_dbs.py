@@ -1,8 +1,4 @@
 import asyncio
-import os
-
-os.environ.setdefault("TG_USER_DATA", "tg_user_data.db")
-os.environ.setdefault("USER_DATA_DB", "assistant_data.db")
 
 from bot.telegram_ui.sqlite_user_data import SqliteUserData
 from bot.user_data.sqlite_backend import init_db
