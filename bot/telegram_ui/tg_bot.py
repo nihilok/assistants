@@ -1,7 +1,8 @@
 import os
 from functools import wraps
 
-from telegram import Update
+from telegram import Update, helpers
+from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
     ApplicationBuilder,
@@ -161,7 +162,13 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     response = response_message.content[0].text.value
 
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
+    escaped_response = helpers.escape_markdown(response, version=2)
+
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=escaped_response,
+        parse_mode=ParseMode.MARKDOWN_V2,
+    )
 
 
 def build_bot(token: str) -> Application:
