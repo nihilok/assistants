@@ -140,7 +140,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         bot_username = context.bot.username
         print(bot_username)
         tag = f"@{bot_username}"
-        if tag not in update.message.text or (
+        if tag not in update.message.text and (
             not update.message.reply_to_message
             or update.message.reply_to_message.from_user.id != bot_id
         ):
