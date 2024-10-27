@@ -138,7 +138,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_text = update.message.text
     if not existing_chat.auto_reply:
         bot_id = context.bot.id
-        bot_username = context.bot.username
+        bot_username = f"@{context.bot.username}"
         if bot_username not in message_text and (
             not update.message.reply_to_message
             or update.message.reply_to_message.from_user.id != bot_id
