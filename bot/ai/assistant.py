@@ -111,7 +111,7 @@ class Assistant:
             await self.prompt(user_input, thread_id)
 
         messages = self.client.beta.threads.messages.list(
-            thread_id=thread_id, order="asc"
+            thread_id=thread_id, order="asc", after=self.last_message_id or NOT_GIVEN
         ).data
 
         last_message_in_thread = messages[-1]
