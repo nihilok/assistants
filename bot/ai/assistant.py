@@ -7,6 +7,7 @@ from openai.types.beta import Thread
 from openai.types.beta.threads import Run, Message
 
 from ..config.environment import OPENAI_API_KEY
+from ..exceptions import NoResponseError
 from ..user_data.sqlite_backend.assistants import get_assistant_id, save_assistant_id
 
 
@@ -28,6 +29,7 @@ class Assistant:
         self.name = name
         loop = asyncio.get_event_loop()
         self.assistant = loop.run_until_complete(self.load_or_create_assistant())
+        self.last_message_id = None
 
     async def load_or_create_assistant(self):
         existing_id = await get_assistant_id(self.name)
@@ -100,7 +102,7 @@ class Assistant:
         self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[Message]:
         if not user_input:
-            return
+            return None
 
         if thread_id is None:
             run = await self.prompt(user_input)
@@ -112,4 +114,11 @@ class Assistant:
             thread_id=thread_id, order="asc"
         ).data
 
-        return messages[-1]
+        last_message_in_thread = messages[-1]
+
+        if last_message_in_thread.id == self.last_message_id:
+            raise NoResponseError
+
+        self.last_message_id = last_message_in_thread.id
+
+        return last_message_in_thread
