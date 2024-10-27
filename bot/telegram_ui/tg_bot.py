@@ -122,7 +122,7 @@ async def new_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @restricted_access
 async def toggle_auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_history = await context.bot.get_chat_history(update.effective_chat.id)
+    chat_history = await user_data.get_chat_history(update.effective_chat.id)
     result = "OFF" if chat_history.auto_reply else "ON"
     await user_data.set_auto_reply(
         update.effective_chat.id, not chat_history.auto_reply
