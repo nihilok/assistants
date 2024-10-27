@@ -49,7 +49,9 @@ class SqliteUserData(UserData):
                     return ChatHistory(
                         chat_id=chat_id, thread_id=thread_id, auto_reply=auto_reply
                     )
-            await db.execute(f"REPLACE INTO chat_history VALUES ({chat_id}, NULL);")
+            await db.execute(
+                f"REPLACE INTO chat_history VALUES ({chat_id}, NULL, true);"
+            )
             await db.commit()
             return ChatHistory(chat_id=chat_id, thread_id=None)
 
