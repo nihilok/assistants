@@ -143,6 +143,9 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             or update.message.reply_to_message.from_user.id != bot_id
         ):
             return
+        update.message.text = update.message.text.replace(
+            bot_username, os.getenv("ASSISTANT_NAME", "[ASSISTANT NAME]")
+        )
 
     response_message = await assistant.converse(
         update.message.text, existing_chat.thread_id
