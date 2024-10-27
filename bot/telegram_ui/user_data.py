@@ -63,3 +63,7 @@ class UserData(ABC):
     @abstractmethod
     async def deauthorise_chat(self, chat_id: int):
         pass
+
+    @abstractmethod
+    async def clear_last_thread_id(self, chat_id: int):
+        pass

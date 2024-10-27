@@ -117,3 +117,8 @@ class SqliteUserData(UserData):
         async with aiosqlite.connect(self.DB) as db:
             await db.execute(f"DELETE FROM authorised_chats WHERE chat_id = {chat_id};")
             await db.commit()
+
+    async def clear_last_thread_id(self, chat_id: int):
+        async with aiosqlite.connect(self.DB) as db:
+            await db.execute(f"REPLACE INTO chat_history VALUES ({chat_id}, NULL);")
+            await db.commit()

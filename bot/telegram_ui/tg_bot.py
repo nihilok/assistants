@@ -110,6 +110,11 @@ async def deauthorise_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @restricted_access
+async def new_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await user_data.clear_last_thread_id(update.effective_chat.id)
+
+
+@restricted_access
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     existing_chat = await user_data.get_chat_history(update.effective_chat.id)
     response_message = await assistant.converse(
@@ -136,6 +141,7 @@ def build_bot(token: str) -> Application:
     application.add_handler(CommandHandler("deauth_user", deauthorise_user))
     application.add_handler(CommandHandler("promote", promote_user))
     application.add_handler(CommandHandler("demote", demote_user))
+    application.add_handler(CommandHandler("new_thread", new_thread))
     return application
 
 
