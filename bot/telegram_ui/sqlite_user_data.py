@@ -53,7 +53,7 @@ class SqliteUserData(UserData):
                 f"REPLACE INTO chat_history VALUES ({chat_id}, NULL, true);"
             )
             await db.commit()
-            return ChatHistory(chat_id=chat_id, thread_id=None)
+            return ChatHistory(chat_id=chat_id, thread_id=None, auto_reply=True)
 
     async def save_chat_history(self, history: ChatHistory):
         async with aiosqlite.connect(self.DB) as db:
