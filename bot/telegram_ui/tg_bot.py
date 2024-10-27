@@ -164,6 +164,14 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     response_parts = response.split("```")
 
+    if len(response_parts) % 2 == 0:
+        # Should be an odd number of parts if codeblocks
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=response,
+        )
+        return
+
     for i, part in enumerate(response_parts):
         if i % 2:
             await context.bot.send_message(
