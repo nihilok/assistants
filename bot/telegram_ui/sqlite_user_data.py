@@ -17,6 +17,7 @@ class SqliteUserData(UserData):
                 CREATE TABLE IF NOT EXISTS chat_history (
                     chat_id INTEGER,
                     thread_id TEXT,
+                    auto_reply BOOLEAN DEFAULT TRUE,
                     PRIMARY KEY (chat_id),
                     FOREIGN KEY (chat_id) REFERENCES authorised_chats(chat_id)
                 );
