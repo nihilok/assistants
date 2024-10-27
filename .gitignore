@@ -163,3 +163,4 @@ cython_debug/
 /.python-version
 /tests/user_data.db
 /user_data.db
+/.idea
