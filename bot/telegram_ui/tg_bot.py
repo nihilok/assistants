@@ -49,7 +49,22 @@ def requires_superuser(f):
     return wrapper
 
 
+def requires_reply_to_message(f):
+    @wraps(f)
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        try:
+            return await f(update, context)
+        except AttributeError:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="You must reply to a message from the target user to use this command",
+            )
+
+    return wrapper
+
+
 @requires_superuser
+@requires_reply_to_message
 async def promote_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await user_data.promote_superuser(update.message.reply_to_message.from_user.id)
     await context.bot.send_message(
@@ -58,6 +73,7 @@ async def promote_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @requires_superuser
+@requires_reply_to_message
 async def demote_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await user_data.demote_superuser(update.message.reply_to_message.from_user.id)
     await context.bot.send_message(
@@ -74,17 +90,12 @@ async def authorise_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @requires_superuser
+@requires_reply_to_message
 async def authorise_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        await user_data.authorise_chat(update.message.reply_to_message.from_user.id)
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id, text="User authorised"
-        )
-    except AttributeError:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="You must reply to a message from the target user to use this command",
-        )
+    await user_data.authorise_chat(update.message.reply_to_message.from_user.id)
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, text="User authorised"
+    )
 
 
 @requires_superuser
@@ -96,17 +107,12 @@ async def deauthorise_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @requires_superuser
+@requires_reply_to_message
 async def deauthorise_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        await user_data.deauthorise_user(update.message.reply_to_message.from_user.id)
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id, text="User de-authorised"
-        )
-    except AttributeError:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="You must reply to a message from the target user to use this command",
-        )
+    await user_data.deauthorise_user(update.message.reply_to_message.from_user.id)
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, text="User de-authorised"
+    )
 
 
 @restricted_access
