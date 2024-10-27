@@ -134,7 +134,6 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def build_bot(token: str) -> Application:
     application = ApplicationBuilder().token(token).build()
-    application.add_handler(MessageHandler(filters.TEXT, message_handler))
     application.add_handler(CommandHandler("auth_chat", authorise_chat))
     application.add_handler(CommandHandler("deauth_chat", deauthorise_chat))
     application.add_handler(CommandHandler("auth_user", authorise_user))
@@ -142,6 +141,7 @@ def build_bot(token: str) -> Application:
     application.add_handler(CommandHandler("promote", promote_user))
     application.add_handler(CommandHandler("demote", demote_user))
     application.add_handler(CommandHandler("new_thread", new_thread))
+    application.add_handler(MessageHandler(filters.TEXT, message_handler))
     return application
 
 
