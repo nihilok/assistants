@@ -1,7 +1,7 @@
 import os
 from functools import wraps
 
-from telegram import Update, helpers
+from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
