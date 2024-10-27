@@ -162,12 +162,12 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     response = response_message.content[0].text.value
 
-    escaped_response = helpers.escape_markdown(response, version=2)
+    escaped_response = helpers.escape_markdown(response)
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=escaped_response,
-        parse_mode=ParseMode.MARKDOWN_V2,
+        parse_mode=ParseMode.MARKDOWN,
     )
 
 
