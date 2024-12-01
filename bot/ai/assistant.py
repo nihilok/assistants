@@ -108,7 +108,7 @@ class Assistant:
                 )
         return response.data[0].url
 
-    def converse(
+    async def converse(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[Message]:
         if not user_input:
