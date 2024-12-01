@@ -1,6 +1,7 @@
 import os
 from functools import wraps
 
+import requests
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import (
@@ -186,6 +187,14 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
 
+@restricted_access
+async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    prompt = update.message.text.replace("/image ", "")
+    image_url = await assistant.image_prompt(prompt)
+    image_content = requests.get(image_url).content
+    await update.message.reply_photo(image_content)
+
+
 def build_bot(token: str) -> Application:
     application = ApplicationBuilder().token(token).build()
     application.add_handler(CommandHandler("add_chat", authorise_chat))
@@ -196,6 +205,7 @@ def build_bot(token: str) -> Application:
     application.add_handler(CommandHandler("demote", demote_user))
     application.add_handler(CommandHandler("new_thread", new_thread))
     application.add_handler(CommandHandler("auto_reply", toggle_auto_reply))
+    application.add_handler(CommandHandler("image", generate_image))
     application.add_handler(MessageHandler(filters.TEXT, message_handler))
     return application
 

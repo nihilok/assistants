@@ -2,6 +2,7 @@ import asyncio
 from typing import Optional
 
 import openai
+import requests
 from openai._types import NOT_GIVEN
 from openai.types.beta import Thread
 from openai.types.beta.threads import Run, Message
@@ -99,10 +100,10 @@ class Assistant:
         return run
 
     async def image_prompt(self, prompt: str) -> str:
-        response = client.images.generate(
+        response = self.client.images.generate(
                 model="dall-e-3",
                 prompt=prompt,
-                size="512x512",
+                size="1024x1024",
                 quality="standard",
                 n=1,
                 )
