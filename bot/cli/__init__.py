@@ -15,6 +15,14 @@ from bot.helpers import get_text_from_default_editor
 
 PERSISTENT_THREAD_ID_FILE = f"{os.environ.get('HOME', '.')}/.assistant-last-thread-id"
 
+def get_thread_id():
+    try:
+        with open(PERSISTENT_THREAD_ID_FILE, "r") as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        return None
+
+
 
 def cli():
     user_input = ""
@@ -24,13 +32,11 @@ def cli():
     args = get_args()
 
     instructions = args.instructions if args.instructions else ASSISTANT_INSTRUCTIONS
-
     thread_id = None
+
     if args.t:
-        try:
-            with open(PERSISTENT_THREAD_ID_FILE, "r") as f:
-                thread_id = f.read().strip("\n")
-        except FileNotFoundError:
+        thread_id = get_thread_id()
+        if thread_id is None:
             output.warn(
                 f"Warning: could not read last thread id from '{PERSISTENT_THREAD_ID_FILE}' - starting new thread..."
             )

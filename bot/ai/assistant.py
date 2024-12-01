@@ -98,7 +98,17 @@ class Assistant:
             await asyncio.sleep(0.5)
         return run
 
-    async def converse(
+    async def image_prompt(self, prompt: str) -> str:
+        response = client.images.generate(
+                model="dall-e-3",
+                prompt=prompt,
+                size="512x512",
+                quality="standard",
+                n=1,
+                )
+        return response.data[0].url
+
+    def converse(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[Message]:
         if not user_input:
