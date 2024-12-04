@@ -30,6 +30,12 @@ def get_args():
         help="Continue previous thread.",
     )
     parser.add_argument(
+        "-c",
+        "--code",
+        action="store_true",
+        help="Use specialised code model with chat completion API.",
+    )
+    parser.add_argument(
         "positional_args",
         nargs="*",
         help="Positional arguments to concatenate into a single prompt. E.g. ./cli.py This is a single prompt.",

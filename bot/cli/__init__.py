@@ -5,15 +5,16 @@ import sys
 
 import pyperclip
 
-from bot.ai.assistant import Assistant
+from bot.ai.assistant import Assistant, Completion
 from bot.cli import output
 from bot.cli.arg_parser import get_args
 from bot.cli.terminal import clear_screen, ANSIEscapeSequence
-from bot.config.environment import DEFAULT_MODEL, ASSISTANT_INSTRUCTIONS
+from bot.config.environment import DEFAULT_MODEL, ASSISTANT_INSTRUCTIONS, CODE_MODEL
 from bot.exceptions import NoResponseError
 from bot.helpers import get_text_from_default_editor
 
 PERSISTENT_THREAD_ID_FILE = f"{os.environ.get('HOME', '.')}/.assistant-last-thread-id"
+
 
 def get_thread_id():
     try:
@@ -21,7 +22,6 @@ def get_thread_id():
             return file.read().strip()
     except FileNotFoundError:
         return None
-
 
 
 def cli():
@@ -68,6 +68,13 @@ def cli():
         instructions,
         tools=[{"type": "code_interpreter"}],
     )
+    completion = Completion(
+        model=CODE_MODEL,
+        system_message=args.instructions
+        or "You are a coding assistant. You should answer concisely and clearly, with examples where appropriate.",
+    )
+    if args.code:
+        assistant = completion
 
     # IO Loop
     try:
@@ -89,10 +96,14 @@ def cli():
                 user_input = get_text_from_default_editor()
                 output.user_input(user_input)
             elif user_input.lower() == "-c":
-                if not last_message:
+                if args.code:
+                    previous_response = assistant.memory[-1]["content"]
+
+                elif not last_message:
                     output.warn("No previous message to copy from.")
                     continue
-                previous_response = last_message.content[0].text.value
+                else:
+                    previous_response = last_message.content[0].text.value
 
                 try:
                     pyperclip.copy(previous_response)
@@ -106,10 +117,15 @@ def cli():
                 output.inform("Copied response to clipboard")
                 continue
             elif user_input.lower() == "-cb":
-                if not last_message:
-                    output.warn("No previous message to copy from!")
+                if args.code:
+                    previous_response = assistant.memory[-1]["content"]
+
+                elif not last_message:
+                    output.warn("No previous message to copy from.")
                     continue
-                previous_response = last_message.content[0].text.value
+                else:
+                    previous_response = last_message.content[0].text.value
+
                 code_blocks = re.split(
                     r"(```.*?```)", previous_response, flags=re.DOTALL
                 )
@@ -148,9 +164,13 @@ def cli():
                     last_message.thread_id if last_message else thread_id,
                 )
             )
-
             initial_input = ""  # Only relevant for first iteration (comes from initial command line),
             # resetting to empty string here, so it won't be evaluated as truthy in future iterations
+
+            if args.code:
+                output.default(message.content)
+                output.new_line(2)
+                continue
 
             if last_message and message.id == last_message.id:
                 raise NoResponseError

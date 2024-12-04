@@ -28,7 +28,10 @@ class Assistant:
         self.tools = tools
         self.model = model
         self.name = name
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
         self.assistant = loop.run_until_complete(self.load_or_create_assistant())
         self.last_message_id = None
 
@@ -101,12 +104,12 @@ class Assistant:
 
     async def image_prompt(self, prompt: str) -> str:
         response = self.client.images.generate(
-                model="dall-e-3",
-                prompt=prompt,
-                size="1024x1024",
-                quality="standard",
-                n=1,
-                )
+            model="dall-e-3",
+            prompt=prompt,
+            size="1024x1024",
+            quality="standard",
+            n=1,
+        )
         return response.data[0].url
 
     async def converse(
@@ -133,3 +136,42 @@ class Assistant:
         self.last_message_id = last_message_in_thread.id
 
         return last_message_in_thread
+
+
+class Completion:
+    def __init__(
+        self,
+        model: str,
+        system_message: str = "You are a helpful assistant",
+        max_memory: int = 50,
+        stream: bool = False,
+        api_key: str = OPENAI_API_KEY,
+    ):
+        self.client = openai.OpenAI(api_key=api_key)
+        self.model = model
+        self.system_message = system_message
+        self.memory = []
+        self.max_memory = max_memory
+        self.stream = stream
+
+    def truncate_memory(self):
+        self.memory = self.memory[-self.max_memory :]
+
+    def complete(self, prompt: str) -> str:
+        new_prompt = {
+            "role": "user",
+            "content": prompt,
+        }
+        self.truncate_memory()
+        self.memory.append(new_prompt)
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=self.memory,
+            stream=self.stream,
+        )
+        message = response.choices[0].message
+        self.memory.append({"role": "assistant", "content": message.content})
+        return response.choices[0].message
+
+    async def converse(self, user_input: str, *args, **kwargs) -> Message:
+        return self.complete(user_input)
