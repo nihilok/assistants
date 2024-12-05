@@ -1,18 +1,37 @@
 import asyncio
 import re
 import sys
+from pathlib import Path
 from typing import Optional, Union
 
 import pyperclip  # type: ignore
 from bot.ai.assistant import Assistant, Completion
 from bot.cli import output
 from bot.cli.arg_parser import get_args
-from bot.cli.terminal import ANSIEscapeSequence, clear_screen
+from bot.cli.terminal import clear_screen
 from bot.cli.utils import PERSISTENT_THREAD_ID_FILE, get_thread_id
 from bot.config.environment import ASSISTANT_INSTRUCTIONS, CODE_MODEL, DEFAULT_MODEL
 from bot.exceptions import NoResponseError
 from bot.helpers import get_text_from_default_editor
 from openai.types.beta.threads import Message
+from prompt_toolkit import prompt
+from prompt_toolkit.history import FileHistory
+from prompt_toolkit.styles import Style
+
+history = FileHistory(f"{Path.home()}/.ai-assistant-history")
+style = Style.from_dict(
+    {"": "ansigreen", "input": "ansibrightgreen"},
+)
+message = [("class:input", ">>> ")]
+
+
+IO_INSTRUCTIONS = """
+-e: Open the default editor to compose a prompt
+-c: Copy the previous response to the clipboard
+-cb: Copy the code blocks from the previous response to the clipboard
+-n: Start a new thread and clear the terminal screen
+clear: Clear the terminal screen without starting a new thread
+"""
 
 
 def _io_loop(
@@ -22,13 +41,21 @@ def _io_loop(
     thread_id: Optional[str] = None,
 ):
     is_completion = isinstance(assistant, Completion)
-    while initial_input or (
-        user_input := input(ANSIEscapeSequence.OKGREEN + ">>> ")
-    ).lower() not in {"q", "quit", "exit"}:
+
+    def get_user_input() -> str:
+        global message
+        return prompt(message, style=style, history=history)  # type: ignore
+
+    while initial_input or (user_input := get_user_input()).lower() not in {
+        "q",
+        "quit",
+        "exit",
+    }:
         output.reset()
         if initial_input:
             output.user_input(initial_input)
             user_input = initial_input
+            initial_input = ""
 
         if not user_input.strip():
             continue
@@ -36,10 +63,15 @@ def _io_loop(
         else:
             user_input = user_input.strip()
 
-        if user_input.lower() == "-e":
-            user_input = get_text_from_default_editor()
+        if user_input.strip().lower() in {"-h", "--help", "help"}:
+            output.inform(IO_INSTRUCTIONS)
+            continue
+        elif user_input.strip().lower() == "-e":
+            user_input = get_text_from_default_editor().strip()
+            if not user_input:
+                continue
             output.user_input(user_input)
-        elif user_input.lower() == "-c":
+        elif user_input.strip().lower() == "-c":
             if is_completion:
                 previous_response = assistant.memory[-1]["content"]  # type: ignore
 
@@ -60,7 +92,7 @@ def _io_loop(
 
             output.inform("Copied response to clipboard")
             continue
-        elif user_input.lower() == "-cb":
+        elif user_input.strip().lower() == "-cb":
             if is_completion:
                 previous_response = assistant.memory[-1]["content"]  # type: ignore
 
@@ -94,10 +126,15 @@ def _io_loop(
 
             output.inform("Copied code blocks to clipboard")
             continue
-        elif user_input.lower().strip() in {"-n", "clear"}:
+        elif user_input.lower().strip() == "-n":
             thread_id = None
             last_message = None
             clear_screen()
+            continue
+        elif user_input.lower().strip() == "clear":
+            clear_screen()
+            continue
+        elif not user_input.strip():
             continue
 
         message = asyncio.run(
@@ -106,9 +143,10 @@ def _io_loop(
                 last_message.thread_id if last_message else thread_id,
             )
         )
-        initial_input = ""  # Only relevant for first iteration (comes from initial
-        # command line) resetting to empty string here, so it won't be evaluated as
-        # truthy in future iterations
+
+        if message is None:
+            output.warn("No response from the AI model.")
+            continue
 
         if is_completion:
             output.default(message.content)  # type: ignore
@@ -136,7 +174,7 @@ def cli():
     instructions = args.instructions if args.instructions else ASSISTANT_INSTRUCTIONS
     initial_input = " ".join(args.positional_args) if args.positional_args else None
 
-    if args.t:
+    if args.continue_thread:
         thread_id = get_thread_id()
         if thread_id is None:
             output.warn(

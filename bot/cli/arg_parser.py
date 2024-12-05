@@ -21,24 +21,28 @@ def get_args():
         "--instructions",
         metavar="INSTRUCTIONS_FILE",
         type=str,
-        help="Read the initial instructions (system message) from a specified file "
-        "(if not provided, environment variables or defaults will be used).",
+        help="Read the initial instructions (system message) from a specified file; "
+        "if not provided, environment variable `ASSISTANT_INSTRUCTIONS` or defaults "
+        "will be used.",
     )
     parser.add_argument(
         "-t",
+        "--continue-thread",
         action="store_true",
-        help="Continue previous thread.",
+        help="Continue previous thread. (not currently possible with `-C` option)",
     )
     parser.add_argument(
-        "-c",
+        "-C",
         "--code",
         action="store_true",
-        help="Use specialised code model with chat completion API.",
+        help="Use specialised reasoning/code model. WARNING: This model will be slower "
+        "and more expensive to use.",
     )
     parser.add_argument(
         "positional_args",
         nargs="*",
-        help="Positional arguments to concatenate into a single prompt. E.g. ./cli.py This is a single prompt.",
+        help="Positional arguments to concatenate into a single prompt. E.g. ./cli.py "
+        "This is a single prompt.",
     )
     args = parser.parse_args()
     return args
