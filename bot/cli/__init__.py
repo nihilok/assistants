@@ -71,85 +71,89 @@ def _io_loop(
         else:
             user_input = user_input.strip()
 
-        if user_input.strip().lower() in {"-h", "--help", "help"}:
-            output.inform(IO_INSTRUCTIONS)
-            continue
-        elif user_input.strip().lower() == "-e":
-            user_input = get_text_from_default_editor().strip()
-            if not user_input:
+        match user_input.lower().strip():
+
+            case instruction if instruction in {"-h", "--help", "help"}:
+                output.inform(IO_INSTRUCTIONS)
                 continue
-            output.user_input(user_input)
-        elif user_input.strip().lower() == "-c":
-            if is_completion:
-                previous_response = assistant.memory[-1]["content"]  # type: ignore
+            case "-e":
+                user_input = get_text_from_default_editor().strip()
+                if not user_input:
+                    continue
+                output.user_input(user_input)
+            case "-c":
+                if is_completion:
+                    previous_response = assistant.memory[-1]["content"]  # type: ignore
 
-            elif not last_message:
-                previous_response = ""
-            else:
-                previous_response = last_message.content[0].text.value  # type: ignore
+                elif not last_message:
+                    previous_response = ""
+                else:
+                    previous_response = last_message.content[0].text.value  # type: ignore
 
-            if not previous_response:
-                output.warn("No previous message to copy.")
+                if not previous_response:
+                    output.warn("No previous message to copy.")
+                    continue
+
+                try:
+                    pyperclip.copy(previous_response)
+                except pyperclip.PyperclipException:
+                    output.fail(
+                        "Error copying to clipboard; this feature doesn't seem to be "
+                        "available in the current terminal environment."
+                    )
+                    continue
+
+                output.inform("Copied response to clipboard")
                 continue
+            case "-cb":
+                if is_completion:
+                    previous_response = assistant.memory[-1]["content"]  # type: ignore
 
-            try:
-                pyperclip.copy(previous_response)
-            except pyperclip.PyperclipException:
-                output.fail(
-                    "Error copying to clipboard; this feature doesn't seem to be "
-                    "available in the current terminal environment."
+                elif not last_message:
+                    previous_response = ""
+                else:
+                    previous_response = last_message.content[0].text.value  # type: ignore
+
+                if not previous_response:
+                    output.warn("No previous message to copy from.")
+                    continue
+
+                code_blocks = re.split(
+                    r"(```.*?```)", previous_response, flags=re.DOTALL
                 )
+                code_only = [
+                    "\n".join(block.split("\n")[1:-1]).strip()
+                    for block in code_blocks
+                    if block.startswith("```")
+                ]
+
+                if not code_only:
+                    output.warn("No codeblocks in previous message!")
+                    continue
+
+                all_code = "\n\n".join(code_only)
+
+                try:
+                    pyperclip.copy(all_code)
+                except pyperclip.PyperclipException:
+                    output.fail(
+                        "Error copying code to clipboard; this feature doesn't seem to "
+                        "be available in the current terminal environment."
+                    )
+                    continue
+
+                output.inform("Copied code blocks to clipboard")
                 continue
-
-            output.inform("Copied response to clipboard")
-            continue
-        elif user_input.strip().lower() == "-cb":
-            if is_completion:
-                previous_response = assistant.memory[-1]["content"]  # type: ignore
-
-            elif not last_message:
-                previous_response = ""
-            else:
-                previous_response = last_message.content[0].text.value  # type: ignore
-
-            if not previous_response:
-                output.warn("No previous message to copy from.")
+            case "-n":
+                thread_id = None
+                last_message = None
+                clear_screen()
                 continue
-
-            code_blocks = re.split(r"(```.*?```)", previous_response, flags=re.DOTALL)
-            code_only = [
-                "\n".join(block.split("\n")[1:-1]).strip()
-                for block in code_blocks
-                if block.startswith("```")
-            ]
-
-            if not code_only:
-                output.warn("No codeblocks in previous message!")
+            case "clear":
+                clear_screen()
                 continue
-
-            all_code = "\n\n".join(code_only)
-
-            try:
-                pyperclip.copy(all_code)
-            except pyperclip.PyperclipException:
-                output.fail(
-                    "Error copying code to clipboard; this feature doesn't seem to "
-                    "be available in the current terminal environment."
-                )
+            case nothing if not nothing:
                 continue
-
-            output.inform("Copied code blocks to clipboard")
-            continue
-        elif user_input.lower().strip() == "-n":
-            thread_id = None
-            last_message = None
-            clear_screen()
-            continue
-        elif user_input.lower().strip() == "clear":
-            clear_screen()
-            continue
-        elif not user_input.strip():
-            continue
 
         message = asyncio.run(
             assistant.converse(
