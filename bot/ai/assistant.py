@@ -2,10 +2,10 @@ import asyncio
 from typing import Optional
 
 import openai
-import requests
+import requests  # type: ignore
 from openai._types import NOT_GIVEN
 from openai.types.beta import Thread
-from openai.types.beta.threads import Run, Message
+from openai.types.beta.threads import Message, Run
 
 from ..config.environment import OPENAI_API_KEY
 from ..exceptions import NoResponseError
@@ -102,7 +102,7 @@ class Assistant:
             await asyncio.sleep(0.5)
         return run
 
-    async def image_prompt(self, prompt: str) -> str:
+    async def image_prompt(self, prompt: str) -> Optional[str]:
         response = self.client.images.generate(
             model="dall-e-3",
             prompt=prompt,
@@ -138,6 +138,11 @@ class Assistant:
         return last_message_in_thread
 
 
+class MessageDict[TypedDict]:
+    role: str
+    content: str
+
+
 class Completion:
     def __init__(
         self,
@@ -150,7 +155,7 @@ class Completion:
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
         self.system_message = system_message
-        self.memory = []
+        self.memory: list[MessageDict] = []
         self.max_memory = max_memory
         self.stream = stream
 

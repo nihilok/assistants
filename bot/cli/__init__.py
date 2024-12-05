@@ -1,55 +1,152 @@
 import asyncio
-import os
 import re
 import sys
+from typing import Optional, Union
 
-import pyperclip
-
+import pyperclip  # type: ignore
 from bot.ai.assistant import Assistant, Completion
 from bot.cli import output
 from bot.cli.arg_parser import get_args
-from bot.cli.terminal import clear_screen, ANSIEscapeSequence
-from bot.config.environment import DEFAULT_MODEL, ASSISTANT_INSTRUCTIONS, CODE_MODEL
+from bot.cli.terminal import ANSIEscapeSequence, clear_screen
+from bot.cli.utils import PERSISTENT_THREAD_ID_FILE, get_thread_id
+from bot.config.environment import ASSISTANT_INSTRUCTIONS, CODE_MODEL, DEFAULT_MODEL
 from bot.exceptions import NoResponseError
 from bot.helpers import get_text_from_default_editor
+from openai.types.beta.threads import Message
 
-PERSISTENT_THREAD_ID_FILE = f"{os.environ.get('HOME', '.')}/.assistant-last-thread-id"
 
+def _io_loop(
+    assistant: Union[Assistant, Completion],
+    initial_input: str = "",
+    last_message: Optional[Message] = None,
+    thread_id: Optional[str] = None,
+):
+    is_completion = isinstance(assistant, Completion)
+    while initial_input or (
+        user_input := input(ANSIEscapeSequence.OKGREEN + ">>> ")
+    ).lower() not in {"q", "quit", "exit"}:
+        output.reset()
+        if initial_input:
+            output.user_input(initial_input)
+            user_input = initial_input
 
-def get_thread_id():
-    try:
-        with open(PERSISTENT_THREAD_ID_FILE, "r") as file:
-            return file.read().strip()
-    except FileNotFoundError:
-        return None
+        if not user_input.strip():
+            continue
+
+        else:
+            user_input = user_input.strip()
+
+        if user_input.lower() == "-e":
+            user_input = get_text_from_default_editor()
+            output.user_input(user_input)
+        elif user_input.lower() == "-c":
+            if is_completion:
+                previous_response = assistant.memory[-1]["content"]  # type: ignore
+
+            elif not last_message:
+                output.warn("No previous message to copy from.")
+                continue
+            else:
+                previous_response = last_message.content[0].text.value  # type: ignore
+
+            try:
+                pyperclip.copy(previous_response)
+            except pyperclip.PyperclipException:
+                output.fail(
+                    "Error copying to clipboard; this feature doesn't seem to be "
+                    "available in the current terminal environment."
+                )
+                continue
+
+            output.inform("Copied response to clipboard")
+            continue
+        elif user_input.lower() == "-cb":
+            if is_completion:
+                previous_response = assistant.memory[-1]["content"]  # type: ignore
+
+            elif not last_message:
+                output.warn("No previous message to copy from.")
+                continue
+            else:
+                previous_response = last_message.content[0].text.value  # type: ignore
+
+            code_blocks = re.split(r"(```.*?```)", previous_response, flags=re.DOTALL)
+            code_only = [
+                "\n".join(block.split("\n")[1:-1]).strip()
+                for block in code_blocks
+                if block.startswith("```")
+            ]
+
+            if not code_only:
+                output.warn("No codeblocks in previous message!")
+                continue
+
+            all_code = "\n\n".join(code_only)
+
+            try:
+                pyperclip.copy(all_code)
+            except pyperclip.PyperclipException:
+                output.fail(
+                    "Error copying code to clipboard; this feature doesn't seem to "
+                    "be available in the current terminal environment."
+                )
+                continue
+
+            output.inform("Copied code blocks to clipboard")
+            continue
+        elif user_input.lower().strip() in {"-n", "clear"}:
+            thread_id = None
+            last_message = None
+            clear_screen()
+            continue
+
+        message = asyncio.run(
+            assistant.converse(
+                initial_input or user_input,
+                last_message.thread_id if last_message else thread_id,
+            )
+        )
+        initial_input = ""  # Only relevant for first iteration (comes from initial
+        # command line) resetting to empty string here, so it won't be evaluated as
+        # truthy in future iterations
+
+        if is_completion:
+            output.default(message.content)  # type: ignore
+            output.new_line(2)
+            continue
+
+        if last_message and message and message.id == last_message.id:
+            raise NoResponseError
+
+        output.default(message.content[0].text.value)  # type: ignore
+        output.new_line(2)
+        last_message = message
+
+        if last_message and not thread_id:
+            with open(PERSISTENT_THREAD_ID_FILE, "w") as file:
+                file.write(last_message.thread_id)
 
 
 def cli():
-    user_input = ""
-    initial_input = ""
     last_message = None
+    thread_id = None
 
     args = get_args()
 
     instructions = args.instructions if args.instructions else ASSISTANT_INSTRUCTIONS
-    thread_id = None
+    initial_input = " ".join(args.positional_args) if args.positional_args else None
 
     if args.t:
         thread_id = get_thread_id()
         if thread_id is None:
             output.warn(
-                f"Warning: could not read last thread id from '{PERSISTENT_THREAD_ID_FILE}' - starting new thread..."
+                "Warning: could not read last thread id from "
+                f"'{PERSISTENT_THREAD_ID_FILE}' - starting new thread..."
             )
 
     if args.editor:
         # Open the default editor to compose formatted prompt
-        if args.positional_args:
-            # If text was provided as positional args alongside the `-e` option, concatenate to a single string and
-            # we can pre-populate the editor (or rather the temp file used by the editor) with this text.
-            initial_cli_input = " ".join(args.positional_args)
-        else:
-            initial_cli_input = None
-        initial_input = get_text_from_default_editor(initial_cli_input)
+        initial_input = get_text_from_default_editor(initial_input)
     elif args.input_file:
         # Read the initial prompt from a file
         try:
@@ -58,131 +155,26 @@ def cli():
         except FileNotFoundError:
             output.fail(f"Error: The file '{args.f}' was not found.")
             sys.exit(1)
-    elif args.positional_args:
-        initial_input = " ".join(args.positional_args)
 
     # Create the assistant
-    assistant = Assistant(
-        "AI Assistant",
-        DEFAULT_MODEL,
-        instructions,
-        tools=[{"type": "code_interpreter"}],
-    )
-    completion = Completion(
-        model=CODE_MODEL,
-        system_message=args.instructions
-        or "You are a coding assistant. You should answer concisely and clearly, with examples where appropriate.",
-    )
     if args.code:
-        assistant = completion
+        assistant = Completion(
+            model=CODE_MODEL,
+            system_message=args.instructions
+            or "You are a coding assistant. You should answer concisely and clearly, "
+            "with examples where appropriate.",
+        )
+    else:
+        assistant = Assistant(
+            "AI Assistant",
+            DEFAULT_MODEL,
+            instructions,
+            tools=[{"type": "code_interpreter"}],
+        )
 
     # IO Loop
     try:
-        while initial_input or (
-            user_input := input(ANSIEscapeSequence.OKGREEN + ">>> ")
-        ).lower() not in {"q", "quit", "exit"}:
-            output.reset()
-            if initial_input:
-                output.user_input(initial_input)
-                user_input = initial_input
-
-            if not user_input.strip():
-                continue
-
-            else:
-                user_input = user_input.strip()
-
-            if user_input.lower() == "-e":
-                user_input = get_text_from_default_editor()
-                output.user_input(user_input)
-            elif user_input.lower() == "-c":
-                if args.code:
-                    previous_response = assistant.memory[-1]["content"]
-
-                elif not last_message:
-                    output.warn("No previous message to copy from.")
-                    continue
-                else:
-                    previous_response = last_message.content[0].text.value
-
-                try:
-                    pyperclip.copy(previous_response)
-                except pyperclip.PyperclipException:
-                    output.fail(
-                        "Error copying to clipboard; this feature doesn't seem to be "
-                        "available in the current terminal environment."
-                    )
-                    continue
-
-                output.inform("Copied response to clipboard")
-                continue
-            elif user_input.lower() == "-cb":
-                if args.code:
-                    previous_response = assistant.memory[-1]["content"]
-
-                elif not last_message:
-                    output.warn("No previous message to copy from.")
-                    continue
-                else:
-                    previous_response = last_message.content[0].text.value
-
-                code_blocks = re.split(
-                    r"(```.*?```)", previous_response, flags=re.DOTALL
-                )
-                code_only = [
-                    "\n".join(block.split("\n")[1:-1]).strip()
-                    for block in code_blocks
-                    if block.startswith("```")
-                ]
-
-                if not code_only:
-                    output.warn("No codeblocks in previous message!")
-                    continue
-
-                all_code = "\n\n".join(code_only)
-
-                try:
-                    pyperclip.copy(all_code)
-                except pyperclip.PyperclipException:
-                    output.fail(
-                        "Error copying code to clipboard; this feature doesn't seem to be "
-                        "available in the current terminal environment."
-                    )
-                    continue
-
-                output.inform("Copied code blocks to clipboard")
-                continue
-            elif user_input.lower().strip() in {"-n", "clear"}:
-                thread_id = None
-                last_message = None
-                clear_screen()
-                continue
-
-            message = asyncio.run(
-                assistant.converse(
-                    initial_input or user_input,
-                    last_message.thread_id if last_message else thread_id,
-                )
-            )
-            initial_input = ""  # Only relevant for first iteration (comes from initial command line),
-            # resetting to empty string here, so it won't be evaluated as truthy in future iterations
-
-            if args.code:
-                output.default(message.content)
-                output.new_line(2)
-                continue
-
-            if last_message and message.id == last_message.id:
-                raise NoResponseError
-
-            output.default(message.content[0].text.value)
-            output.new_line(2)
-            last_message = message
-
-            if not thread_id:
-                with open(PERSISTENT_THREAD_ID_FILE, "w") as file:
-                    file.write(last_message.thread_id)
-
+        _io_loop(assistant, initial_input, last_message, thread_id)
     except (EOFError, KeyboardInterrupt):
         # Exit gracefully if ctrl+C or ctrl+D are pressed
         sys.exit(0)
