@@ -1,11 +1,11 @@
 import asyncio
-from typing import Optional
+from typing import Optional, TypedDict
 
 import openai
-import requests  # type: ignore
-from openai._types import NOT_GIVEN
+from openai._types import NOT_GIVEN, NotGiven
 from openai.types.beta import Thread
 from openai.types.beta.threads import Message, Run
+from openai.types.chat import ChatCompletionMessage
 
 from ..config.environment import OPENAI_API_KEY
 from ..exceptions import NoResponseError
@@ -18,7 +18,7 @@ class Assistant:
         name: str,
         model: str,
         instructions: str,
-        tools: Optional[list] = NOT_GIVEN,
+        tools: list | NotGiven = NOT_GIVEN,
         api_key: str = OPENAI_API_KEY,
     ):
         self.client = openai.OpenAI(
@@ -138,45 +138,40 @@ class Assistant:
         return last_message_in_thread
 
 
-class MessageDict[TypedDict]:
+class MessageDict(TypedDict):
     role: str
-    content: str
+    content: str | None
 
 
 class Completion:
     def __init__(
         self,
         model: str,
-        system_message: str = "You are a helpful assistant",
         max_memory: int = 50,
-        stream: bool = False,
         api_key: str = OPENAI_API_KEY,
     ):
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
-        self.system_message = system_message
         self.memory: list[MessageDict] = []
         self.max_memory = max_memory
-        self.stream = stream
 
     def truncate_memory(self):
         self.memory = self.memory[-self.max_memory :]
 
-    def complete(self, prompt: str) -> str:
-        new_prompt = {
-            "role": "user",
-            "content": prompt,
-        }
+    def complete(self, prompt: str) -> ChatCompletionMessage:
+        new_prompt = MessageDict(
+            role="user",
+            content=prompt,
+        )
         self.truncate_memory()
         self.memory.append(new_prompt)
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=self.memory,
-            stream=self.stream,
+            messages=self.memory,  # type: ignore
         )
         message = response.choices[0].message
         self.memory.append({"role": "assistant", "content": message.content})
         return response.choices[0].message
 
-    async def converse(self, user_input: str, *args, **kwargs) -> Message:
+    async def converse(self, user_input: str, *args, **kwargs) -> ChatCompletionMessage:
         return self.complete(user_input)

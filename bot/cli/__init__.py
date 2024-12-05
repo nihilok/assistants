@@ -2,7 +2,7 @@ import asyncio
 import re
 import sys
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, cast
 
 import pyperclip  # type: ignore
 from bot.ai.assistant import Assistant, Completion
@@ -76,10 +76,13 @@ def _io_loop(
                 previous_response = assistant.memory[-1]["content"]  # type: ignore
 
             elif not last_message:
-                output.warn("No previous message to copy from.")
-                continue
+                previous_response = ""
             else:
                 previous_response = last_message.content[0].text.value  # type: ignore
+
+            if not previous_response:
+                output.warn("No previous message to copy.")
+                continue
 
             try:
                 pyperclip.copy(previous_response)
@@ -97,10 +100,13 @@ def _io_loop(
                 previous_response = assistant.memory[-1]["content"]  # type: ignore
 
             elif not last_message:
-                output.warn("No previous message to copy from.")
-                continue
+                previous_response = ""
             else:
                 previous_response = last_message.content[0].text.value  # type: ignore
+
+            if not previous_response:
+                output.warn("No previous message to copy from.")
+                continue
 
             code_blocks = re.split(r"(```.*?```)", previous_response, flags=re.DOTALL)
             code_only = [
@@ -153,6 +159,7 @@ def _io_loop(
             output.new_line(2)
             continue
 
+        message = cast(Message, message)
         if last_message and message and message.id == last_message.id:
             raise NoResponseError
 
@@ -196,12 +203,7 @@ def cli():
 
     # Create the assistant
     if args.code:
-        assistant = Completion(
-            model=CODE_MODEL,
-            system_message=args.instructions
-            or "You are a coding assistant. You should answer concisely and clearly, "
-            "with examples where appropriate.",
-        )
+        assistant = Completion(model=CODE_MODEL)
     else:
         assistant = Assistant(
             "AI Assistant",
