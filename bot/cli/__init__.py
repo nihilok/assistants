@@ -10,14 +10,17 @@ from bot.cli import output
 from bot.cli.arg_parser import get_args
 from bot.cli.terminal import clear_screen
 from bot.cli.utils import PERSISTENT_THREAD_ID_FILE, get_thread_id
+from bot.config import __VERSION__
 from bot.config.environment import ASSISTANT_INSTRUCTIONS, CODE_MODEL, DEFAULT_MODEL
 from bot.exceptions import NoResponseError
 from bot.helpers import get_text_from_default_editor
 from openai.types.beta.threads import Message
 from prompt_toolkit import prompt
 from prompt_toolkit.history import FileHistory
+from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 
+bindings = KeyBindings()
 history = FileHistory(f"{Path.home()}/.ai-assistant-history")
 style = Style.from_dict(
     {"": "ansigreen", "input": "ansibrightgreen"},
@@ -25,13 +28,18 @@ style = Style.from_dict(
 message = [("class:input", ">>> ")]
 
 
-IO_INSTRUCTIONS = """
--e: Open the default editor to compose a prompt
--c: Copy the previous response to the clipboard
--cb: Copy the code blocks from the previous response to the clipboard
--n: Start a new thread and clear the terminal screen
-clear: Clear the terminal screen without starting a new thread
-"""
+IO_INSTRUCTIONS = """\
+-h, --help:   Show this help message
+-e:           Open the default editor to compose a prompt
+-c:           Copy the previous response to the clipboard
+-cb:          Copy the code blocks from the previous response to the clipboard
+-n:           Start a new thread and clear the terminal screen
+clear:        (or CTRL+L) Clear the terminal screen without starting a new thread"""
+
+
+@bindings.add("c-l")
+def _(event):
+    clear_screen()
 
 
 def _io_loop(
@@ -188,7 +196,9 @@ def cli():
                 "Warning: could not read last thread id from "
                 f"'{PERSISTENT_THREAD_ID_FILE}' - starting new thread..."
             )
-
+    output.default(
+        f"AI Assistant v{__VERSION__}; type 'help' for a list of commands.\n"
+    )
     if args.editor:
         # Open the default editor to compose formatted prompt
         initial_input = get_text_from_default_editor(initial_input)

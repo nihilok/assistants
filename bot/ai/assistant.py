@@ -39,6 +39,13 @@ class Assistant:
         existing_id = await get_assistant_id(self.name)
         if existing_id:
             try:
+                self.client.beta.assistants.update(
+                    existing_id,
+                    instructions=self.instructions,
+                    model=self.model,
+                    tools=self.tools,
+                    name=self.name,
+                )
                 return self.client.beta.assistants.retrieve(existing_id)
             except openai.NotFoundError:
                 pass
