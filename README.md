@@ -1,11 +1,10 @@
 # Assistants Framework
 
-Welcome to the AI Assistants Framework! This repository contains the foundational code for a versatile AI assistant capable of interacting through various front-end interfaces and utilizing interchangeable data layers. The goal is to create a powerful yet flexible assistants framework that can adapt to different user needs and environments.
+Welcome to the AI Assistants Framework! This repository contains the foundational code for creating versatile AI assistants capable of interacting through various front-end interfaces and utilizing interchangeable data layers. The goal is to create a powerful yet flexible assistants framework that can adapt to different user needs and environments.
 
 ## Table of Contents
 
 - [Features](#features)
-- [Project Structure](#project-structure)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Contributing](#contributing)
@@ -18,39 +17,6 @@ Welcome to the AI Assistants Framework! This repository contains the foundationa
 - **Extensible Architecture**: Built with modularity in mind, allowing for easy addition of new features and integrations.
 - **User Data Management**: Efficient handling of user data with a robust backend.
 
-## Project Structure
-
-Here is an overview of the current project structure:
-
-```
-.
-├── README.md                     # Project documentation
-├── bot                           # Main bot package
-│   ├── __init__.py               # Package initialization
-│   ├── ai                        # AI-related functionality
-│   │   ├── __init__.py
-│   │   ├── assistant.py          # Core assistant logic
-│   │   └── lib.py                # Helper functions for AI
-│   ├── cli.py                    # Command-line interface implementation
-│   ├── config                    # Configuration
-│   │   ├── __init__.py
-│   │   ├── environment.py        # Environment variables
-│   ├── telegram_ui               # Telegram bot interface
-│   │   ├── __init__.py
-│   │   ├── commands.py           # Bot commands
-│   │   ├── lib.py                # Helper functions for Telegram bot
-│   │   └── tg_bot.py             # Main entry point for Telegram bot
-│   └── user_data                 # User data management
-│       ├── __init__.py
-│       └── sqlite_backend.py     # SQLite backend for user data
-├── dev_requirements.txt          # Development dependencies
-├── main.py                       # Main entry point for the application
-├── requirements.txt              # Production dependencies
-└── tests                         # Unit tests
-    └── __init__.py
-    └──...    
-```
-
 ## Installation
 
 To get started with the AI Assistant Project, follow these steps:
@@ -59,7 +25,7 @@ To get started with the AI Assistant Project, follow these steps:
 
    ```bash
    git clone https://github.com/nihilok/assistants.git
-   cd ai-assistant
+   cd assistants
    ```
 
 2. **Install the dependencies**:
@@ -77,12 +43,6 @@ To get started with the AI Assistant Project, follow these steps:
    ```
 
 ## Usage
-
-To run the AI assistant, use the following command:
-
-```bash
-python main.py
-```
 
 ### Command Line Interface
 
@@ -107,10 +67,8 @@ You can customize the behavior of the assistant by modifying the `ASSISTANT_INST
 Contributions are welcome! If you have suggestions for improvements, please feel free to submit a pull request or open an issue.
 
 1. Fork the repository.
-2. Create your feature branch (`git checkout -b feature/YourFeature`).
-3. Commit your changes (`git commit -m 'Add some feature'`).
-4. Push to the branch (`git push origin feature/YourFeature`).
-5. Open a pull request.
+2. Commit your changes.
+3. Open a pull request.
 
 ## License
 
@@ -118,4 +76,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ---
 
-Thank you for checking out the AI Assistant Project! We hope you find it useful and inspiring.
+Thank you for checking out the AI Assistant Project! I hope you find it useful and inspiring.
