@@ -1,19 +1,21 @@
 import json
 
-from bot.telegram_ui.user_data import UserData, ChatHistory, NotAuthorized
-import urllib.parse
-
 import aiosqlite
+from bot.telegram_ui.user_data import ChatHistory, NotAuthorized, UserData
 
 
 class SqliteUserData(UserData):
     async def create_db(self):
         async with aiosqlite.connect(self.DB) as db:
             await db.execute(
-                f"CREATE TABLE IF NOT EXISTS authorised_chats (chat_id INTEGER PRIMARY KEY);"
+                """\
+                CREATE TABLE IF NOT EXISTS authorised_chats (
+                    chat_id INTEGER PRIMARY KEY
+                );
+                """
             )
             await db.execute(
-                f"""
+                """\
                 CREATE TABLE IF NOT EXISTS chat_history (
                     chat_id INTEGER,
                     thread_id TEXT,
@@ -24,10 +26,14 @@ class SqliteUserData(UserData):
                 """
             )
             await db.execute(
-                f"CREATE TABLE IF NOT EXISTS authorised_users (user_id INTEGER PRIMARY KEY);"
+                """\
+                CREATE TABLE IF NOT EXISTS authorised_users (
+                    user_id INTEGER PRIMARY KEY
+                );
+                """
             )
             await db.execute(
-                f"""
+                """\
                 CREATE TABLE IF NOT EXISTS superusers (
                     user_id INTEGER,
                     FOREIGN KEY (user_id) REFERENCES authorised_users(user_id),
@@ -41,7 +47,11 @@ class SqliteUserData(UserData):
     async def get_chat_history(self, chat_id: int) -> ChatHistory:
         async with aiosqlite.connect(self.DB) as db:
             async with await db.execute(
-                f"SELECT thread_id, auto_reply FROM chat_history WHERE chat_id = {chat_id};"
+                f"""\
+                SELECT thread_id, auto_reply
+                FROM chat_history
+                WHERE chat_id = {chat_id};
+                """
             ) as cursor:
                 result = await cursor.fetchone()
                 if result:
@@ -58,7 +68,13 @@ class SqliteUserData(UserData):
     async def save_chat_history(self, history: ChatHistory):
         async with aiosqlite.connect(self.DB) as db:
             await db.execute(
-                f"REPLACE INTO chat_history VALUES ({history.chat_id}, '{history.thread_id}', {json.dumps(history.auto_reply)});"
+                f"""\
+                REPLACE INTO chat_history VALUES (
+                    {history.chat_id},
+                    '{history.thread_id}',
+                    {json.dumps(history.auto_reply)}
+                );
+                """
             )
             await db.commit()
 
@@ -125,12 +141,18 @@ class SqliteUserData(UserData):
 
     async def clear_last_thread_id(self, chat_id: int):
         async with aiosqlite.connect(self.DB) as db:
-            await db.execute(f"REPLACE INTO chat_history VALUES ({chat_id}, NULL);")
+            await db.execute(
+                f"UPDATE chat_history SET thread_id = NULL WHERE chat_id = {chat_id};"
+            )
             await db.commit()
 
     async def set_auto_reply(self, chat_id: int, auto_reply: bool):
         async with aiosqlite.connect(self.DB) as db:
             await db.execute(
-                f"UPDATE chat_history SET auto_reply = {json.dumps(auto_reply)} WHERE chat_id = {chat_id};"
+                f"""\
+                UPDATE chat_history
+                SET auto_reply = {json.dumps(auto_reply)}
+                WHERE chat_id = {chat_id};
+                """
             )
             await db.commit()
