@@ -166,3 +166,5 @@ cython_debug/
 /.idea
 run.sh
 run_dev.sh
+debug_assistant_data.db
+debug_tg_user_data.db

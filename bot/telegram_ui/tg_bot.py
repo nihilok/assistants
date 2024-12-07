@@ -2,29 +2,29 @@ import os
 from functools import wraps
 
 import requests
+from bot.ai.assistant import Assistant
+from bot.config.environment import ASSISTANT_INSTRUCTIONS, DEFAULT_MODEL, OPENAI_API_KEY
+from bot.telegram_ui.sqlite_user_data import SqliteUserData
+from bot.telegram_ui.user_data import ChatHistory, NotAuthorized
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
     ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
     MessageHandler,
     filters,
-    ContextTypes,
-    CommandHandler,
 )
-
-from bot.ai.assistant import Assistant
-from bot.telegram_ui.sqlite_user_data import SqliteUserData
-from bot.telegram_ui.user_data import NotAuthorized, ChatHistory
 
 user_data = SqliteUserData()
 
 assistant = Assistant(
     name=os.getenv("ASSISTANT_NAME"),
-    model=os.getenv("ASSISTANT_MODEL"),
-    instructions=os.getenv("ASSISTANT_INSTRUCTIONS"),
+    model=DEFAULT_MODEL,
+    instructions=ASSISTANT_INSTRUCTIONS,
     tools=[{"type": "code_interpreter"}],
-    api_key=os.getenv("ASSISTANT_API_KEY"),
+    api_key=OPENAI_API_KEY,
 )
 
 
@@ -120,6 +120,10 @@ async def deauthorise_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @restricted_access
 async def new_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await user_data.clear_last_thread_id(update.effective_chat.id)
+    assistant.last_message_id = None
+    await context.bot.send_message(
+        update.effective_chat.id, "Conversation history cleared."
+    )
 
 
 @restricted_access
