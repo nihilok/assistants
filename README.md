@@ -49,7 +49,7 @@ To get started with the AI Assistant Project, follow these steps:
 To interact with the assistant through the CLI, simply run:
 
 ```bash
-python -m bot.cli
+python -m cli
 ```
 
 ### Telegram Bot
@@ -57,7 +57,7 @@ python -m bot.cli
 To set up the Telegram bot, ensure you have the necessary API tokens configured as specified in `environment.py`, then run:
 
 ```bash
-python -m bot.telegram_ui.tg_bot
+python -m telegram_ui.tg_bot
 ```
 
 You can customize the behavior of the assistant by modifying the `ASSISTANT_INSTRUCTIONS` environment variable, which defaults to `"You are a helpful assistant."`

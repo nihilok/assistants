@@ -2,10 +2,8 @@ import os
 from functools import wraps
 
 import requests
-from bot.ai.assistant import Assistant
-from bot.config.environment import ASSISTANT_INSTRUCTIONS, DEFAULT_MODEL, OPENAI_API_KEY
-from bot.telegram_ui.sqlite_user_data import SqliteUserData
-from bot.telegram_ui.user_data import ChatHistory, NotAuthorized
+from ai.assistant import Assistant
+from config.environment import ASSISTANT_INSTRUCTIONS, DEFAULT_MODEL, OPENAI_API_KEY
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import (
@@ -16,6 +14,9 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+
+from telegram_ui.sqlite_user_data import SqliteUserData
+from telegram_ui.user_data import ChatHistory, NotAuthorized
 
 user_data = SqliteUserData()
 

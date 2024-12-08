@@ -3,9 +3,9 @@ import random
 import pytest
 from unittest.mock import patch, MagicMock
 
-from bot.cli import cli
-from bot.exceptions import NoResponseError
-from bot.helpers import get_text_from_default_editor
+from cli import cli
+from exceptions import NoResponseError
+from helpers import get_text_from_default_editor
 
 
 class MockText:

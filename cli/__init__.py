@@ -5,20 +5,21 @@ from pathlib import Path
 from typing import Optional, Union, cast
 
 import pyperclip  # type: ignore
-from bot.ai.assistant import Assistant, Completion
-from bot.cli import output
-from bot.cli.arg_parser import get_args
-from bot.cli.terminal import clear_screen
-from bot.cli.utils import PERSISTENT_THREAD_ID_FILE, get_thread_id
-from bot.config import __VERSION__
-from bot.config.environment import ASSISTANT_INSTRUCTIONS, CODE_MODEL, DEFAULT_MODEL
-from bot.exceptions import NoResponseError
-from bot.helpers import get_text_from_default_editor
+from ai.assistant import Assistant, Completion
+from config import __VERSION__
+from config.environment import ASSISTANT_INSTRUCTIONS, CODE_MODEL, DEFAULT_MODEL
+from exceptions import NoResponseError
+from helpers import get_text_from_default_editor
 from openai.types.beta.threads import Message
 from prompt_toolkit import prompt
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
+
+from cli import output
+from cli.arg_parser import get_args
+from cli.terminal import clear_screen
+from cli.utils import PERSISTENT_THREAD_ID_FILE, get_thread_id
 
 bindings = KeyBindings()
 history = FileHistory(f"{Path.home()}/.ai-assistant-history")
@@ -198,7 +199,7 @@ def cli():
         if thread_id is None:
             output.warn(
                 "Warning: could not read last thread id from "
-                f"'{PERSISTENT_THREAD_ID_FILE}' - starting new thread..."
+                f"'{PERSISTENT_THREAD_ID_FILE}' - starting new thread."
             )
     output.default(
         f"AI Assistant v{__VERSION__}; type 'help' for a list of commands.\n"

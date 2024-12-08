@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 from typing import Optional, TypedDict
 
 import openai
@@ -7,9 +8,11 @@ from openai.types.beta import Thread
 from openai.types.beta.threads import Message, Run
 from openai.types.chat import ChatCompletionMessage
 
-from ..config.environment import OPENAI_API_KEY
-from ..exceptions import NoResponseError
-from ..user_data.sqlite_backend.assistants import get_assistant_id, save_assistant_id
+from config.environment import OPENAI_API_KEY
+from exceptions import NoResponseError
+from user_data.sqlite_backend.assistants import get_assistant_id, save_assistant_id
+from log import logger
+
 
 
 class Assistant:
@@ -32,21 +35,37 @@ class Assistant:
             loop = asyncio.get_event_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
+        self._config_hash = None
         self.assistant = loop.run_until_complete(self.load_or_create_assistant())
         self.last_message_id = None
 
+    @property
+    def config_hash(self):
+        if not self._config_hash:
+            self._config_hash = self.generate_config_hash()
+        return self._config_hash
+
+    def generate_config_hash(self):
+        return hashlib.sha256(
+            f"{self.instructions}{self.model}{self.tools}".encode()
+        ).hexdigest()
+
     async def load_or_create_assistant(self):
-        existing_id = await get_assistant_id(self.name)
+        existing_id, config_hash = await get_assistant_id(self.name, self.config_hash)
         if existing_id:
             try:
-                self.client.beta.assistants.update(
-                    existing_id,
-                    instructions=self.instructions,
-                    model=self.model,
-                    tools=self.tools,
-                    name=self.name,
-                )
-                return self.client.beta.assistants.retrieve(existing_id)
+                assistant = self.client.beta.assistants.retrieve(existing_id)
+                if config_hash != self.config_hash:
+                    logger.info("Config has changed, updating assistant...")
+                    self.client.beta.assistants.update(
+                        existing_id,
+                        instructions=self.instructions,
+                        model=self.model,
+                        tools=self.tools,
+                        name=self.name,
+                    )
+                    await save_assistant_id(self.name, assistant.id, self.config_hash)
+                return assistant
             except openai.NotFoundError:
                 pass
         assistant = self.client.beta.assistants.create(
@@ -55,7 +74,7 @@ class Assistant:
             model=self.model,
             tools=self.tools,
         )
-        await save_assistant_id(self.name, assistant.id)
+        await save_assistant_id(self.name, assistant.id, self.config_hash)
         return assistant
 
     def _create_thread(self, messages=NOT_GIVEN) -> Thread:

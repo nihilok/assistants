@@ -1,4 +1,4 @@
-from bot.cli.terminal import ANSIEscapeSequence
+from cli.terminal import ANSIEscapeSequence
 
 
 def reset():

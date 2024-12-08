@@ -1,8 +1,8 @@
 import aiosqlite
 
-from bot.user_data.sqlite_backend.constants import DB_TABLE
-from bot.user_data.sqlite_backend.chat_history import TABLE_NAME as CHAT_HISTORY
-from bot.user_data.sqlite_backend.assistants import TABLE_NAME as ASSISTANTS
+from user_data.sqlite_backend.constants import DB_TABLE
+from user_data.sqlite_backend.chat_history import TABLE_NAME as CHAT_HISTORY
+from user_data.sqlite_backend.assistants import TABLE_NAME as ASSISTANTS
 
 
 async def init_db():
@@ -11,7 +11,7 @@ async def init_db():
             f"CREATE TABLE IF NOT EXISTS {CHAT_HISTORY} (chat_id INTEGER PRIMARY KEY, history TEXT);"
         )
         await db.execute(
-            f"CREATE TABLE IF NOT EXISTS {ASSISTANTS} (assistant_name TEXT PRIMARY KEY, assistant_id TEXT);"
+            f"CREATE TABLE IF NOT EXISTS {ASSISTANTS} (assistant_name TEXT PRIMARY KEY, assistant_id TEXT, config_hash TEXT);"
         )
         await db.commit()
 
