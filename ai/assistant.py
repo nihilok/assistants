@@ -10,7 +10,7 @@ from openai.types.chat import ChatCompletionMessage
 
 from config.environment import OPENAI_API_KEY
 from exceptions import NoResponseError
-from user_data.sqlite_backend.assistants import get_assistant_id, save_assistant_id
+from user_data.sqlite_backend.assistants import get_assistant_data, save_assistant_id
 from log import logger
 
 
@@ -51,7 +51,7 @@ class Assistant:
         ).hexdigest()
 
     async def load_or_create_assistant(self):
-        existing_id, config_hash = await get_assistant_id(self.name, self.config_hash)
+        existing_id, config_hash = await get_assistant_data(self.name, self.config_hash)
         if existing_id:
             try:
                 assistant = self.client.beta.assistants.retrieve(existing_id)

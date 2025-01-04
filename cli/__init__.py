@@ -19,7 +19,7 @@ from prompt_toolkit.styles import Style
 from cli import output
 from cli.arg_parser import get_args
 from cli.terminal import clear_screen
-from cli.utils import PERSISTENT_THREAD_ID_FILE, get_thread_id
+from cli.utils import PERSISTENT_THREAD_ID_FILE, get_thread_id, highlight_code_blocks
 
 bindings = KeyBindings()
 history = FileHistory(f"{Path.home()}/.ai-assistant-history")
@@ -73,7 +73,6 @@ def _io_loop(
             user_input = user_input.strip()
 
         match user_input.lower().strip():
-
             case instruction if instruction in {"-h", "--help", "help"}:
                 output.inform(IO_INSTRUCTIONS)
                 continue
@@ -176,7 +175,9 @@ def _io_loop(
         if last_message and message and message.id == last_message.id:
             raise NoResponseError
 
-        output.default(message.content[0].text.value)  # type: ignore
+        text = highlight_code_blocks(message.content[0].text.value)
+
+        output.default(text)
         output.new_line(2)
         last_message = message
 
