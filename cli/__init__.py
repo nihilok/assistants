@@ -1,3 +1,22 @@
+import sys
+
+from cli import output
+from lib.exceptions import ConfigError
+
+try:
+    import config
+except ConfigError as e:
+    import re
+
+    pattern = re.compile(r"Missing required (\w+) environment variable")
+
+    match = pattern.match(str(e))
+
+    output.fail(
+        f"`{match.group(1)}` not found! Check README.md for setup instructions. Exiting..."
+    )
+    sys.exit(1)
+
 import asyncio
 import re
 import sys
@@ -5,21 +24,22 @@ from pathlib import Path
 from typing import Optional, Union, cast
 
 import pyperclip  # type: ignore
-from ai.assistant import Assistant, Completion
-from config import __VERSION__
-from config.environment import ASSISTANT_INSTRUCTIONS, CODE_MODEL, DEFAULT_MODEL
-from exceptions import NoResponseError
-from helpers import get_text_from_default_editor
 from openai.types.beta.threads import Message
 from prompt_toolkit import prompt
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 
-from cli import output
+from ai.assistant import Assistant, Completion
 from cli.arg_parser import get_args
 from cli.terminal import clear_screen
-from cli.utils import PERSISTENT_THREAD_ID_FILE, get_thread_id, highlight_code_blocks
+from cli.utils import (
+    PERSISTENT_THREAD_ID_FILE,
+    get_text_from_default_editor,
+    get_thread_id,
+    highlight_code_blocks,
+)
+from lib.exceptions import NoResponseError
 
 bindings = KeyBindings()
 history = FileHistory(f"{Path.home()}/.ai-assistant-history")
@@ -49,6 +69,7 @@ def _io_loop(
     last_message: Optional[Message] = None,
     thread_id: Optional[str] = None,
 ):
+    user_input = ""
     is_completion = isinstance(assistant, Completion)
 
     def get_user_input() -> str:
@@ -192,7 +213,9 @@ def cli():
 
     args = get_args()
 
-    instructions = args.instructions if args.instructions else ASSISTANT_INSTRUCTIONS
+    instructions = (
+        args.instructions if args.instructions else config.ASSISTANT_INSTRUCTIONS
+    )
     initial_input = " ".join(args.positional_args) if args.positional_args else None
 
     if args.continue_thread:
@@ -203,7 +226,7 @@ def cli():
                 f"'{PERSISTENT_THREAD_ID_FILE}' - starting new thread."
             )
     output.default(
-        f"AI Assistant v{__VERSION__}; type 'help' for a list of commands.\n"
+        f"AI Assistant v{config.__VERSION__}; type 'help' for a list of commands.\n"
     )
     if args.editor:
         # Open the default editor to compose formatted prompt
@@ -219,11 +242,11 @@ def cli():
 
     # Create the assistant
     if args.code:
-        assistant = Completion(model=CODE_MODEL)
+        assistant = Completion(model=config.CODE_MODEL)
     else:
         assistant = Assistant(
             "AI Assistant",
-            DEFAULT_MODEL,
+            config.DEFAULT_MODEL,
             instructions,
             tools=[{"type": "code_interpreter"}],
         )

@@ -1,11 +1,11 @@
 import os
 import random
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from cli import cli
-from exceptions import NoResponseError
-from helpers import get_text_from_default_editor
+import pytest
+
+from cli import cli, get_text_from_default_editor
+from lib.exceptions import NoResponseError
 
 
 class MockText:

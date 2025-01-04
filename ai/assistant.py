@@ -8,11 +8,10 @@ from openai.types.beta import Thread
 from openai.types.beta.threads import Message, Run
 from openai.types.chat import ChatCompletionMessage
 
-from config.environment import OPENAI_API_KEY
-from exceptions import NoResponseError
-from user_data.sqlite_backend.assistants import get_assistant_data, save_assistant_id
+import config
+from lib.exceptions import NoResponseError
 from log import logger
-
+from user_data.sqlite_backend.assistants import get_assistant_data, save_assistant_id
 
 
 class Assistant:
@@ -22,7 +21,7 @@ class Assistant:
         model: str,
         instructions: str,
         tools: list | NotGiven = NOT_GIVEN,
-        api_key: str = OPENAI_API_KEY,
+        api_key: str = config.OPENAI_API_KEY,
     ):
         self.client = openai.OpenAI(
             api_key=api_key, default_headers={"OpenAI-Beta": "assistants=v2"}
@@ -174,7 +173,7 @@ class Completion:
         self,
         model: str,
         max_memory: int = 50,
-        api_key: str = OPENAI_API_KEY,
+        api_key: str = config.OPENAI_API_KEY,
     ):
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model

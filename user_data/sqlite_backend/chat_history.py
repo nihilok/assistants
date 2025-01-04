@@ -3,7 +3,7 @@ import urllib.parse
 
 import aiosqlite
 
-from user_data.sqlite_backend import DB_TABLE
+from config import DB_TABLE
 
 TABLE_NAME = "chat_history"
 

@@ -1,12 +1,14 @@
 import os
 
-from exceptions import ConfigError
+from lib.exceptions import ConfigError
 from log import logger
 
 ASSISTANTS_API_KEY_NAME = os.environ.get("ASSISTANTS_API_KEY_NAME", "OPENAI_API_KEY")
 
 try:
     OPENAI_API_KEY = os.environ[ASSISTANTS_API_KEY_NAME]
+    if not OPENAI_API_KEY:
+        raise KeyError
 except KeyError as e:
     error = f"Missing required {ASSISTANTS_API_KEY_NAME} environment variable"
     logger.error(error)
@@ -17,3 +19,5 @@ CODE_MODEL = os.environ.get("CODE_MODEL", "o1-mini")
 ASSISTANT_INSTRUCTIONS = os.environ.get(
     "ASSISTANT_INSTRUCTIONS", "You are a helpful assistant."
 )
+HOME_DIR = os.environ["HOME"]
+DB_TABLE = os.environ.get("USER_DATA_DB", f"{HOME_DIR}/.assistants_user_data.db")

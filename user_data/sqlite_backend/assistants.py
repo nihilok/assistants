@@ -1,7 +1,8 @@
+from typing import NamedTuple, Optional
+
 import aiosqlite
-from typing import Optional, NamedTuple
-from dataclasses import dataclass
-from user_data.sqlite_backend.constants import DB_TABLE
+
+from config import DB_TABLE
 
 TABLE_NAME = "assistants"
 
