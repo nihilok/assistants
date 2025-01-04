@@ -7,6 +7,7 @@ Welcome to the AI Assistants Framework! This repository contains the foundationa
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Environment Variables](#environment-variables)
 - [Contributing](#contributing)
 - [License](#license)
 
