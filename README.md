@@ -62,6 +62,15 @@ python -m telegram_ui.tg_bot
 
 You can customize the behavior of the assistant by modifying the `ASSISTANT_INSTRUCTIONS` environment variable, which defaults to `"You are a helpful assistant."`
 
+## Environment Variables
+
+In addition to `ASSISTANT_INSTRUCTIONS`, other environment variables that can be configured include:
+
+- `ASSISTANTS_API_KEY_NAME` - The name of the API key environment variable to use for authentication (defaults to `OPENAI_API_KEY`) - remember to also set the corresponding API key value to the environment variable you choose (or the default).
+- `DEFAULT_MODEL` - The default model to use for OpenAI API requests (defaults to `gpt-4o-mini`)
+- `CODE_MODEL` - more advanced reasoning model to use for OpenAI API requests (defaults to `o1-mini`)
+- `TG_BOT_TOKEN` - The Telegram bot token if using the Telegram UI 
+
 ## Contributing
 
 Contributions are welcome! If you have suggestions for improvements, please feel free to submit a pull request or open an issue.
