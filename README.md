@@ -14,15 +14,15 @@ Welcome to the AI Assistants Framework! This repository contains the foundationa
 ## Features
 
 - **Multi-Front-End Support**: The AI assistant (configured via environment variables) can interact through different user interfaces, including CLI and Telegram.
+- **User Data Management**: Efficient handling of user data with a robust backend.
 - **Interchangeable Data Layers**: Easily swap out the underlying data storage solutions, such as SQLite or other databases (coming soon).
 - **Extensible Architecture**: Built with modularity in mind, allowing for easy addition of new features and integrations.
-- **User Data Management**: Efficient handling of user data with a robust backend.
 
 ## Installation
 
 To get started with the AI Assistant Project, follow these steps:
 
-- Create a Python virtual environment (recommended, but not required on most systems) (Requires Python 3.10+)
+- \[Optional\] Create a Python virtual environment (recommended, but not required on most systems) (Requires Python 3.10+)
 
 (a simple way is to use the built-in `venv` module, e.g., `python -m venv my-venv; source my-venv/bin/activate`)
 

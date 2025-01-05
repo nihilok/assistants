@@ -21,7 +21,7 @@ def highlight_code_blocks(markdown_text):
             lexer = get_lexer_by_name(lang, stripall=True)
         else:
             lexer = get_lexer_by_name("text", stripall=True)
-        return f"```{lang}\n{highlight(code, lexer, TerminalFormatter())}```"
+        return f"```{lang if lang else ''}\n{highlight(code, lexer, TerminalFormatter())}```"
 
     return code_block_pattern.sub(replacer, markdown_text)
 

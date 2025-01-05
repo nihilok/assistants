@@ -213,7 +213,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         :return: The URL of the generated image.
         """
         response = self.client.images.generate(
-            model="dall-e-3",
+            model=environment.IMAGE_MODEL,
             prompt=prompt,
             size="1024x1024",
             quality="standard",
