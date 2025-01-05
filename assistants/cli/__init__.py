@@ -1,16 +1,21 @@
 import sys
 
-from cli import output
-from lib.exceptions import ConfigError
+from assistants.cli import output
+from assistants.cli.constants import IO_INSTRUCTIONS
+from assistants.lib.exceptions import ConfigError
 
 try:
-    import config
+    from assistants import config, version
 except ConfigError as e:
     import re
 
     pattern = re.compile(r"Missing required (\w+) environment variable")
 
     match = pattern.match(str(e))
+
+    if match is None:
+        output.fail(f"Error: {e}")
+        sys.exit(1)
 
     output.fail(
         f"`{match.group(1)}` not found! Check README.md for setup instructions. Exiting..."
@@ -30,16 +35,16 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 
-from ai.assistant import Assistant, Completion
-from cli.arg_parser import get_args
-from cli.terminal import clear_screen
-from cli.utils import (
+from assistants.ai.assistant import Assistant, Completion
+from assistants.cli.arg_parser import get_args
+from assistants.cli.terminal import clear_screen
+from assistants.cli.utils import (
     PERSISTENT_THREAD_ID_FILE,
     get_text_from_default_editor,
     get_thread_id,
     highlight_code_blocks,
 )
-from lib.exceptions import NoResponseError
+from assistants.lib.exceptions import NoResponseError
 
 bindings = KeyBindings()
 history = FileHistory(f"{Path.home()}/.ai-assistant-history")
@@ -47,15 +52,6 @@ style = Style.from_dict(
     {"": "ansigreen", "input": "ansibrightgreen"},
 )
 message = [("class:input", ">>> ")]
-
-
-IO_INSTRUCTIONS = """\
--h, --help:   Show this help message
--e:           Open the default editor to compose a prompt
--c:           Copy the previous response to the clipboard
--cb:          Copy the code blocks from the previous response to the clipboard
--n:           Start a new thread and clear the terminal screen
-clear:        (or CTRL+L) Clear the terminal screen without starting a new thread"""
 
 
 @bindings.add("c-l")
@@ -214,19 +210,18 @@ def cli():
     args = get_args()
 
     instructions = (
-        args.instructions if args.instructions else config.ASSISTANT_INSTRUCTIONS
+        args.instructions
+        if args.instructions
+        else config.environment.ASSISTANT_INSTRUCTIONS
     )
-    initial_input = " ".join(args.positional_args) if args.positional_args else None
+    initial_input = " ".join(args.prompt) if args.prompt else None
 
     if args.continue_thread:
         thread_id = get_thread_id()
         if thread_id is None:
-            output.warn(
-                "Warning: could not read last thread id from "
-                f"'{PERSISTENT_THREAD_ID_FILE}' - starting new thread."
-            )
+            output.warn("Warning: could not read last thread id; starting new thread.")
     output.default(
-        f"AI Assistant v{config.__VERSION__}; type 'help' for a list of commands.\n"
+        f"AI Assistant v{version.__VERSION__}; type 'help' for a list of commands.\n"
     )
     if args.editor:
         # Open the default editor to compose formatted prompt
@@ -242,11 +237,11 @@ def cli():
 
     # Create the assistant
     if args.code:
-        assistant = Completion(model=config.CODE_MODEL)
+        assistant = Completion(model=config.environment.CODE_MODEL)
     else:
         assistant = Assistant(
             "AI Assistant",
-            config.DEFAULT_MODEL,
+            config.environment.DEFAULT_MODEL,
             instructions,
             tools=[{"type": "code_interpreter"}],
         )

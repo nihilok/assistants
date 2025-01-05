@@ -1,0 +1,3 @@
+include version.py
+include main.py
+include main_tg.py

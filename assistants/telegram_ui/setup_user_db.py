@@ -1,6 +1,6 @@
 import asyncio
 
-from telegram_ui.sqlite_user_data import SqliteUserData
+from assistants.telegram_ui.sqlite_user_data import SqliteUserData
 
 if __name__ == "__main__":
     user_data = SqliteUserData()

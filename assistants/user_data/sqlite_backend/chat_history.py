@@ -3,7 +3,7 @@ import urllib.parse
 
 import aiosqlite
 
-from config import DB_TABLE
+from assistants.config.environment import DB_TABLE
 
 TABLE_NAME = "chat_history"
 

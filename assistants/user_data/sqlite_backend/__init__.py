@@ -1,8 +1,8 @@
 import aiosqlite
 
-from user_data.sqlite_backend.assistants import TABLE_NAME as ASSISTANTS
-from user_data.sqlite_backend.chat_history import TABLE_NAME as CHAT_HISTORY
-from config import DB_TABLE
+from assistants.config.environment import DB_TABLE
+from assistants.user_data.sqlite_backend.assistants import TABLE_NAME as ASSISTANTS
+from assistants.user_data.sqlite_backend.chat_history import TABLE_NAME as CHAT_HISTORY
 
 
 async def init_db():

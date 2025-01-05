@@ -8,7 +8,7 @@ from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
 
-PERSISTENT_THREAD_ID_FILE = f"{os.environ.get('HOME', '.')}/.assistant-last-thread-id"
+PERSISTENT_THREAD_ID_FILE = f"{os.environ.get('HOME', '')}/.assistant-last-thread-id"
 
 
 def highlight_code_blocks(markdown_text):

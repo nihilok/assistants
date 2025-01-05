@@ -2,7 +2,7 @@ from typing import NamedTuple, Optional
 
 import aiosqlite
 
-from config import DB_TABLE
+from assistants.config.environment import DB_TABLE
 
 TABLE_NAME = "assistants"
 

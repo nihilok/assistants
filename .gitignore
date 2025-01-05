@@ -15,7 +15,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+assistants/lib/
 lib64/
 parts/
 sdist/
@@ -161,7 +161,7 @@ cython_debug/
 #.idea/
 
 /.python-version
-/tests/user_data.db
+/assistants/tests/user_data.db
 /user_data.db
 /.idea
 run.sh

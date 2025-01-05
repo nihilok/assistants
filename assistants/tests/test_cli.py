@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from cli import cli, get_text_from_default_editor
-from lib.exceptions import NoResponseError
+from assistants.cli import cli, get_text_from_default_editor
+from assistants.lib.exceptions import NoResponseError
 
 
 class MockText:

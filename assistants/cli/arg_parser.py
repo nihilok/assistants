@@ -1,8 +1,12 @@
 import argparse
 
+from assistants import version
+
 
 def get_args():
-    parser = argparse.ArgumentParser(description="CLI for AI Assistant")
+    parser = argparse.ArgumentParser(
+        description=f"CLI for AI Assistant v{version.__VERSION__}"
+    )
     parser.add_argument(
         "-e",
         "--editor",
@@ -39,10 +43,13 @@ def get_args():
         "and more expensive to use.",
     )
     parser.add_argument(
-        "positional_args",
+        "prompt",
         nargs="*",
-        help="Positional arguments to concatenate into a single prompt. E.g. ./cli.py "
-        "This is a single prompt.",
+        help="Positional arguments concatenate into a single prompt. E.g. `ai-cli "
+        "Is this a single prompt\\?` (question mark escaped)\n"
+        "...will be passed to the program as a single string (without the backslash). You "
+        "can also use quotes to pass a single argument with spaces and special characters. "
+        "See the -e and -f options for more advanced prompt options.",
     )
     args = parser.parse_args()
     return args

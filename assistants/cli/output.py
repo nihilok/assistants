@@ -1,4 +1,4 @@
-from cli.terminal import ANSIEscapeSequence
+from assistants.cli.terminal import ANSIEscapeSequence
 
 
 def reset():

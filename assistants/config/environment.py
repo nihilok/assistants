@@ -1,7 +1,7 @@
 import os
 
-from lib.exceptions import ConfigError
-from log import logger
+from assistants.lib.exceptions import ConfigError
+from assistants.log import logger
 
 ASSISTANTS_API_KEY_NAME = os.environ.get("ASSISTANTS_API_KEY_NAME", "OPENAI_API_KEY")
 

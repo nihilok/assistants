@@ -2,7 +2,7 @@ import json
 
 import aiosqlite
 
-from telegram_ui.user_data import ChatHistory, NotAuthorized, UserData
+from assistants.telegram_ui.user_data import ChatHistory, NotAuthorized, UserData
 
 
 class SqliteUserData(UserData):

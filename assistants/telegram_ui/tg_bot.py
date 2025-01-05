@@ -1,17 +1,26 @@
 import os
 from functools import wraps
 
-import requests
+import aiohttp
 from telegram import Update
 from telegram.constants import ParseMode
-from telegram.ext import (Application, ApplicationBuilder, CommandHandler,
-                          ContextTypes, MessageHandler, filters)
+from telegram.ext import (
+    Application,
+    ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 
-from ai.assistant import Assistant
-from config.environment import (ASSISTANT_INSTRUCTIONS, DEFAULT_MODEL,
-                                OPENAI_API_KEY)
-from telegram_ui.sqlite_user_data import SqliteUserData
-from telegram_ui.user_data import ChatHistory, NotAuthorized
+from assistants.ai.assistant import Assistant
+from assistants.config.environment import (
+    ASSISTANT_INSTRUCTIONS,
+    DEFAULT_MODEL,
+    OPENAI_API_KEY,
+)
+from assistants.telegram_ui.sqlite_user_data import SqliteUserData
+from assistants.telegram_ui.user_data import ChatHistory, NotAuthorized
 
 user_data = SqliteUserData()
 
@@ -191,7 +200,11 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     prompt = update.message.text.replace("/image ", "")
     image_url = await assistant.image_prompt(prompt)
-    image_content = requests.get(image_url).content
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(image_url) as response:
+            image_content = await response.read()
+
     await update.message.reply_photo(image_content)
 
 
