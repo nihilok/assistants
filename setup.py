@@ -1,4 +1,5 @@
 from setuptools import find_packages, setup
+
 from assistants import version
 
 setup(
