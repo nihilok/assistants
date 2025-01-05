@@ -11,9 +11,7 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/nihilok/assistants",
-    packages=find_packages(
-        include=["assistants", "assistants.*"], exclude=["assistants.tests*"]
-    ),
+    packages=find_packages(exclude=["assistants.tests*"]),
     install_requires=[
         "openai==1.59.3",
         "aiosqlite==0.20.0",

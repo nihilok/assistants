@@ -2,7 +2,7 @@ from typing import NamedTuple, Optional
 
 import aiosqlite
 
-from assistants.config.environment import DB_TABLE
+from assistants.config.file_management import DB_PATH
 
 TABLE_NAME = "assistants"
 
@@ -13,7 +13,7 @@ class AssistantData(NamedTuple):
 
 
 async def get_assistant_data(assistant_name: str, config_hash: str):
-    async with aiosqlite.connect(DB_TABLE) as db:
+    async with aiosqlite.connect(DB_PATH) as db:
         async with await db.execute(
             f"SELECT assistant_id, config_hash FROM {TABLE_NAME} WHERE assistant_name = '{assistant_name}';"
         ) as cursor:
@@ -29,7 +29,7 @@ async def get_assistant_data(assistant_name: str, config_hash: str):
 
 
 async def save_assistant_id(assistant_name: str, assistant_id: str, config_hash: str):
-    async with aiosqlite.connect(DB_TABLE) as db:
+    async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             f"REPLACE INTO {TABLE_NAME} VALUES ('{assistant_name}', '{assistant_id}', '{config_hash}');"
         )

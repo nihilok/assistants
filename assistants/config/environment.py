@@ -20,5 +20,3 @@ IMAGE_MODEL = os.environ.get("IMAGE_MODEL", "dall-e-3")
 ASSISTANT_INSTRUCTIONS = os.environ.get(
     "ASSISTANT_INSTRUCTIONS", "You are a helpful assistant."
 )
-HOME_DIR = os.environ["HOME"]
-DB_TABLE = os.environ.get("USER_DATA_DB", f"{HOME_DIR}/.assistants_user_data.db")

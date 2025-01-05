@@ -3,7 +3,7 @@ Assistant classes encapsulating interactions with the OpenAI API(s)
 """
 import asyncio
 import hashlib
-from typing import Optional, TypedDict
+from typing import Optional, Protocol, TypedDict, Union
 
 import openai
 from openai._types import NOT_GIVEN, NotGiven
@@ -20,7 +20,34 @@ from assistants.user_data.sqlite_backend.assistants import (
 )
 
 
-class Assistant:  # pylint: disable=too-many-instance-attributes
+class AssistantProtocol(Protocol):
+    """
+    Protocol defining the interface for assistant classes.
+    """
+
+    def __init__(self):
+        self.assistant_id: Optional[str] = None
+
+    async def start(self) -> None:
+        """
+        Load the assistant.
+        """
+        ...
+
+    async def converse(
+        self, user_input: str, thread_id: Optional[str] = None
+    ) -> Optional[Union[Message, str]]:
+        """
+        Converse with the assistant.
+
+        :param user_input: The user's input message.
+        :param thread_id: Optional ID of the thread to continue.
+        :return: The last message in the thread or a string response.
+        """
+        ...
+
+
+class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attributes
     """
     Encapsulates interactions with the OpenAI Assistants API.
     """
@@ -50,13 +77,36 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         self.tools = tools
         self.model = model
         self.name = name
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
         self._config_hash = None
-        self.assistant = loop.run_until_complete(self.load_or_create_assistant())
+        self.assistant = None
         self.last_message_id = None
+
+    async def start(self):
+        """
+        Load the assistant_id from DB if exists or create a new assistant.
+        """
+        self.assistant = await self.load_or_create_assistant()
+
+    def __getattribute__(self, item):
+        """
+        Override to check if the assistant is loaded before accessing it.
+
+        :param item: The attribute name.
+        :return: The attribute value.
+        """
+        if item == "assistant":
+            if self.__dict__.get("assistant") is None:
+                raise AttributeError("Assistant not loaded. Call `start` method.")
+        return super().__getattribute__(item)
+
+    @property
+    def assistant_id(self):
+        """
+        Get the assistant ID.
+
+        :return: The assistant ID.
+        """
+        return self.assistant.id
 
     @property
     def config_hash(self):
@@ -263,7 +313,7 @@ class MessageDict(TypedDict):
     content: str | None
 
 
-class Completion:
+class Completion(AssistantProtocol):
     """
     Encapsulates interactions with the OpenAI Chat Completion API.
     """
@@ -285,6 +335,12 @@ class Completion:
         self.model = model
         self.memory: list[MessageDict] = []
         self.max_memory = max_memory
+
+    async def start(self):
+        """
+        Load the completion instance.
+        """
+        pass
 
     def truncate_memory(self):
         """

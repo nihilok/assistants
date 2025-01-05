@@ -99,6 +99,8 @@ In addition to `ASSISTANT_INSTRUCTIONS`, other environment variables that can be
 - `ASSISTANTS_API_KEY_NAME` - The name of the API key environment variable to use for authentication (defaults to `OPENAI_API_KEY`) - remember to also set the corresponding API key value to the environment variable you choose (or the default).
 - `DEFAULT_MODEL` - The default model to use for OpenAI API requests (defaults to `gpt-4o-mini`)
 - `CODE_MODEL` - more advanced reasoning model to use for OpenAI API requests (defaults to `o1-mini`)
+- `ASSISTANTS_DATA_DIR` - The directory to store user data (defaults to `~/.local/share/assistants`)
+- `ASSISTANTS_CONFIG_DIR` - The directory to store configuration files (defaults to `~/.config/assistants`)
 - `TG_BOT_TOKEN` - The Telegram bot token if using the Telegram UI
 
 ## Contributing

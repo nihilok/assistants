@@ -2,13 +2,27 @@ import os
 import re
 import subprocess
 import tempfile
+from argparse import Namespace
+from typing import Optional
 
-import pygments
 from pygments import highlight
+from pygments.formatter import Formatter
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
 
-PERSISTENT_THREAD_ID_FILE = f"{os.environ.get('HOME', '')}/.assistant-last-thread-id"
+from assistants.ai.assistant import Assistant, Completion
+from assistants.config import environment
+
+from assistants.user_data.sqlite_backend.threads import (
+    get_last_thread_for_assistant,
+    ThreadData,
+)
+
+
+class GreyTextFormatter(Formatter):
+    def format(self, tokensource, outfile):
+        for ttype, value in tokensource:
+            outfile.write(f"\033[90m{value}\033[0m")
 
 
 def highlight_code_blocks(markdown_text):
@@ -26,12 +40,9 @@ def highlight_code_blocks(markdown_text):
     return code_block_pattern.sub(replacer, markdown_text)
 
 
-def get_thread_id():
-    try:
-        with open(PERSISTENT_THREAD_ID_FILE, "r") as file:
-            return file.read().strip()
-    except FileNotFoundError:
-        return None
+async def get_thread_id(assistant_id: str):
+    last_thread = await get_last_thread_for_assistant(assistant_id)
+    return last_thread.thread_id if last_thread else None
 
 
 def get_text_from_default_editor(initial_text=None):
@@ -55,3 +66,24 @@ def get_text_from_default_editor(initial_text=None):
     os.remove(temp_file_path)
 
     return text
+
+
+async def create_assistant_and_thread(
+    args: Namespace,
+) -> tuple[Assistant, Optional[ThreadData]]:
+    if args.code:
+        # Create a completion model for code reasoning (slower and more expensive)
+        assistant = Completion(model=environment.CODE_MODEL)
+        thread = None  # Threads are not supported with code reasoning
+    else:
+        # Create a default assistant
+        assistant = Assistant(
+            name="AI Assistant",
+            model=environment.DEFAULT_MODEL,
+            instructions=args.instructions or environment.ASSISTANT_INSTRUCTIONS,
+            tools=[{"type": "code_interpreter"}],
+        )
+        await assistant.start()
+        thread = await get_last_thread_for_assistant(assistant.assistant_id)
+
+    return assistant, thread
