@@ -5,7 +5,7 @@ from assistants.cli.constants import IO_INSTRUCTIONS
 from assistants.lib.exceptions import ConfigError
 
 try:
-    from assistants import config, version
+    from assistants.config import environment
 except ConfigError as e:
     import re
 
@@ -28,13 +28,14 @@ import sys
 from pathlib import Path
 from typing import Optional, Union, cast
 
-import pyperclip  # type: ignore
+import pyperclip
 from openai.types.beta.threads import Message
 from prompt_toolkit import prompt
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 
+from assistants import version
 from assistants.ai.assistant import Assistant, Completion
 from assistants.cli.arg_parser import get_args
 from assistants.cli.terminal import clear_screen
@@ -210,9 +211,7 @@ def cli():
     args = get_args()
 
     instructions = (
-        args.instructions
-        if args.instructions
-        else config.environment.ASSISTANT_INSTRUCTIONS
+        args.instructions if args.instructions else environment.ASSISTANT_INSTRUCTIONS
     )
     initial_input = " ".join(args.prompt) if args.prompt else None
 
@@ -237,12 +236,12 @@ def cli():
 
     # Create the assistant
     if args.code:
-        assistant = Completion(model=config.environment.CODE_MODEL)
+        assistant = Completion(model=environment.CODE_MODEL)
     else:
         assistant = Assistant(
-            "AI Assistant",
-            config.environment.DEFAULT_MODEL,
-            instructions,
+            name="AI Assistant",
+            model=environment.DEFAULT_MODEL,
+            instructions=instructions,
             tools=[{"type": "code_interpreter"}],
         )
 
