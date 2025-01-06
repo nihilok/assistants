@@ -7,6 +7,7 @@ and starting the IO loop.
 import sys
 import asyncio
 
+import assistants.cli.commands
 from assistants.cli import output
 from assistants.cli.io_loop import io_loop
 from assistants.lib.exceptions import ConfigError
@@ -54,7 +55,7 @@ def cli():
         f"Assistant CLI v{version.__VERSION__}; type 'help' for a list of commands.\n"
     )
 
-    if args.editor:
+    if assistants.cli.commands.editor:
         # Open the default editor to compose formatted prompt
         initial_input = get_text_from_default_editor(initial_input)
 
