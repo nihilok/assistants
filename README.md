@@ -18,13 +18,17 @@ Welcome to the AI Assistants Framework! This repository contains the foundationa
 - **Interchangeable Data Layers**: Easily swap out the underlying data storage solutions, such as SQLite or other databases (coming soon).
 - **Extensible Architecture**: Built with modularity in mind, allowing for easy addition of new features and integrations.
 
+### CLI Features
+- **Code Highlighting**: The CLI supports syntax highlighting for code snippets.
+- **Thread Selection/Continuation**: The CLI can continue previous threads for a more seamless conversational experience. Previous thread ids are stored in the DB along with the initial prompt.
+- **Editor Integration**: The CLI can open the default editor to compose a prompt.
+- **File Input**: The CLI can read the initial prompt from a file.
+
 ## Installation
 
 To get started with the AI Assistant Project, follow these steps:
 
-- \[Optional\] Create a Python virtual environment (recommended, but not required on most systems) (Requires Python 3.10+)
-
-(a simple way is to use the built-in `venv` module, e.g., `python -m venv my-venv; source my-venv/bin/activate`)
+- \[Optional\] Create a Python virtual environment (recommended, but not required on most systems) (Requires Python 3.10+) (a simple way is to use the built-in `venv` module, e.g., `python -m venv my-venv; source my-venv/bin/activate`)
 
 - Install the package using pip:
 
