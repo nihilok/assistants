@@ -19,10 +19,10 @@ from assistants.config.environment import (
     DEFAULT_MODEL,
     OPENAI_API_KEY,
 )
-from assistants.telegram_ui.sqlite_user_data import SqliteUserData
+from assistants.telegram_ui.sqlite_user_data import TelegramSqliteUserData
 from assistants.telegram_ui.user_data import ChatHistory, NotAuthorized
 
-user_data = SqliteUserData()
+user_data = TelegramSqliteUserData()
 
 assistant = Assistant(
     name=os.getenv("ASSISTANT_NAME"),

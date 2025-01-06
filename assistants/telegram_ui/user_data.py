@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-DB = os.environ.get("TG_USER_DATA")
+from assistants.config.file_management import DB_PATH
 
 
 class NotAuthorized(ValueError):
@@ -18,7 +18,7 @@ class ChatHistory(BaseModel):
 
 
 class UserData(ABC):
-    DB = DB
+    DB = DB_PATH
 
     @abstractmethod
     async def create_db(self):

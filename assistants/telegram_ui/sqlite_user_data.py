@@ -5,7 +5,7 @@ import aiosqlite
 from assistants.telegram_ui.user_data import ChatHistory, NotAuthorized, UserData
 
 
-class SqliteUserData(UserData):
+class TelegramSqliteUserData(UserData):
     async def create_db(self):
         async with aiosqlite.connect(self.DB) as db:
             await db.execute(

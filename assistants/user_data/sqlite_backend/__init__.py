@@ -1,6 +1,9 @@
+import os
+
 import aiosqlite
 
 from assistants.config.file_management import DB_PATH
+from assistants.log import logger
 from assistants.user_data.sqlite_backend.assistants import TABLE_NAME as ASSISTANTS
 from assistants.user_data.sqlite_backend.chat_history import TABLE_NAME as CHAT_HISTORY
 from assistants.user_data.sqlite_backend.threads import TABLE_NAME as THREADS
@@ -18,13 +21,22 @@ async def init_db():
             f"CREATE TABLE IF NOT EXISTS {ASSISTANTS} (assistant_name TEXT PRIMARY KEY, assistant_id TEXT, config_hash TEXT);"
         )
         await db.execute(
-            f"CREATE TABLE IF NOT EXISTS {THREADS} (thread_id TEXT PRIMARY KEY, assistant_id TEXT, last_run_dt TEXT);"
+            f"CREATE TABLE IF NOT EXISTS {THREADS} (thread_id TEXT PRIMARY KEY, assistant_id TEXT, last_run_dt TEXT, initial_prompt TEXT);"
         )
 
         await db.commit()
 
 
-if __name__ == "__main__":
-    import asyncio
+async def rebuild_db():
+    if DB_PATH.exists():
+        # Create backup of existing database in /tmp
+        backup_file = DB_PATH.with_suffix(".bak")
+        backup_file.write_bytes(DB_PATH.read_bytes())
+        os.rename(backup_file, f"/tmp/{backup_file.name}")
+        logger.info(f"Existing database backed up to /tmp/{backup_file.name}")
+        DB_PATH.unlink()
 
-    asyncio.run(init_db())
+    if DB_PATH.exists():
+        raise RuntimeError("Failed to delete existing database")
+
+    await init_db()

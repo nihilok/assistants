@@ -1,10 +1,11 @@
 import sys
-from pathlib import Path
 
 from loguru import logger
 
+from assistants.config.file_management import DATA_DIR
+
 # Create a log directory if it doesn't exist
-log_path = Path("~/.assistants_framework/log").expanduser()
+log_path = DATA_DIR / "logs"
 log_path.mkdir(parents=True, exist_ok=True)
 
 # Remove the default logger configuration
@@ -13,8 +14,8 @@ logger.remove()
 # Add a logger configuration for logging to a file
 logger.add(
     log_path / "debug_{time}.log",
-    rotation="1 day",
-    retention="7 days",
+    rotation="2 MB",
+    retention=7,
     compression="zip",
     level="DEBUG",
     format="{time} [{level}]\t\t{module} | {message}",
@@ -36,7 +37,7 @@ logger.add(
     filter=lambda record: record["level"].name not in ["ERROR", "CRITICAL"],
 )
 
-# Add a logger configuration for logging to stderr (includes module
+# Add a logger configuration for logging to stderr
 logger.add(
     sys.stderr,
     level="ERROR",
