@@ -7,6 +7,7 @@ and starting the IO loop.
 import sys
 import asyncio
 
+import assistants.cli.commands
 from assistants.cli import output
 from assistants.cli.io_loop import io_loop
 from assistants.lib.exceptions import ConfigError
@@ -73,8 +74,10 @@ def cli():
     if thread is None and args.continue_thread:
         output.warn("Warning: could not read last thread id; starting new thread.")
         thread_id = None
-    else:
+    elif thread is not None and args.continue_thread:
         thread_id = thread.thread_id
+    else:
+        thread_id = None
 
     # IO Loop (takes user input and sends it to the assistant, or parses it as a command,
     # then prints the response before looping to do it all over again)

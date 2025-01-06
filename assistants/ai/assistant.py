@@ -85,7 +85,9 @@ class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attribu
         """
         Load the assistant_id from DB if exists or create a new assistant.
         """
-        self.assistant = await self.load_or_create_assistant()
+        if not self.__dict__.get("assistant"):
+            self.assistant = await self.load_or_create_assistant()
+        self.last_message_id = None
 
     def __getattribute__(self, item):
         """
@@ -186,6 +188,7 @@ class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attribu
         :param prompt: The initial prompt for the thread.
         :return: The created thread.
         """
+        logger.debug(f"Starting new thread with prompt: {prompt}")
         thread = self._new_thread()
         self.client.beta.threads.messages.create(
             thread_id=thread.id,

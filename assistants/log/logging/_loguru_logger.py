@@ -13,8 +13,8 @@ logger.remove()
 
 # Add a logger configuration for logging to a file
 logger.add(
-    log_path / "debug_{time}.log",
-    rotation="2 MB",
+    log_path / "debug.log",
+    rotation="1 MB",
     retention=7,
     compression="zip",
     level="DEBUG",
