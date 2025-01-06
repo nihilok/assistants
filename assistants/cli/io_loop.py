@@ -2,7 +2,6 @@
 This module contains the main input/output loop for interacting with the assistant.
 """
 import asyncio
-from dataclasses import dataclass
 from typing import Optional
 
 from openai.types.beta.threads import Message
@@ -15,7 +14,9 @@ from assistants.ai.assistant import Completion, AssistantProtocol
 from assistants.cli import output
 from assistants.cli.commands import (
     COMMAND_MAP,
+    IoEnviron,
 )
+from assistants.log import logger
 from assistants.cli.terminal import clear_screen
 from assistants.cli.utils import highlight_code_blocks
 from assistants.config.file_management import CONFIG_DIR
@@ -35,17 +36,6 @@ style = Style.from_dict(
     },
 )
 PROMPT = [("class:input", ">>> ")]  # prompt symbol
-
-
-@dataclass
-class IoEnviron:
-    """
-    Environment variables for the input/output loop.
-    """
-
-    assistant: AssistantProtocol
-    last_message: Optional[Message] = None
-    thread_id: Optional[str] = None
 
 
 # Bind CTRL+L to clear the screen
@@ -101,6 +91,9 @@ def io_loop(
         # Handle commands
         command = COMMAND_MAP.get(user_input.lower())
         if command:
+            logger.debug(
+                f"Command input: {user_input}; Command: {command.__class__.__name__}"
+            )
             command(environ)
             continue
 
@@ -143,8 +136,8 @@ async def converse(
 
     output.default(text)
     output.new_line(2)
-    last_message = message
+    environ.last_message = message
 
-    if last_message and not thread_id:
-        thread_id = last_message.thread_id
-        await save_thread_data(thread_id, assistant.assistant_id)
+    if environ.last_message and not environ.thread_id:
+        environ.thread_id = environ.last_message.thread_id
+        await save_thread_data(environ.thread_id, assistant.assistant_id, user_input)

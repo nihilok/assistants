@@ -55,7 +55,7 @@ def cli():
         f"Assistant CLI v{version.__VERSION__}; type 'help' for a list of commands.\n"
     )
 
-    if assistants.cli.commands.editor:
+    if args.editor:
         # Open the default editor to compose formatted prompt
         initial_input = get_text_from_default_editor(initial_input)
 
@@ -74,8 +74,10 @@ def cli():
     if thread is None and args.continue_thread:
         output.warn("Warning: could not read last thread id; starting new thread.")
         thread_id = None
-    else:
+    elif thread is not None and args.continue_thread:
         thread_id = thread.thread_id
+    else:
+        thread_id = None
 
     # IO Loop (takes user input and sends it to the assistant, or parses it as a command,
     # then prints the response before looping to do it all over again)
