@@ -79,7 +79,8 @@ class CopyResponse(Command):
             )
             return
 
-    def get_previous_response(self, environ: IoEnviron) -> str:
+    @staticmethod
+    def get_previous_response(environ: IoEnviron) -> str:
         """
         Get the previous response from the assistant.
 
