@@ -6,6 +6,7 @@ from assistants.config.file_management import DB_PATH
 from assistants.log import logger
 from assistants.user_data.sqlite_backend.assistants import TABLE_NAME as ASSISTANTS
 from assistants.user_data.sqlite_backend.chat_history import TABLE_NAME as CHAT_HISTORY
+from assistants.user_data.sqlite_backend.conversations import conversations_table
 from assistants.user_data.sqlite_backend.threads import TABLE_NAME as THREADS
 
 
@@ -25,6 +26,8 @@ async def init_db():
         )
 
         await db.commit()
+
+        await conversations_table.create_table()
 
 
 async def rebuild_db():

@@ -1,9 +1,13 @@
 """
-Assistant classes encapsulating interactions with the OpenAI API(s)
+This module defines classes for interacting with the OpenAI API(s), including memory management functionality through the MemoryMixin class.
+
+Classes:
+    - Assistant: Encapsulates interactions with the OpenAI Assistants API.
+    - Completion: Encapsulates interactions with the OpenAI Chat Completion API.
 """
 import asyncio
 import hashlib
-from typing import Optional, Protocol, TypedDict, Union
+from typing import Optional
 
 import openai
 from openai._types import NOT_GIVEN, NotGiven
@@ -11,8 +15,10 @@ from openai.types.beta import Thread
 from openai.types.beta.threads import Message, Run
 from openai.types.chat import ChatCompletionMessage
 
+from assistants.ai.memory import MemoryMixin
+from assistants.ai.types import AssistantProtocol, MessageData, MessageDict
 from assistants.config import environment
-from assistants.lib.exceptions import NoResponseError
+from assistants.lib.exceptions import ConfigError, NoResponseError
 from assistants.log import logger
 from assistants.user_data.sqlite_backend.assistants import (
     get_assistant_data,
@@ -20,36 +26,23 @@ from assistants.user_data.sqlite_backend.assistants import (
 )
 
 
-class AssistantProtocol(Protocol):
-    """
-    Protocol defining the interface for assistant classes.
-    """
-
-    def __init__(self):
-        self.assistant_id: Optional[str] = None
-
-    async def start(self) -> None:
-        """
-        Load the assistant.
-        """
-        ...
-
-    async def converse(
-        self, user_input: str, thread_id: Optional[str] = None
-    ) -> Optional[Union[Message, str]]:
-        """
-        Converse with the assistant.
-
-        :param user_input: The user's input message.
-        :param thread_id: Optional ID of the thread to continue.
-        :return: The last message in the thread or a string response.
-        """
-        ...
-
-
 class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attributes
     """
     Encapsulates interactions with the OpenAI Assistants API.
+
+    Inherits from:
+        - AssistantProtocol: Protocol defining the interface for assistant classes.
+
+    Attributes:
+        name (str): The name of the assistant.
+        model (str): The model to be used by the assistant.
+        instructions (str): Instructions for the assistant.
+        tools (list | NotGiven): Optional tools for the assistant.
+        api_key (str): API key for OpenAI.
+        client (openai.OpenAI): Client for interacting with the OpenAI API.
+        _config_hash (Optional[str]): Hash of the current configuration.
+        assistant (Optional[object]): The assistant object.
+        last_message_id (Optional[str]): ID of the last message in the thread.
     """
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -70,6 +63,9 @@ class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attribu
         :param tools: Optional tools for the assistant.
         :param api_key: API key for OpenAI.
         """
+        if not api_key:
+            raise ConfigError("Missing 'OPENAI_API_KEY' environment variable")
+
         self.client = openai.OpenAI(
             api_key=api_key, default_headers={"OpenAI-Beta": "assistants=v2"}
         )
@@ -276,7 +272,7 @@ class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attribu
 
     async def converse(
         self, user_input: str, thread_id: Optional[str] = None
-    ) -> Optional[Message]:
+    ) -> Optional[MessageData]:
         """
         Converse with the assistant by creating or continuing a thread.
 
@@ -304,21 +300,25 @@ class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attribu
 
         self.last_message_id = last_message_in_thread.id
 
-        return last_message_in_thread
+        return MessageData(
+            text_content=last_message_in_thread.content[0].text.value,
+            thread_id=thread_id,
+        )
 
 
-class MessageDict(TypedDict):
-    """
-    Typed dictionary for message data.
-    """
-
-    role: str
-    content: str | None
-
-
-class Completion(AssistantProtocol):
+class Completion(AssistantProtocol, MemoryMixin):
     """
     Encapsulates interactions with the OpenAI Chat Completion API.
+
+    Inherits from:
+        - AssistantProtocol: Protocol defining the interface for assistant classes.
+        - MemoryMixin: Mixin class to handle memory-related functionality.
+
+    Attributes:
+        model (str): The model to be used for completions.
+        max_memory (int): Maximum number of messages to retain in memory.
+        api_key (str): API key for OpenAI.
+        client (openai.OpenAI): Client for interacting with the OpenAI API.
     """
 
     def __init__(
@@ -334,22 +334,18 @@ class Completion(AssistantProtocol):
         :param max_memory: Maximum number of messages to retain in memory.
         :param api_key: API key for OpenAI.
         """
+        if not api_key:
+            raise ConfigError("Missing 'OPENAI_API_KEY' environment variable")
+
+        MemoryMixin.__init__(self, max_memory)
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
-        self.memory: list[MessageDict] = []
-        self.max_memory = max_memory
 
     async def start(self):
         """
         Load the completion instance.
         """
-        pass
-
-    def truncate_memory(self):
-        """
-        Truncate the memory to the maximum allowed messages.
-        """
-        self.memory = self.memory[-self.max_memory :]
+        await self.load_conversation()
 
     def complete(self, prompt: str) -> ChatCompletionMessage:
         """
@@ -362,23 +358,26 @@ class Completion(AssistantProtocol):
             role="user",
             content=prompt,
         )
-        self.truncate_memory()
-        self.memory.append(new_prompt)
+        self.remember(new_prompt)
         response = self.client.chat.completions.create(
             model=self.model,
             messages=self.memory,  # type: ignore
         )
         message = response.choices[0].message
-        self.memory.append({"role": "assistant", "content": message.content})
+        self.remember({"role": "assistant", "content": message.content})
         return response.choices[0].message
 
     async def converse(
         self, user_input: str, *args, **kwargs  # pylint: disable=unused-argument
-    ) -> ChatCompletionMessage:
+    ) -> Optional[MessageData]:
         """
         Converse with the assistant using the chat completion API.
 
         :param user_input: The user's input message.
         :return: The completion message.
         """
-        return self.complete(user_input)
+        if not user_input:
+            return None
+
+        message = self.complete(user_input)
+        return MessageData(text_content=message.content or "")

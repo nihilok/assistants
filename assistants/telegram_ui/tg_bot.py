@@ -13,7 +13,7 @@ from telegram.ext import (
     filters,
 )
 
-from assistants.ai.assistant import Assistant
+from assistants.ai.openai import Assistant
 from assistants.config.environment import (
     ASSISTANT_INSTRUCTIONS,
     DEFAULT_MODEL,

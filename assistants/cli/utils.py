@@ -10,12 +10,13 @@ from pygments.formatter import Formatter
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
 
-from assistants.ai.assistant import Assistant, Completion
+from assistants.ai.anthropic import Claude
+from assistants.ai.openai import Assistant, Completion
 from assistants.config import environment
-
+from assistants.lib.exceptions import ConfigError
 from assistants.user_data.sqlite_backend.threads import (
-    get_last_thread_for_assistant,
     ThreadData,
+    get_last_thread_for_assistant,
 )
 
 
@@ -72,9 +73,17 @@ async def create_assistant_and_thread(
     args: Namespace,
 ) -> tuple[Assistant, Optional[ThreadData]]:
     if args.code:
-        # Create a completion model for code reasoning (slower and more expensive)
-        assistant = Completion(model=environment.CODE_MODEL)
+        if environment.CODE_MODEL == "o1-mini":
+            # Create a completion model for code reasoning (slower and more expensive)
+            assistant = Completion(model=environment.CODE_MODEL)
+        elif environment.CODE_MODEL == "claude-3-5-sonnet-latest":
+            # Create an Anthropic assistant for code reasoning
+            assistant = Claude(model=environment.CODE_MODEL)
+        else:
+            raise ConfigError(f"Invalid code reasoning model: {environment.CODE_MODEL}")
         thread = None  # Threads are not supported with code reasoning
+        if args.continue_thread:
+            await assistant.start()
     else:
         # Create a default assistant
         assistant = Assistant(

@@ -4,39 +4,19 @@ It is responsible for parsing command line arguments, creating the Assistant obj
 and starting the IO loop.
 """
 
-import sys
 import asyncio
-
-import assistants.cli.commands
-from assistants.cli import output
-from assistants.cli.io_loop import io_loop
-from assistants.lib.exceptions import ConfigError
-
-try:
-    from assistants.config import environment
-except ConfigError as e:
-    import re
-
-    pattern = re.compile(r"Missing required (\w+) environment variable")
-
-    match = pattern.match(str(e))
-
-    if match is None:
-        output.fail(f"Error: {e}")
-        sys.exit(1)
-
-    output.fail(
-        f"`{match.group(1)}` not found! Check README.md for setup instructions. Exiting..."
-    )
-    sys.exit(1)
-
+import sys
 
 from assistants import version
+from assistants.cli import output
 from assistants.cli.arg_parser import get_args
+from assistants.cli.io_loop import io_loop
 from assistants.cli.utils import (
-    get_text_from_default_editor,
     create_assistant_and_thread,
+    get_text_from_default_editor,
 )
+from assistants.config import environment
+from assistants.lib.exceptions import ConfigError
 
 
 def cli():
@@ -52,9 +32,11 @@ def cli():
 
     # First line of output (version and basic instructions)
     output.default(
-        f"Assistant CLI v{version.__VERSION__}; type 'help' for a list of commands.\n"
+        f"""Assistant CLI v{version.__VERSION__}; using '{environment.CODE_MODEL if args.code else environment.DEFAULT_MODEL}' model{' (reasoning model)' if args.code else ''}.
+Type '/help' (or '/h') for a list of commands.
+"""
     )
-
+    output.default("")
     if args.editor:
         # Open the default editor to compose formatted prompt
         initial_input = get_text_from_default_editor(initial_input)
@@ -69,9 +51,13 @@ def cli():
             sys.exit(1)
 
     # Create assistant and get the last thread if one exists
-    assistant, thread = asyncio.run(create_assistant_and_thread(args))
+    try:
+        assistant, thread = asyncio.run(create_assistant_and_thread(args))
+    except ConfigError as e:
+        output.fail(f"Error: {e}")
+        sys.exit(1)
 
-    if thread is None and args.continue_thread:
+    if thread is None and args.continue_thread and not args.code:
         output.warn("Warning: could not read last thread id; starting new thread.")
         thread_id = None
     elif thread is not None and args.continue_thread:
