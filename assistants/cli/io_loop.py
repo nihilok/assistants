@@ -10,17 +10,15 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 
-from assistants.ai.assistant import Completion, AssistantProtocol
+from assistants.ai.memory import MemoryMixin
+from assistants.ai.openai import Assistant
+from assistants.ai.types import AssistantProtocol
 from assistants.cli import output
-from assistants.cli.commands import (
-    COMMAND_MAP,
-    IoEnviron,
-)
-from assistants.log import logger
+from assistants.cli.commands import COMMAND_MAP, EXIT_COMMANDS, IoEnviron
 from assistants.cli.terminal import clear_screen
 from assistants.cli.utils import highlight_code_blocks
 from assistants.config.file_management import CONFIG_DIR
-from assistants.lib.exceptions import NoResponseError
+from assistants.log import logger
 from assistants.user_data.sqlite_backend.threads import save_thread_data
 
 bindings = KeyBindings()
@@ -45,7 +43,7 @@ def _(_event):
 
 
 def io_loop(
-    assistant: AssistantProtocol,
+    assistant: AssistantProtocol | MemoryMixin,
     initial_input: str = "",
     last_message: Optional[Message] = None,
     thread_id: Optional[str] = None,
@@ -73,15 +71,14 @@ def io_loop(
         last_message=last_message,
         thread_id=thread_id,
     )
-    while initial_input or (user_input := get_user_input()).lower() not in {
-        "q",
-        "quit",
-        "exit",
-    }:
+    while (
+        initial_input or (user_input := get_user_input()).lower() not in EXIT_COMMANDS
+    ):
         output.reset()
         if initial_input:
             output.user_input(initial_input)
             user_input = initial_input
+            initial_input = ""  # Otherwise, the initial input will be repeated in the next iteration
 
         if not user_input.strip():
             continue
@@ -116,28 +113,31 @@ async def converse(
     thread_id = environ.thread_id
 
     message = await assistant.converse(
-        user_input,
-        last_message.thread_id if last_message else thread_id,
+        user_input, last_message.thread_id if last_message else thread_id
     )
 
-    if message is None:
+    if (
+        message is None
+        or not message.text_content
+        or last_message
+        and last_message.text_content == message.text_content
+    ):
         output.warn("No response from the AI model.")
         return
 
-    if isinstance(assistant, Completion):
-        output.default(message.content)  # type: ignore
-        output.new_line(2)
-        return
-
-    if last_message and message and message.id == last_message.id:
-        raise NoResponseError
-
-    text = highlight_code_blocks(message.content[0].text.value)
+    text = highlight_code_blocks(message.text_content)
 
     output.default(text)
     output.new_line(2)
     environ.last_message = message
 
-    if environ.last_message and not environ.thread_id:
+    if (
+        environ.last_message
+        and not environ.thread_id
+        and isinstance(assistant, Assistant)
+    ):
         environ.thread_id = environ.last_message.thread_id
         await save_thread_data(environ.thread_id, assistant.assistant_id, user_input)
+    elif not isinstance(assistant, Assistant):
+        await assistant.save_conversation()
+        environ.thread_id = assistant.conversation_id

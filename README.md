@@ -17,6 +17,7 @@ Welcome to the AI Assistants Framework! This repository contains the foundationa
 - **User Data Management**: Efficient handling of user data with a robust backend.
 - **Interchangeable Data Layers**: Easily swap out the underlying data storage solutions, such as SQLite or other databases (coming soon).
 - **Extensible Architecture**: Built with modularity in mind, allowing for easy addition of new features and integrations.
+- **Support For Multiple LLMs**: The assistant can use different models for different tasks, such as reasoning or code generation. As well as OpenAI `gpt-*` (general) & `o1` (reasoning) models, there is also support for models from Anthropic, e.g. `claude-3.5-sonnet-latest` (which we use like a reasoning model). It's also possible to generate images using DALL-E models; however, this is not yet integrated into the CLI (but does have Telegram support).
 
 ### CLI Features
 - **Code Highlighting**: The CLI supports syntax highlighting for code snippets.
@@ -96,11 +97,14 @@ $ ai-tg-bot
 
 You can customize the behavior of the assistant by modifying the `ASSISTANT_INSTRUCTIONS` environment variable, which defaults to `"You are a helpful assistant."`
 
+To use with Claude.ai (Anthropic) models, you can set the `CODE_MODEL` environment variable to `claude-3.5-sonnet-latest` or another model of your choice and run the program with the `-C` option. You must have an API key for Anthropic models set in the `ANTHROPIC_API_KEY` environment variable (or another variable that you have specified; see below).
+
 ## Environment Variables
 
 In addition to `ASSISTANT_INSTRUCTIONS`, other environment variables that can be configured include:
 
 - `ASSISTANTS_API_KEY_NAME` - The name of the API key environment variable to use for authentication (defaults to `OPENAI_API_KEY`) - remember to also set the corresponding API key value to the environment variable you choose (or the default).
+- `ANTHROPIC_API_KEY_NAME` - The name of the API key environment variable to use for authentication with Anthropic models (defaults to `ANTHROPIC_API_KEY`)
 - `DEFAULT_MODEL` - The default model to use for OpenAI API requests (defaults to `gpt-4o-mini`)
 - `CODE_MODEL` - more advanced reasoning model to use for OpenAI API requests (defaults to `o1-mini`)
 - `ASSISTANTS_DATA_DIR` - The directory to store user data (defaults to `~/.local/share/assistants`)

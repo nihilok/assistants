@@ -1,18 +1,20 @@
 import asyncio
+import json
 import re
 from dataclasses import dataclass
-from typing import Protocol, Optional
+from typing import Optional, Protocol
 
 import pyperclip
-from openai.types.beta.threads import Message
 
-from assistants.ai.assistant import Completion, AssistantProtocol
+from assistants.ai.memory import MemoryMixin
+from assistants.ai.types import AssistantProtocol, MessageData
 from assistants.cli import output
 from assistants.cli.constants import IO_INSTRUCTIONS
 from assistants.cli.selector import TerminalSelector
 from assistants.cli.terminal import clear_screen
 from assistants.cli.utils import get_text_from_default_editor
 from assistants.user_data import threads_table
+from assistants.user_data.sqlite_backend import conversations_table
 
 
 @dataclass
@@ -21,8 +23,8 @@ class IoEnviron:
     Environment variables for the input/output loop.
     """
 
-    assistant: AssistantProtocol
-    last_message: Optional[Message] = None
+    assistant: AssistantProtocol | MemoryMixin
+    last_message: Optional[MessageData] = None
     thread_id: Optional[str] = None
 
 
@@ -87,14 +89,10 @@ class CopyResponse(Command):
         :param environ: The environment variables for the input/output loop.
         :return: The previous response from the assistant.
         """
-        assistant = environ.assistant
         previous_response = ""
-        if isinstance(assistant, Completion):
-            if assistant.memory:
-                previous_response = assistant.memory[-1]["content"]  # type: ignore
 
-        elif environ.last_message:
-            previous_response = last_message.content[0].text.value  # type: ignore
+        if environ.last_message:
+            previous_response = environ.last_message.text_content
 
         return previous_response
 
@@ -204,26 +202,41 @@ class SelectThread(Command):
 
         :param environ: The environment variables for the input/output loop.
         """
-        threads = asyncio.run(
-            threads_table.get_by_assistant_id(environ.assistant.assistant_id)
-        )
+        if isinstance(environ.assistant, MemoryMixin):
+            threads = asyncio.run(conversations_table.get_all_conversations())
+            threads_output = [
+                f"{thread.last_updated} | {thread.id} | {json.loads(thread.conversation)[0]['content']}"
+                for i, thread in enumerate(threads)
+            ]
+        else:
+            threads = asyncio.run(
+                threads_table.get_by_assistant_id(environ.assistant.assistant_id)
+            )
+            threads_output = [
+                f"{thread.last_run_dt} | {thread.thread_id} | {thread.initial_prompt}"
+                for i, thread in enumerate(threads)
+            ]
+
         if not threads:
             output.warn("No threads found.")
             return
 
-        threads_output = [
-            f"{thread.last_run_dt} | {thread.thread_id} | {thread.initial_prompt}"
-            for i, thread in enumerate(threads)
-        ]
         selector = TerminalSelector(threads_output)
         result = selector.run()
         if not result:
             output.warn("No thread selected.")
             return
+
         thread_id = result.split("|")[1].strip()
         environ.thread_id = thread_id
+
+        if isinstance(environ.assistant, MemoryMixin):
+            asyncio.run(environ.assistant.load_conversation(thread_id))
+        else:
+            asyncio.run(environ.assistant.start())
+
         environ.last_message = None
-        asyncio.run(environ.assistant.start())
+        output.inform(f"Selected thread {thread_id}")
 
 
 select_thread: Command = SelectThread()
@@ -239,10 +252,18 @@ COMMAND_MAP = {
     "/copy-code": copy_code_blocks,
     "/h": print_usage,
     "/help": print_usage,
-    "help": print_usage,
     "/n": new_thread,
     "/new": new_thread,
     "/new-thread": new_thread,
     "/t": select_thread,
     "/threads": select_thread,
+}
+
+EXIT_COMMANDS = {
+    "q",
+    "quit",
+    "exit",
+    "/q",
+    "/quit",
+    "/exit",
 }
