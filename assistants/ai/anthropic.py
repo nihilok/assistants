@@ -11,12 +11,12 @@ from typing import Optional
 from anthropic import AsyncAnthropic
 
 from assistants.ai.memory import MemoryMixin
-from assistants.ai.types import AssistantProtocol, MessageData
+from assistants.ai.types import MessageData
 from assistants.config.environment import ANTHROPIC_API_KEY
 from assistants.lib.exceptions import ConfigError
 
 
-class Claude(AssistantProtocol, MemoryMixin):
+class Claude(MemoryMixin):
     """
     Claude class encapsulates interactions with the Anthropic API.
 

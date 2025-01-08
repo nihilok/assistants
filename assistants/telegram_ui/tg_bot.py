@@ -125,7 +125,7 @@ async def deauthorise_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @restricted_access
 async def new_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await user_data.clear_last_thread_id(update.effective_chat.id)
-    assistant.last_message_id = None
+    assistant.last_message = None
     await context.bot.send_message(
         update.effective_chat.id, "Conversation history cleared."
     )

@@ -54,6 +54,15 @@ class AssistantProtocol(Protocol):
         """
         ...
 
+    def get_last_message(self, thread_id: str) -> Optional[MessageData]:
+        """
+        Get the last message in the thread.
+
+        :param thread_id: the ID of the thread to continue.
+        :return: last message in the thread if one exists.
+        """
+        ...
+
 
 class MessageDict(TypedDict):
     """

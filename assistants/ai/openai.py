@@ -16,7 +16,7 @@ from openai.types.beta.threads import Message, Run
 from openai.types.chat import ChatCompletionMessage
 
 from assistants.ai.memory import MemoryMixin
-from assistants.ai.types import AssistantProtocol, MessageData, MessageDict
+from assistants.ai.types import MessageData, MessageDict
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError, NoResponseError
 from assistants.log import logger
@@ -26,12 +26,11 @@ from assistants.user_data.sqlite_backend.assistants import (
 )
 
 
-class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attributes
+class Assistant:  # pylint: disable=too-many-instance-attributes
     """
     Encapsulates interactions with the OpenAI Assistants API.
 
-    Inherits from:
-        - AssistantProtocol: Protocol defining the interface for assistant classes.
+    Fits AssistantProtocol: Protocol defining the interface for assistant classes.
 
     Attributes:
         name (str): The name of the assistant.
@@ -42,7 +41,7 @@ class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attribu
         client (openai.OpenAI): Client for interacting with the OpenAI API.
         _config_hash (Optional[str]): Hash of the current configuration.
         assistant (Optional[object]): The assistant object.
-        last_message_id (Optional[str]): ID of the last message in the thread.
+        last_message (Optional[str]): ID of the last message in the thread.
     """
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -75,7 +74,7 @@ class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attribu
         self.name = name
         self._config_hash = None
         self.assistant = None
-        self.last_message_id = None
+        self.last_message = None
 
     async def start(self):
         """
@@ -83,7 +82,7 @@ class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attribu
         """
         if not self.__dict__.get("assistant"):
             self.assistant = await self.load_or_create_assistant()
-        self.last_message_id = None
+        self.last_message = None
 
     def __getattribute__(self, item):
         """
@@ -270,6 +269,28 @@ class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attribu
         )
         return response.data[0].url
 
+    def get_last_message(self, thread_id: str) -> Optional[MessageData]:
+        messages = self.client.beta.threads.messages.list(
+            thread_id=thread_id,
+            order="asc",
+            after=self.last_message.id if self.last_message else NOT_GIVEN,
+        ).data
+
+        last_message_in_thread = messages[-1]
+
+        if not last_message_in_thread:
+            return None
+
+        if self.last_message and last_message_in_thread.id == self.last_message.id:
+            raise NoResponseError
+
+        self.last_message = last_message_in_thread
+
+        return MessageData(
+            text_content=last_message_in_thread.content[0].text.value,
+            thread_id=thread_id,
+        )
+
     async def converse(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[MessageData]:
@@ -289,24 +310,10 @@ class Assistant(AssistantProtocol):  # pylint: disable=too-many-instance-attribu
         else:
             await self.prompt(user_input, thread_id)
 
-        messages = self.client.beta.threads.messages.list(
-            thread_id=thread_id, order="asc", after=self.last_message_id or NOT_GIVEN
-        ).data
-
-        last_message_in_thread = messages[-1]
-
-        if last_message_in_thread.id == self.last_message_id:
-            raise NoResponseError
-
-        self.last_message_id = last_message_in_thread.id
-
-        return MessageData(
-            text_content=last_message_in_thread.content[0].text.value,
-            thread_id=thread_id,
-        )
+        return self.get_last_message(thread_id)
 
 
-class Completion(AssistantProtocol, MemoryMixin):
+class Completion(MemoryMixin):
     """
     Encapsulates interactions with the OpenAI Chat Completion API.
 

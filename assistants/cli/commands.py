@@ -7,12 +7,13 @@ from typing import Optional, Protocol
 import pyperclip
 
 from assistants.ai.memory import MemoryMixin
+from assistants.ai.openai import Assistant
 from assistants.ai.types import AssistantProtocol, MessageData
 from assistants.cli import output
 from assistants.cli.constants import IO_INSTRUCTIONS
 from assistants.cli.selector import TerminalSelector
 from assistants.cli.terminal import clear_screen
-from assistants.cli.utils import get_text_from_default_editor
+from assistants.cli.utils import get_text_from_default_editor, highlight_code_blocks
 from assistants.user_data import threads_table
 from assistants.user_data.sqlite_backend import conversations_table
 
@@ -23,7 +24,7 @@ class IoEnviron:
     Environment variables for the input/output loop.
     """
 
-    assistant: AssistantProtocol | MemoryMixin
+    assistant: AssistantProtocol | MemoryMixin | Assistant
     last_message: Optional[MessageData] = None
     thread_id: Optional[str] = None
 
@@ -235,8 +236,16 @@ class SelectThread(Command):
         else:
             asyncio.run(environ.assistant.start())
 
-        environ.last_message = None
-        output.inform(f"Selected thread {thread_id}")
+        output.inform(f"Selected thread '{thread_id}'")
+
+        last_message = environ.assistant.get_last_message(thread_id)
+        environ.last_message = last_message
+
+        if last_message:
+            output.default(highlight_code_blocks(last_message.text_content))
+            output.new_line(2)
+        else:
+            output.warn("No last message found in thread")
 
 
 select_thread: Command = SelectThread()

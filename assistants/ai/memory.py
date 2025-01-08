@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from assistants.ai.types import MessageDict
+from assistants.ai.types import MessageDict, MessageData
 from assistants.user_data.sqlite_backend import conversations_table
 from assistants.user_data.sqlite_backend.conversations import Conversation
 
@@ -75,4 +75,18 @@ class MemoryMixin:
                 conversation=json.dumps(self.memory),
                 last_updated=datetime.now(),
             )
+        )
+
+    def get_last_message(self, thread_id: str) -> Optional[MessageData]:
+        """
+        Get the last message from the conversation or None if no message exists.
+        Conversation must have already been loaded.
+
+        :param thread_id: Not used; required by protocol
+        :return: MessageData with the last message and current conversation_id.
+        """
+        if not self.memory:
+            return None
+        return MessageData(
+            text_content=self.memory[-1]["content"], thread_id=self.conversation_id
         )
