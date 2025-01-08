@@ -86,12 +86,13 @@ def io_loop(
         user_input = user_input.strip()
 
         # Handle commands
-        command = COMMAND_MAP.get(user_input.lower())
+        c, *args = user_input.split(" ")
+        command = COMMAND_MAP.get(c.lower())
         if command:
             logger.debug(
                 f"Command input: {user_input}; Command: {command.__class__.__name__}"
             )
-            command(environ)
+            command(environ, *args)
             continue
 
         asyncio.run(converse(user_input, environ))

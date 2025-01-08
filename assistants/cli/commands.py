@@ -34,7 +34,7 @@ class Command(Protocol):
     Command protocol for the input/output loop.
     """
 
-    def __call__(self, environ: IoEnviron) -> None:
+    def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command.
 
@@ -48,7 +48,7 @@ class Editor(Command):
     Command to open the default text editor.
     """
 
-    def __call__(self, environ: IoEnviron) -> None:
+    def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to open the default text editor.
 
@@ -97,7 +97,7 @@ class CopyResponse(Command):
 
         return previous_response
 
-    def __call__(self, environ: IoEnviron) -> None:
+    def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to copy the response to the clipboard.
 
@@ -121,7 +121,7 @@ class CopyCodeBlocks(CopyResponse):
     Command to copy the code blocks from the response to the clipboard.
     """
 
-    def __call__(self, environ: IoEnviron) -> None:
+    def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to copy the code blocks from the response to the clipboard.
 
@@ -133,23 +133,32 @@ class CopyCodeBlocks(CopyResponse):
             output.warn("No previous message to copy from.")
             return
 
-        code_blocks = re.split(r"(```.*?```)", previous_response, flags=re.DOTALL)
-
-        code_only = [
+        code_blocks = [
             "\n".join(block.split("\n")[1:-1]).strip()
-            for block in code_blocks
+            for block in re.split(r"(```.*?```)", previous_response, flags=re.DOTALL)
             if block.startswith("```")
         ]
 
-        if not code_only:
+        if args:
+            try:
+                code_blocks = [code_blocks[int(str(args[0]))]]
+            except (ValueError, IndexError):
+                output.fail(
+                    "Pass the index of the code block to copy, or no arguments to copy all code blocks."
+                )
+                return
+
+        if not code_blocks:
             output.warn("No codeblocks in previous message!")
             return
 
-        all_code = "\n\n".join(code_only)
+        all_code = "\n\n".join(code_blocks)
 
         self.copy_to_clipboard(all_code)
 
-        output.inform("Copied code blocks to clipboard")
+        output.inform(
+            f"Copied code block{'s' if not args and len(code_blocks) > 1 else ''} to clipboard"
+        )
 
 
 copy_code_blocks: Command = CopyCodeBlocks()
@@ -160,7 +169,7 @@ class PrintUsage(Command):
     Command to print the usage instructions.
     """
 
-    def __call__(self, environ: IoEnviron) -> None:
+    def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to print the usage instructions.
 
@@ -177,7 +186,7 @@ class NewThread(Command):
     Command to start a new thread.
     """
 
-    def __call__(self, environ: IoEnviron) -> None:
+    def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to start a new thread.
 
@@ -197,7 +206,7 @@ class SelectThread(Command):
     Command to select a thread.
     """
 
-    def __call__(self, environ: IoEnviron) -> None:
+    def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to select a thread.
 
