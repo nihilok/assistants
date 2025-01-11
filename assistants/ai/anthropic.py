@@ -12,7 +12,7 @@ from anthropic import AsyncAnthropic
 
 from assistants.ai.memory import MemoryMixin
 from assistants.ai.types import MessageData
-from assistants.config.environment import ANTHROPIC_API_KEY
+from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
 
 
@@ -36,7 +36,7 @@ class Claude(MemoryMixin):
         model: str,
         max_tokens: int = 1024,
         max_memory: int = 50,
-        api_key: Optional[str] = ANTHROPIC_API_KEY,
+        api_key: Optional[str] = environment.ANTHROPIC_API_KEY,
     ) -> None:
         """
         Initialize the Claude instance.

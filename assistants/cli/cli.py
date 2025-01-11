@@ -44,10 +44,10 @@ Type '/help' (or '/h') for a list of commands.
     elif args.input_file:
         # Read the initial prompt from a file
         try:
-            with open(args.f, "r") as file:  # pylint: disable=unspecified-encoding
+            with open(args.input_file, "r") as file:  # pylint: disable=unspecified-encoding
                 initial_input = file.read()
         except FileNotFoundError:
-            output.fail(f"Error: The file '{args.f}' was not found.")
+            output.fail(f"Error: The file '{args.input_file}' was not found.")
             sys.exit(1)
 
     # Create assistant and get the last thread if one exists

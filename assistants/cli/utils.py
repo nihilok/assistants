@@ -74,7 +74,7 @@ async def create_assistant_and_thread(
     args: Namespace,
 ) -> tuple[AssistantProtocol, Optional[ThreadData]]:
     if args.code:
-        if environment.CODE_MODEL == "o1-mini":
+        if environment.CODE_MODEL.startswith("o1"):
             # Create a completion model for code reasoning (slower and more expensive)
             assistant = Completion(model=environment.CODE_MODEL)
         elif environment.CODE_MODEL.startswith("claude-"):

@@ -133,9 +133,14 @@ class CopyCodeBlocks(CopyResponse):
             output.warn("No previous message to copy from.")
             return
 
+        split_code = re.split(r"(```.*?```)", previous_response, flags=re.DOTALL)
+
+        pattern = r"```(?:[a-zA-Z]+(\n))?(\n)?([\s\S]*?)\n?```"
+        replacement = r"\1\2\3\2\1"
+
         code_blocks = [
-            "\n".join(block.split("\n")[1:-1]).strip()
-            for block in re.split(r"(```.*?```)", previous_response, flags=re.DOTALL)
+            re.sub(pattern, replacement, block)
+            for block in split_code
             if block.startswith("```")
         ]
 
@@ -152,7 +157,17 @@ class CopyCodeBlocks(CopyResponse):
             output.warn("No codeblocks in previous message!")
             return
 
-        all_code = "\n\n".join(code_blocks)
+        if code_blocks[0].startswith("\n"):
+            code_blocks[0] = code_blocks[0][1:]  # Remove the leading newline
+        if code_blocks[-1].endswith("\n"):
+            code_blocks[-1] = code_blocks[-1][:-1] # Remove the trailing newline
+
+        if len(code_blocks) > 1:
+            for i, block in enumerate(code_blocks[:-1]):
+                if not block.endswith("\n"):
+                    code_blocks[i] = block + "\n"
+
+        all_code = "".join(code_blocks)
 
         self.copy_to_clipboard(all_code)
 

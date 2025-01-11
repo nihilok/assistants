@@ -2,7 +2,7 @@ import asyncio
 import os
 import sys
 
-from assistants.config.environment import TELEGRAM_BOT_TOKEN
+from assistants.config import environment
 from assistants.log import logger
 from assistants.telegram_ui.tg_bot import async_setup, setup_and_run
 from assistants.user_data.sqlite_backend import init_db
@@ -17,7 +17,7 @@ except ImportError:
 
 
 def main():
-    if TELEGRAM_BOT_TOKEN is None:
+    if environment.TELEGRAM_BOT_TOKEN is None:
         print("Please set the TG_BOT_TOKEN environment variable.")
         return
 

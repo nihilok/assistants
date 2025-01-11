@@ -14,12 +14,7 @@ from telegram.ext import (
 )
 
 from assistants.ai.openai import Assistant
-from assistants.config.environment import (
-    ASSISTANT_INSTRUCTIONS,
-    DEFAULT_MODEL,
-    OPENAI_API_KEY,
-    ASSISTANT_NAME,
-)
+from assistants.config import environment
 from assistants.log import logger
 from assistants.user_data import threads_table
 from assistants.user_data.sqlite_backend.telegram_chat_data import (
@@ -33,11 +28,11 @@ from assistants.user_data.interfaces.telegram_chat_data import (
 chat_data = TelegramSqliteUserData()
 
 assistant = Assistant(
-    name=ASSISTANT_NAME,
-    model=DEFAULT_MODEL,
-    instructions=ASSISTANT_INSTRUCTIONS,
+    name=environment.ASSISTANT_NAME,
+    model=environment.DEFAULT_MODEL,
+    instructions=environment.ASSISTANT_INSTRUCTIONS,
     tools=[{"type": "code_interpreter"}],
-    api_key=OPENAI_API_KEY,
+    api_key=environment.OPENAI_API_KEY,
 )
 
 
