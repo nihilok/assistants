@@ -27,6 +27,7 @@ class IoEnviron:
     assistant: AssistantProtocol | MemoryMixin | Assistant
     last_message: Optional[MessageData] = None
     thread_id: Optional[str] = None
+    user_input: Optional[str] = None
 
 
 class Command(Protocol):

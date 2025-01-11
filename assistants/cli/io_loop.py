@@ -42,7 +42,7 @@ def _(_event):
     clear_screen()
 
 
-def io_loop(
+async def io_loop_async(
     assistant: AssistantProtocol | MemoryMixin,
     initial_input: str = "",
     last_message: Optional[Message] = None,
@@ -75,15 +75,16 @@ def io_loop(
         initial_input or (user_input := get_user_input()).lower() not in EXIT_COMMANDS
     ):
         output.reset()
+        environ.user_input = None
         if initial_input:
             output.user_input(initial_input)
             user_input = initial_input
             initial_input = ""  # Otherwise, the initial input will be repeated in the next iteration
 
-        if not user_input.strip():
-            continue
-
         user_input = user_input.strip()
+
+        if not user_input:
+            continue
 
         # Handle commands
         c, *args = user_input.split(" ")
@@ -93,19 +94,20 @@ def io_loop(
                 f"Command input: {user_input}; Command: {command.__class__.__name__}"
             )
             command(environ, *args)
+            if environ.user_input:
+                initial_input = environ.user_input
             continue
 
-        asyncio.run(converse(user_input, environ))
+        environ.user_input = user_input
+        asyncio.run(converse(environ))
 
 
 async def converse(
-    user_input: str = "",
-    environ: IoEnviron = None,
+    environ: IoEnviron,
 ):
     """
     Handle the conversation with the assistant.
 
-    :param user_input: The user's input message.
     :param environ: The environment variables manipulated on each
     iteration of the input/output loop.
     """
@@ -114,7 +116,7 @@ async def converse(
     thread_id = environ.thread_id
 
     message = await assistant.converse(
-        user_input, last_message.thread_id if last_message else thread_id
+        environ.user_input, last_message.thread_id if last_message else thread_id
     )
 
     if (
@@ -138,7 +140,9 @@ async def converse(
         and isinstance(assistant, Assistant)
     ):
         environ.thread_id = environ.last_message.thread_id
-        await save_thread_data(environ.thread_id, assistant.assistant_id, user_input)
+        await save_thread_data(
+            environ.thread_id, assistant.assistant_id, environ.user_input
+        )
     elif not isinstance(assistant, Assistant):
         await assistant.save_conversation()
         environ.thread_id = assistant.conversation_id
