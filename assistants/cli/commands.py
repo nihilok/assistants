@@ -1,4 +1,3 @@
-import asyncio
 import json
 import re
 from dataclasses import dataclass
@@ -35,7 +34,7 @@ class Command(Protocol):
     Command protocol for the input/output loop.
     """
 
-    def __call__(self, environ: IoEnviron, *args) -> None:
+    async def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command.
 
@@ -49,7 +48,7 @@ class Editor(Command):
     Command to open the default text editor.
     """
 
-    def __call__(self, environ: IoEnviron, *args) -> None:
+    async def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to open the default text editor.
 
@@ -98,7 +97,7 @@ class CopyResponse(Command):
 
         return previous_response
 
-    def __call__(self, environ: IoEnviron, *args) -> None:
+    async def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to copy the response to the clipboard.
 
@@ -122,7 +121,7 @@ class CopyCodeBlocks(CopyResponse):
     Command to copy the code blocks from the response to the clipboard.
     """
 
-    def __call__(self, environ: IoEnviron, *args) -> None:
+    async def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to copy the code blocks from the response to the clipboard.
 
@@ -170,7 +169,7 @@ class PrintUsage(Command):
     Command to print the usage instructions.
     """
 
-    def __call__(self, environ: IoEnviron, *args) -> None:
+    async def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to print the usage instructions.
 
@@ -187,7 +186,7 @@ class NewThread(Command):
     Command to start a new thread.
     """
 
-    def __call__(self, environ: IoEnviron, *args) -> None:
+    async def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to start a new thread.
 
@@ -195,7 +194,7 @@ class NewThread(Command):
         """
         environ.thread_id = None
         environ.last_message = None
-        asyncio.run(environ.assistant.start())
+        await environ.assistant.start()
         clear_screen()
 
 
@@ -207,21 +206,22 @@ class SelectThread(Command):
     Command to select a thread.
     """
 
-    def __call__(self, environ: IoEnviron, *args) -> None:
+    async def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to select a thread.
 
         :param environ: The environment variables for the input/output loop.
         """
         if isinstance(environ.assistant, MemoryMixin):
-            threads = asyncio.run(conversations_table.get_all_conversations())
+            threads = await conversations_table.get_all_conversations()
+
             threads_output = [
                 f"{thread.last_updated} | {thread.id} | {json.loads(thread.conversation)[0]['content']}"
                 for i, thread in enumerate(threads)
             ]
         else:
-            threads = asyncio.run(
-                threads_table.get_by_assistant_id(environ.assistant.assistant_id)
+            threads = await threads_table.get_by_assistant_id(
+                environ.assistant.assistant_id
             )
             threads_output = [
                 f"{thread.last_run_dt} | {thread.thread_id} | {thread.initial_prompt}"
@@ -242,9 +242,9 @@ class SelectThread(Command):
         environ.thread_id = thread_id
 
         if isinstance(environ.assistant, MemoryMixin):
-            asyncio.run(environ.assistant.load_conversation(thread_id))
+            await environ.assistant.load_conversation(thread_id)
         else:
-            asyncio.run(environ.assistant.start())
+            await environ.assistant.start()
 
         output.inform(f"Selected thread '{thread_id}'")
 

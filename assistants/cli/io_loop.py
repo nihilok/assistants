@@ -59,7 +59,7 @@ def _(_event):
 
 def get_user_input() -> str:
     """Get user input from interactive/styled prompt (prompt_toolkit)."""
-    return prompt(PROMPT, style=config.style, history=history)
+    return prompt(PROMPT, style=config.style, history=history, in_thread=True)
 
 
 async def io_loop_async(
@@ -103,7 +103,7 @@ async def io_loop_async(
             logger.debug(
                 f"Command input: {user_input}; Command: {command.__class__.__name__}"
             )
-            command(environ, *args)
+            await command(environ, *args)
             if environ.user_input:
                 initial_input = environ.user_input
             continue
