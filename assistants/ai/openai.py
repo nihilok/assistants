@@ -123,7 +123,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         :return: The generated hash.
         """
         return hashlib.sha256(
-            f"{self.instructions}{self.model}{self.tools}".encode()
+            f"{self.name}{self.instructions}{self.model}{self.tools}".encode()
         ).hexdigest()
 
     async def load_or_create_assistant(self):

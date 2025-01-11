@@ -2,12 +2,16 @@ import json
 
 import aiosqlite
 
-from assistants.telegram_ui.user_data import ChatHistory, NotAuthorized, UserData
+from assistants.user_data.interfaces.telegram_chat_data import (
+    ChatHistory,
+    NotAuthorized,
+    UserData,
+)
 
 
 class TelegramSqliteUserData(UserData):
     async def create_db(self):
-        async with aiosqlite.connect(self.DB) as db:
+        async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """\
                 CREATE TABLE IF NOT EXISTS authorised_chats (
@@ -157,3 +161,6 @@ class TelegramSqliteUserData(UserData):
                 """
             )
             await db.commit()
+
+
+telegram_data = TelegramSqliteUserData()

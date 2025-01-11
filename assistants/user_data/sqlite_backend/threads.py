@@ -73,32 +73,25 @@ class ThreadsTable:
             for row in rows:
                 results.append(ThreadData(*row))
 
+    async def save_thread(
+        self, thread_id: str, assistant_id: str, initial_prompt: Optional[str] = None
+    ) -> None:
+        async with aiosqlite.connect(self.db_path) as conn:
+            # Select the initial prompt for the thread_id if it exists
+            async with await conn.execute(
+                f"SELECT initial_prompt FROM {TABLE_NAME} WHERE thread_id = '{thread_id}';"
+            ) as cursor:
+                result = await cursor.fetchone()
+                initial_prompt = result[0] if result else initial_prompt
+            await conn.execute(
+                f"REPLACE INTO {TABLE_NAME} VALUES (?, ?, ?, ?);",
+                (thread_id, assistant_id, datetime.now().isoformat(), initial_prompt),
+            )
+            await conn.commit()
+
 
 threads_table = ThreadsTable()
 
 
 async def get_last_thread_for_assistant(assistant_id: str):
-    async with aiosqlite.connect(DB_PATH) as db:
-        async with await db.execute(
-            f"SELECT * FROM {TABLE_NAME} WHERE assistant_id = '{assistant_id}'\
-            ORDER BY last_run_dt DESC LIMIT 1;"
-        ) as cursor:
-            result = await cursor.fetchone()
-            if result:
-                return ThreadData(*result)
-        return None
-
-
-async def save_thread_data(thread_id: str, assistant_id: str, user_input: str):
-    async with aiosqlite.connect(DB_PATH) as db:
-        # select the initial prompt for the thread_id if it exists
-        async with await db.execute(
-            f"SELECT initial_prompt FROM {TABLE_NAME} WHERE thread_id = '{thread_id}';"
-        ) as cursor:
-            result = await cursor.fetchone()
-            initial_prompt = result[0] if result else user_input
-        await db.execute(
-            f"REPLACE INTO {TABLE_NAME} VALUES (?, ?, ?, ?);",
-            (thread_id, assistant_id, datetime.now().isoformat(), initial_prompt),
-        )
-        await db.commit()
+    await threads_table.get_by_assistant_id(assistant_id, limit=1)

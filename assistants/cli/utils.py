@@ -3,7 +3,7 @@ import re
 import subprocess
 import tempfile
 from argparse import Namespace
-from typing import Optional
+from typing import Optional, cast
 
 from pygments import highlight
 from pygments.formatter import Formatter
@@ -77,7 +77,7 @@ async def create_assistant_and_thread(
         if environment.CODE_MODEL == "o1-mini":
             # Create a completion model for code reasoning (slower and more expensive)
             assistant = Completion(model=environment.CODE_MODEL)
-        elif environment.CODE_MODEL == "claude-3-5-sonnet-latest":
+        elif environment.CODE_MODEL.startswith("claude-"):
             # Create an Anthropic assistant for code reasoning
             assistant = Claude(model=environment.CODE_MODEL)
         else:
@@ -87,13 +87,24 @@ async def create_assistant_and_thread(
             await assistant.start()
     else:
         # Create a default assistant
+        if args.instructions:
+            try:
+                with open(args.instructions, "r") as instructions_file:
+                    instructions_text = instructions_file.read()
+            except FileNotFoundError:
+                raise ConfigError(f"Instructions file not found: '{args.instructions}'")
+        else:
+            instructions_text = environment.ASSISTANT_INSTRUCTIONS
+
         assistant = Assistant(
-            name="AI Assistant",
+            name=environment.ASSISTANT_NAME,
             model=environment.DEFAULT_MODEL,
-            instructions=args.instructions or environment.ASSISTANT_INSTRUCTIONS,
+            instructions=instructions_text,
             tools=[{"type": "code_interpreter"}],
         )
         await assistant.start()
         thread = await get_last_thread_for_assistant(assistant.assistant_id)
+
+    assistant = cast(AssistantProtocol, assistant)
 
     return assistant, thread

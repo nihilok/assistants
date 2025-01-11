@@ -20,7 +20,7 @@ from assistants.cli.terminal import clear_screen
 from assistants.cli.utils import highlight_code_blocks
 from assistants.config.file_management import CONFIG_DIR
 from assistants.log import logger
-from assistants.user_data.sqlite_backend.threads import save_thread_data
+from assistants.user_data.sqlite_backend.threads import threads_table
 
 
 # Constants and Configuration
@@ -150,7 +150,7 @@ async def converse(
         and isinstance(assistant, Assistant)
     ):
         environ.thread_id = environ.last_message.thread_id
-        await save_thread_data(
+        await threads_table.save_thread_data(
             environ.thread_id, assistant.assistant_id, environ.user_input
         )
     elif isinstance(assistant, MemoryMixin):

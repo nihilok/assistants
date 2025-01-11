@@ -18,14 +18,22 @@ from assistants.config.environment import (
     ASSISTANT_INSTRUCTIONS,
     DEFAULT_MODEL,
     OPENAI_API_KEY,
+    ASSISTANT_NAME,
 )
-from assistants.telegram_ui.sqlite_user_data import TelegramSqliteUserData
-from assistants.telegram_ui.user_data import ChatHistory, NotAuthorized
+from assistants.log import logger
+from assistants.user_data import threads_table
+from assistants.user_data.sqlite_backend.telegram_chat_data import (
+    TelegramSqliteUserData,
+)
+from assistants.user_data.interfaces.telegram_chat_data import (
+    ChatHistory,
+    NotAuthorized,
+)
 
-user_data = TelegramSqliteUserData()
+chat_data = TelegramSqliteUserData()
 
 assistant = Assistant(
-    name=os.getenv("ASSISTANT_NAME"),
+    name=ASSISTANT_NAME,
     model=DEFAULT_MODEL,
     instructions=ASSISTANT_INSTRUCTIONS,
     tools=[{"type": "code_interpreter"}],
@@ -37,9 +45,9 @@ def restricted_access(f):
     @wraps(f)
     async def wrapper(update: Update, *args, **kwargs):
         try:
-            await user_data.check_chat_authorised(update.effective_chat.id)
+            await chat_data.check_chat_authorised(update.effective_chat.id)
         except NotAuthorized:
-            await user_data.check_user_authorised(update.effective_user.id)
+            await chat_data.check_user_authorised(update.effective_user.id)
 
         return await f(update, *args, **kwargs)
 
@@ -49,7 +57,7 @@ def restricted_access(f):
 def requires_superuser(f):
     @wraps(f)
     async def wrapper(update: Update, *args, **kwargs):
-        await user_data.check_superuser(update.effective_user.id)
+        await chat_data.check_superuser(update.effective_user.id)
 
         return await f(update, *args, **kwargs)
 
@@ -73,7 +81,7 @@ def requires_reply_to_message(f):
 @requires_superuser
 @requires_reply_to_message
 async def promote_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await user_data.promote_superuser(update.message.reply_to_message.from_user.id)
+    await chat_data.promote_superuser(update.message.reply_to_message.from_user.id)
     await context.bot.send_message(
         chat_id=update.effective_chat.id, text="User promoted"
     )
@@ -82,7 +90,7 @@ async def promote_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @requires_superuser
 @requires_reply_to_message
 async def demote_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await user_data.demote_superuser(update.message.reply_to_message.from_user.id)
+    await chat_data.demote_superuser(update.message.reply_to_message.from_user.id)
     await context.bot.send_message(
         chat_id=update.effective_chat.id, text="User demoted"
     )
@@ -90,7 +98,7 @@ async def demote_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @requires_superuser
 async def authorise_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await user_data.authorise_chat(update.effective_chat.id)
+    await chat_data.authorise_chat(update.effective_chat.id)
     await context.bot.send_message(
         chat_id=update.effective_chat.id, text="Chat authorised"
     )
@@ -99,7 +107,7 @@ async def authorise_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @requires_superuser
 @requires_reply_to_message
 async def authorise_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await user_data.authorise_chat(update.message.reply_to_message.from_user.id)
+    await chat_data.authorise_chat(update.message.reply_to_message.from_user.id)
     await context.bot.send_message(
         chat_id=update.effective_chat.id, text="User authorised"
     )
@@ -107,7 +115,7 @@ async def authorise_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @requires_superuser
 async def deauthorise_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await user_data.deauthorise_chat(update.effective_chat.id)
+    await chat_data.deauthorise_chat(update.effective_chat.id)
     await context.bot.send_message(
         chat_id=update.effective_chat.id, text="Chat de-authorised"
     )
@@ -116,7 +124,7 @@ async def deauthorise_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @requires_superuser
 @requires_reply_to_message
 async def deauthorise_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await user_data.deauthorise_user(update.message.reply_to_message.from_user.id)
+    await chat_data.deauthorise_user(update.message.reply_to_message.from_user.id)
     await context.bot.send_message(
         chat_id=update.effective_chat.id, text="User de-authorised"
     )
@@ -124,7 +132,7 @@ async def deauthorise_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @restricted_access
 async def new_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await user_data.clear_last_thread_id(update.effective_chat.id)
+    await chat_data.clear_last_thread_id(update.effective_chat.id)
     assistant.last_message = None
     await context.bot.send_message(
         update.effective_chat.id, "Conversation history cleared."
@@ -133,9 +141,9 @@ async def new_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @restricted_access
 async def toggle_auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_history = await user_data.get_chat_history(update.effective_chat.id)
+    chat_history = await chat_data.get_chat_history(update.effective_chat.id)
     result = "OFF" if chat_history.auto_reply else "ON"
-    await user_data.set_auto_reply(
+    await chat_data.set_auto_reply(
         update.effective_chat.id, not chat_history.auto_reply
     )
     await context.bot.send_message(
@@ -145,7 +153,7 @@ async def toggle_auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @restricted_access
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    existing_chat = await user_data.get_chat_history(update.effective_chat.id)
+    existing_chat = await chat_data.get_chat_history(update.effective_chat.id)
     message_text = update.message.text
     if not existing_chat.auto_reply:
         bot_id = context.bot.id
@@ -162,15 +170,18 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     response_message = await assistant.converse(message_text, existing_chat.thread_id)
 
     if not existing_chat.thread_id:
-        await user_data.save_chat_history(
+        await chat_data.save_chat_history(
             ChatHistory(
                 chat_id=update.effective_chat.id,
                 thread_id=response_message.thread_id,
                 auto_reply=existing_chat.auto_reply,
             )
         )
+        await threads_table.save_thread(
+            response_message.thread_id, assistant.assistant_id, message_text
+        )
 
-    response = response_message.content[0].text.value
+    response = response_message.text_content
 
     response_parts = response.split("```")
 
@@ -220,13 +231,19 @@ def build_bot(token: str) -> Application:
     application.add_handler(CommandHandler("auto_reply", toggle_auto_reply))
     application.add_handler(CommandHandler("image", generate_image))
     application.add_handler(MessageHandler(filters.TEXT, message_handler))
+    logger.info("Setup complete!")
     return application
 
 
 def run_polling(application: Application):
+    logger.info("Telegram bot is running...")
     application.run_polling()
 
 
-if __name__ == "__main__":
-    BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
-    run_polling(build_bot(BOT_TOKEN))
+async def async_setup():
+    await assistant.start()
+
+
+def setup_and_run(token: str):
+    application = build_bot(token)
+    run_polling(application)

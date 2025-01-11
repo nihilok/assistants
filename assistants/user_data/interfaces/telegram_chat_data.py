@@ -19,6 +19,10 @@ class ChatHistory(BaseModel):
 class UserData(ABC):
     DB = DB_PATH
 
+    def __init__(self, db_path: Optional[str] = None):
+        if db_path is None:
+            self.db_path = self.DB
+
     @abstractmethod
     async def create_db(self):
         pass

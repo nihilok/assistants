@@ -13,3 +13,5 @@ IMAGE_MODEL = os.environ.get("IMAGE_MODEL", "dall-e-3")
 ASSISTANT_INSTRUCTIONS = os.environ.get(
     "ASSISTANT_INSTRUCTIONS", "You are a helpful assistant."
 )
+ASSISTANT_NAME = os.environ.get("ASSISTANT_NAME", "DefaultAssistant")
+TELEGRAM_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", None)
