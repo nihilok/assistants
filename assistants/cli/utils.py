@@ -12,6 +12,7 @@ from pygments.lexers import get_lexer_by_name
 
 from assistants.ai.anthropic import Claude
 from assistants.ai.openai import Assistant, Completion
+from assistants.ai.types import AssistantProtocol
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
 from assistants.user_data.sqlite_backend.threads import (
@@ -71,7 +72,7 @@ def get_text_from_default_editor(initial_text=None):
 
 async def create_assistant_and_thread(
     args: Namespace,
-) -> tuple[Assistant, Optional[ThreadData]]:
+) -> tuple[AssistantProtocol, Optional[ThreadData]]:
     if args.code:
         if environment.CODE_MODEL == "o1-mini":
             # Create a completion model for code reasoning (slower and more expensive)

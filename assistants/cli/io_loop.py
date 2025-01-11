@@ -2,9 +2,10 @@
 This module contains the main input/output loop for interacting with the assistant.
 """
 import asyncio
+from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 
-from openai.types.beta.threads import Message
 from prompt_toolkit import prompt
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
@@ -12,7 +13,7 @@ from prompt_toolkit.styles import Style
 
 from assistants.ai.memory import MemoryMixin
 from assistants.ai.openai import Assistant
-from assistants.ai.types import AssistantProtocol
+from assistants.ai.types import AssistantProtocol, MessageData
 from assistants.cli import output
 from assistants.cli.commands import COMMAND_MAP, EXIT_COMMANDS, IoEnviron
 from assistants.cli.terminal import clear_screen
@@ -21,19 +22,33 @@ from assistants.config.file_management import CONFIG_DIR
 from assistants.log import logger
 from assistants.user_data.sqlite_backend.threads import save_thread_data
 
+
+# Constants and Configuration
+class PromptStyle(Enum):
+    USER_INPUT = "ansigreen"
+    PROMPT_SYMBOL = "ansibrightgreen"
+
+
+INPUT_CLASSNAME = "input"
+
+
+@dataclass
+class PromptConfig:
+    style: Style = Style.from_dict(
+        {
+            "": PromptStyle.USER_INPUT.value,
+            INPUT_CLASSNAME: PromptStyle.PROMPT_SYMBOL.value,
+        }
+    )
+    prompt_symbol: str = ">>>"
+    history_file: str = f"{CONFIG_DIR}/history"
+
+
+# Setup
 bindings = KeyBindings()
-
-# Prompt history
-history = FileHistory(f"{CONFIG_DIR}/history")
-
-# Styling for the prompt_toolkit prompt
-style = Style.from_dict(
-    {
-        "": "ansigreen",  # green user input
-        "input": "ansibrightgreen",  # bright green prompt symbol
-    },
-)
-PROMPT = [("class:input", ">>> ")]  # prompt symbol
+config = PromptConfig()
+history = FileHistory(config.history_file)
+PROMPT = [(f"class:{INPUT_CLASSNAME}", f"{config.prompt_symbol} ")]
 
 
 # Bind CTRL+L to clear the screen
@@ -42,10 +57,15 @@ def _(_event):
     clear_screen()
 
 
+def get_user_input() -> str:
+    """Get user input from interactive/styled prompt (prompt_toolkit)."""
+    return prompt(PROMPT, style=config.style, history=history)
+
+
 async def io_loop_async(
     assistant: AssistantProtocol | MemoryMixin,
     initial_input: str = "",
-    last_message: Optional[Message] = None,
+    last_message: Optional[MessageData] = None,
     thread_id: Optional[str] = None,
 ):
     """
@@ -56,16 +76,6 @@ async def io_loop_async(
     :param last_message: The last message in the conversation thread.
     :param thread_id: The ID of the conversation thread.
     """
-    user_input = ""
-
-    def get_user_input() -> str:
-        """
-        Get user input from the prompt.
-
-        :return: The user input as a string.
-        """
-        return prompt(PROMPT, style=style, history=history)
-
     environ = IoEnviron(
         assistant=assistant,
         last_message=last_message,
@@ -99,7 +109,7 @@ async def io_loop_async(
             continue
 
         environ.user_input = user_input
-        asyncio.run(converse(environ))
+        await converse(environ)
 
 
 async def converse(
@@ -143,6 +153,15 @@ async def converse(
         await save_thread_data(
             environ.thread_id, assistant.assistant_id, environ.user_input
         )
-    elif not isinstance(assistant, Assistant):
+    elif isinstance(assistant, MemoryMixin):
         await assistant.save_conversation()
         environ.thread_id = assistant.conversation_id
+
+
+def io_loop(
+    assistant: AssistantProtocol | MemoryMixin,
+    initial_input: str = "",
+    last_message: Optional[MessageData] = None,
+    thread_id: Optional[str] = None,
+):
+    asyncio.run(io_loop_async(assistant, initial_input, last_message, thread_id))

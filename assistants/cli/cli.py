@@ -21,7 +21,7 @@ from assistants.lib.exceptions import ConfigError
 
 def cli():
     """
-    Main function for the Assistant CLI.
+    Main function (entrypoint) for the Assistant CLI.
     """
 
     # Parse command line arguments, if --help is passed, it will exit here
