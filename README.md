@@ -86,6 +86,36 @@ options:
                         slower and more expensive to use.
 ```
 
+There are also a number if commands that can be invoked in the CLI and these are all prefixed with a forward slash (`/`)
+
+```
+$ ai-cli
+Assistant CLI v0.4.9; using 'gpt-4o-mini' model.
+Type '/help' (or '/h') for a list of commands.
+>>> /help
+Commands:
+
+/h,  /help      Show this help message
+/e,  /editor    Open the default editor to compose a prompt
+/i,  /image <prompt>
+                Generate an image from the prompt supplied as args
+                e.g. `/i a dog riding a pony, in the style of Botero`
+/c,  /copy      Copy the previous response to the clipboard
+/cc, /copy-code [i]
+                Copy the code blocks from the previous response to the clipboard
+                (an optional index can be supplied to copy a single code block)
+/n,  /new       Start a new thread and clear the terminal screen
+/t,  /threads:  List all the threads, and select one to continue
+/clear, C-l     Clear the terminal screen without starting a new thread
+
+Press Ctrl+C or Ctrl+D to exit the program
+
+Anything else you type will be sent to the assistant for processing.
+
+>>> /image a dog riding a pony, in the style of Botero
+```
+
+Note: prompt (& command) history is saved in `$ASSISTANTS_CONFIG_DIR/history` (default `~/.config/assistants/history`); responses are not saved here, just user input; this history file is used to provide a prompt history which can be accessed via up and down arrows as with your bash prompt. Bear this file in mind when auditing security as you would with shell history.
 
 ### Telegram Bot
 
@@ -107,9 +137,11 @@ In addition to `ASSISTANT_INSTRUCTIONS`, other environment variables that can be
 - `ANTHROPIC_API_KEY_NAME` - The name of the API key environment variable to use for authentication with Anthropic models (defaults to `ANTHROPIC_API_KEY`)
 - `DEFAULT_MODEL` - The default model to use for OpenAI API requests (defaults to `gpt-4o-mini`)
 - `CODE_MODEL` - more advanced reasoning model to use for OpenAI API requests (defaults to `o1-mini`)
+- `CLAUDE_MAX_TOKENS` - the maximum number of tokens claude-* models may use for their responses
 - `ASSISTANTS_DATA_DIR` - The directory to store user data (defaults to `~/.local/share/assistants`)
 - `ASSISTANTS_CONFIG_DIR` - The directory to store configuration files (defaults to `~/.config/assistants`)
 - `TG_BOT_TOKEN` - The Telegram bot token if using the Telegram UI
+- `OPEN_IMAGES_IN_BROWSER` - (cli) default `true`; can be set to `0` or `false` to turn off opening images by default
 
 ## Contributing
 
