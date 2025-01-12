@@ -21,6 +21,7 @@ from assistants.ai.types import MessageData, MessageDict
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError, NoResponseError
 from assistants.log import logger
+from assistants.user_data import threads_table
 from assistants.user_data.sqlite_backend.assistants import (
     get_assistant_data,
     save_assistant_id,
@@ -76,6 +77,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         self._config_hash = None
         self.assistant = None
         self.last_message = None
+        self.last_prompt = None
 
     async def start(self):
         """
@@ -238,6 +240,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         :param thread_id: Optional ID of the thread to continue.
         :return: The run object.
         """
+        self.last_prompt = prompt
         if thread_id is None:
             thread = self.start_thread(prompt)
             run = self.run_thread(thread)
@@ -261,6 +264,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         :param prompt: The image prompt.
         :return: The URL of the generated image.
         """
+        self.last_prompt = prompt
         response = self.client.images.generate(
             model=environment.IMAGE_MODEL,
             prompt=prompt,
@@ -312,6 +316,16 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
             await self.prompt(user_input, thread_id)
 
         return self.get_last_message(thread_id)
+
+    async def save_conversation_state(self) -> str:
+        """
+        Save the state of the conversation.
+        :return: The thread ID of the conversation.
+        """
+        await threads_table.save_thread(
+            self.last_message.thread_id, self.assistant_id, self.last_prompt
+        )
+        return self.last_message.thread_id
 
 
 class Completion(MemoryMixin):

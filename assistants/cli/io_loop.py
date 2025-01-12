@@ -13,7 +13,6 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 
 from assistants.ai.memory import MemoryMixin
-from assistants.ai.openai import Assistant
 from assistants.ai.types import AssistantProtocol
 from assistants.cli import output
 from assistants.cli.commands import COMMAND_MAP, EXIT_COMMANDS, IoEnviron
@@ -21,7 +20,6 @@ from assistants.cli.terminal import clear_screen
 from assistants.cli.utils import highlight_code_blocks
 from assistants.config.file_management import CONFIG_DIR
 from assistants.log import logger
-from assistants.user_data.sqlite_backend.threads import threads_table
 
 
 # Constants and Configuration
@@ -121,7 +119,7 @@ async def converse(
     """
     assistant = environ.assistant
     last_message = environ.last_message
-    thread_id = environ.thread_id
+    thread_id = environ.thread_id  # Could be None; a new thread will be created if so.
 
     message = await assistant.converse(
         environ.user_input, last_message.thread_id if last_message else thread_id
@@ -140,20 +138,10 @@ async def converse(
 
     output.default(text)
     output.new_line(2)
-    environ.last_message = message
 
-    if (
-        environ.last_message
-        and not environ.thread_id
-        and isinstance(assistant, Assistant)
-    ):
-        environ.thread_id = environ.last_message.thread_id
-        await threads_table.save_thread(
-            environ.thread_id, assistant.assistant_id, environ.user_input
-        )
-    elif isinstance(assistant, MemoryMixin):
-        await assistant.save_conversation()
-        environ.thread_id = assistant.conversation_id
+    # Set and save the new conversation state for future iterations:
+    environ.last_message = message
+    environ.thread_id = await assistant.save_conversation_state()
 
 
 def io_loop(

@@ -59,9 +59,10 @@ class MemoryMixin:
         self.memory = json.loads(conversation.conversation) if conversation else []
         self.conversation_id = conversation.id if conversation else uuid.uuid4().hex
 
-    async def save_conversation(self):
+    async def save_conversation_state(self) -> str:
         """
         Save the current conversation to the database.
+        :return: The conversation ID.
         """
         if not self.memory:
             return
@@ -76,6 +77,7 @@ class MemoryMixin:
                 last_updated=datetime.now(),
             )
         )
+        return self.conversation_id
 
     def get_last_message(self, thread_id: str) -> Optional[MessageData]:
         """

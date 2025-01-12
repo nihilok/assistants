@@ -63,6 +63,13 @@ class AssistantProtocol(Protocol):
         """
         ...
 
+    def save_conversation_state(self) -> str:
+        """
+        Save the current state of the conversation.
+        :return: The conversation ID/ Thread ID.
+        """
+        ...
+
 
 class MessageDict(TypedDict):
     """
