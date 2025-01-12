@@ -1,7 +1,7 @@
 import json
 import os
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 
 from assistants.cli.constants import CLAUDE_CLI_MAX_TOKENS
 

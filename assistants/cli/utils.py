@@ -17,7 +17,6 @@ from assistants.cli import output
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
 from assistants.user_data.sqlite_backend.threads import (
-    ThreadData,
     get_last_thread_for_assistant,
 )
 

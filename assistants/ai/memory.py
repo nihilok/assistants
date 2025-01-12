@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from assistants.ai.types import MessageDict, MessageData
+from assistants.ai.types import MessageData, MessageDict
 from assistants.user_data.sqlite_backend import conversations_table
 from assistants.user_data.sqlite_backend.conversations import Conversation
 

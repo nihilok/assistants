@@ -3,7 +3,7 @@ import math
 
 
 class TerminalSelector:
-    def __init__(self, items: list[str], title: str ="Please select an item"):
+    def __init__(self, items: list[str], title: str = "Please select an item"):
         self.items = items
         self.title = title
         self.current_position = 0
@@ -26,7 +26,9 @@ class TerminalSelector:
             stdscr.addstr(
                 height - 1,
                 0,
-                self.truncate("Use ↑/↓ arrows to navigate, Enter to select, q to quit", width),
+                self.truncate(
+                    "Use ↑/↓ arrows to navigate, Enter to select, q to quit", width
+                ),
                 curses.A_DIM,
             )
 

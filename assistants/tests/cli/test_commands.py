@@ -1,8 +1,9 @@
 import asyncio
+from unittest.mock import MagicMock, patch
 
 import pyperclip
-from unittest.mock import patch, MagicMock
-from assistants.cli.commands import CopyResponse, CopyCodeBlocks, IoEnviron, output
+
+from assistants.cli.commands import CopyCodeBlocks, CopyResponse, IoEnviron
 
 
 @patch("assistants.cli.commands.pyperclip.copy")

@@ -2,7 +2,7 @@ import json
 import re
 import webbrowser
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Optional, Protocol
 
 import aiofiles
@@ -296,7 +296,6 @@ select_thread: Command = SelectThread()
 
 
 class GenerateImage(Command):
-
     @staticmethod
     async def save_image(image_url: str, prompt: str) -> None:
         """
@@ -326,7 +325,7 @@ class GenerateImage(Command):
     async def __call__(self, environ: IoEnviron, *args) -> None:
         assistant = environ.assistant
         if not isinstance(assistant, Assistant):
-            raise NotImplemented
+            raise NotImplementedError
 
         prompt = " ".join(args)
 

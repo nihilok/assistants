@@ -17,12 +17,12 @@ from assistants.ai.openai import Assistant
 from assistants.config import environment
 from assistants.log import logger
 from assistants.user_data import threads_table
-from assistants.user_data.sqlite_backend.telegram_chat_data import (
-    TelegramSqliteUserData,
-)
 from assistants.user_data.interfaces.telegram_chat_data import (
     ChatHistory,
     NotAuthorized,
+)
+from assistants.user_data.sqlite_backend.telegram_chat_data import (
+    TelegramSqliteUserData,
 )
 
 chat_data = TelegramSqliteUserData()

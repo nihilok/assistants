@@ -5,6 +5,7 @@ Classes:
     - Assistant: Encapsulates interactions with the OpenAI Assistants API.
     - Completion: Encapsulates interactions with the OpenAI Chat Completion API.
 """
+
 import asyncio
 import hashlib
 from typing import Optional

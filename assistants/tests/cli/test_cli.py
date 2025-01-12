@@ -1,5 +1,7 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from assistants.cli.cli import cli
 from assistants.lib.exceptions import ConfigError
 

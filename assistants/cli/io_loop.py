@@ -1,6 +1,7 @@
 """
 This module contains the main input/output loop for interacting with the assistant.
 """
+
 import asyncio
 from dataclasses import dataclass
 from enum import Enum
@@ -13,7 +14,7 @@ from prompt_toolkit.styles import Style
 
 from assistants.ai.memory import MemoryMixin
 from assistants.ai.openai import Assistant
-from assistants.ai.types import AssistantProtocol, MessageData
+from assistants.ai.types import AssistantProtocol
 from assistants.cli import output
 from assistants.cli.commands import COMMAND_MAP, EXIT_COMMANDS, IoEnviron
 from assistants.cli.terminal import clear_screen
