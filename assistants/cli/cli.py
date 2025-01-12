@@ -59,7 +59,7 @@ Type '/help' (or '/h') for a list of commands.
         output.fail(f"Error: {e}")
         sys.exit(1)
 
-    if thread_id is None and args.continue_thread and not args.code:
+    if thread_id is None and args.continue_thread:
         output.warn("Warning: could not read last thread id; starting new thread.")
 
     # IO Loop (takes user input and sends it to the assistant, or parses it as a command,

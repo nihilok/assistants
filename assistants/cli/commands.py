@@ -160,7 +160,7 @@ class CopyCodeBlocks(CopyResponse):
         if code_blocks[0].startswith("\n"):
             code_blocks[0] = code_blocks[0][1:]  # Remove the leading newline
         if code_blocks[-1].endswith("\n"):
-            code_blocks[-1] = code_blocks[-1][:-1] # Remove the trailing newline
+            code_blocks[-1] = code_blocks[-1][:-1]  # Remove the trailing newline
 
         if len(code_blocks) > 1:
             for i, block in enumerate(code_blocks[:-1]):
@@ -247,14 +247,17 @@ class SelectThread(Command):
             output.warn("No threads found.")
             return
 
-        selector = TerminalSelector(threads_output, title="Select a thread to continue...")
+        selector = TerminalSelector(
+            threads_output, title="Select a thread to continue..."
+        )
         result = selector.run()
         if not result:
-            return # No change
+            return  # No change
 
-        thread_id = result.split("|")[1].strip()
+        thread_id = result.split(" | ")[1].strip()
         if thread_id == environ.thread_id:
-            return # No change
+            return  # No change
+
         environ.thread_id = thread_id
 
         if isinstance(environ.assistant, MemoryMixin):

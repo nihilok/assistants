@@ -94,4 +94,6 @@ threads_table = ThreadsTable()
 
 
 async def get_last_thread_for_assistant(assistant_id: str):
-    await threads_table.get_by_assistant_id(assistant_id, limit=1)
+    result = await threads_table.get_by_assistant_id(assistant_id, limit=1)
+    if result:
+        return result[0]

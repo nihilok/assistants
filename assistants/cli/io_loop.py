@@ -65,7 +65,6 @@ def get_user_input() -> str:
 async def io_loop_async(
     assistant: AssistantProtocol | MemoryMixin,
     initial_input: str = "",
-    last_message: Optional[MessageData] = None,
     thread_id: Optional[str] = None,
 ):
     """
@@ -73,12 +72,10 @@ async def io_loop_async(
 
     :param assistant: The assistant instance implementing AssistantProtocol.
     :param initial_input: Initial user input to start the conversation.
-    :param last_message: The last message in the conversation thread.
     :param thread_id: The ID of the conversation thread.
     """
     environ = IoEnviron(
         assistant=assistant,
-        last_message=last_message,
         thread_id=thread_id,
     )
     while (
@@ -161,7 +158,6 @@ async def converse(
 def io_loop(
     assistant: AssistantProtocol | MemoryMixin,
     initial_input: str = "",
-    last_message: Optional[MessageData] = None,
     thread_id: Optional[str] = None,
 ):
-    asyncio.run(io_loop_async(assistant, initial_input, last_message, thread_id))
+    asyncio.run(io_loop_async(assistant, initial_input, thread_id))
