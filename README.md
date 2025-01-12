@@ -90,7 +90,7 @@ There are also a number if commands that can be invoked in the CLI and these are
 
 ```
 $ ai-cli
-Assistant CLI v0.4.9; using 'gpt-4o-mini' model.
+Assistant CLI v0.5.0; using 'gpt-4o-mini' model.
 Type '/help' (or '/h') for a list of commands.
 >>> /help
 Commands:
