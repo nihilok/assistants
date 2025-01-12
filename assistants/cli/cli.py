@@ -44,7 +44,9 @@ Type '/help' (or '/h') for a list of commands.
     elif args.input_file:
         # Read the initial prompt from a file
         try:
-            with open(args.input_file, "r") as file:  # pylint: disable=unspecified-encoding
+            with open(  # pylint: disable=unspecified-encoding
+                args.input_file, "r"
+            ) as file:
                 initial_input = file.read()
         except FileNotFoundError:
             output.fail(f"Error: The file '{args.input_file}' was not found.")
