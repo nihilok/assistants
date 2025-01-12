@@ -2,6 +2,8 @@ import os
 from enum import Enum
 from dataclasses import dataclass
 
+from assistants.cli.constants import CLAUDE_CLI_MAX_TOKENS
+
 
 class CustomKeyNames(str, Enum):
     ASSISTANTS_API_KEY_NAME: str = "ASSISTANTS_API_KEY_NAME"
@@ -35,6 +37,7 @@ class Config:
     ASSISTANT_INSTRUCTIONS: str
     ASSISTANT_NAME: str
     TELEGRAM_BOT_TOKEN: str
+    CLAUDE_MAX_TOKENS: str
 
 
 def get_config() -> Config:
@@ -50,6 +53,7 @@ def get_config() -> Config:
         ),
         ASSISTANT_NAME=os.environ.get("ASSISTANT_NAME", "DefaultAssistant"),
         TELEGRAM_BOT_TOKEN=os.environ.get("TG_BOT_TOKEN", None),
+        CLAUDE_MAX_TOKENS=os.environ.get("CLAUDE_MAX_TOKENS", CLAUDE_CLI_MAX_TOKENS),
     )
 
 

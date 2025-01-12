@@ -14,3 +14,5 @@ Press Ctrl+C or Ctrl+D to exit the program
 
 Anything else you type will be sent to the assistant for processing.\
 """
+
+CLAUDE_CLI_MAX_TOKENS = 2048
