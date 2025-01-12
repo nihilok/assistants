@@ -150,7 +150,7 @@ async def converse(
         and isinstance(assistant, Assistant)
     ):
         environ.thread_id = environ.last_message.thread_id
-        await threads_table.save_thread_data(
+        await threads_table.save_thread(
             environ.thread_id, assistant.assistant_id, environ.user_input
         )
     elif isinstance(assistant, MemoryMixin):
