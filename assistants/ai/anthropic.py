@@ -12,7 +12,6 @@ from anthropic import AsyncAnthropic
 
 from assistants.ai.memory import MemoryMixin
 from assistants.ai.types import MessageData
-from assistants.cli.constants import CLAUDE_CLI_MAX_TOKENS
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
 
@@ -35,7 +34,7 @@ class Claude(MemoryMixin):
     def __init__(
         self,
         model: str,
-        max_tokens: int = CLAUDE_CLI_MAX_TOKENS,
+        max_tokens: int = environment.CLAUDE_MAX_TOKENS,
         max_memory: int = 50,
         api_key: Optional[str] = environment.ANTHROPIC_API_KEY,
     ) -> None:
