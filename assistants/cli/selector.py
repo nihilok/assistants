@@ -3,7 +3,7 @@ import math
 
 
 class TerminalSelector:
-    def __init__(self, items, title="Please select an item"):
+    def __init__(self, items: list[str], title: str ="Please select an item"):
         self.items = items
         self.title = title
         self.current_position = 0
@@ -18,15 +18,17 @@ class TerminalSelector:
         stdscr.clear()
 
         # Display title
-        stdscr.addstr(0, 0, self.title, curses.A_BOLD)
+        if width > 0:
+            stdscr.addstr(0, 0, self.title[:width], curses.A_BOLD)
 
         # Display instructions
-        stdscr.addstr(
-            height - 1,
-            0,
-            "Use ↑/↓ arrows to navigate, Enter to select, q to quit",
-            curses.A_DIM,
-        )
+        if width > 0:
+            stdscr.addstr(
+                height - 1,
+                0,
+                self.truncate("Use ↑/↓ arrows to navigate, Enter to select, q to quit", width),
+                curses.A_DIM,
+            )
 
         # Adjust window if current position is out of view
         if self.current_position >= self.window_start + max_display_items:
@@ -37,22 +39,23 @@ class TerminalSelector:
         # Display items
         for idx in range(min(max_display_items, len(self.items) - self.window_start)):
             item_idx = idx + self.window_start
-            item = self.items[item_idx]
+            item = str(self.items[item_idx])
 
             # Truncate item if it's too long
-            if len(item) > width - 4:
-                item = item[: width - 7] + "..."
+            item = self.truncate(item, width)
 
             # Highlight current selection
             if item_idx == self.current_position:
+                if len(item) < width - 4:
+                    item += " " * (width - 4 - len(item))
                 stdscr.attron(curses.A_REVERSE)
-                stdscr.addstr(idx + 1, 0, f" {item} ")
+                stdscr.addstr(idx + 1, 0, f" {item}"[:width])
                 stdscr.attroff(curses.A_REVERSE)
             else:
-                stdscr.addstr(idx + 1, 0, f" {item} ")
+                stdscr.addstr(idx + 1, 0, f" {item} "[:width])
 
         # Display scrollbar if needed
-        if len(self.items) > max_display_items:
+        if len(self.items) > max_display_items and width > 0:
             scrollbar_height = math.ceil(
                 (max_display_items / len(self.items)) * max_display_items
             )
@@ -66,6 +69,11 @@ class TerminalSelector:
                     stdscr.addstr(i + 1, width - 1, "│")
 
         stdscr.refresh()
+
+    def truncate(self, item, width):
+        if len(item) > width - 4:
+            item = item[: width - 7] + "..."
+        return item
 
     def run(self):
         def _inner(stdscr):

@@ -247,7 +247,7 @@ class SelectThread(Command):
             output.warn("No threads found.")
             return
 
-        selector = TerminalSelector(threads_output)
+        selector = TerminalSelector(threads_output, title="Select a thread to continue...")
         result = selector.run()
         if not result:
             return # No change
