@@ -13,6 +13,7 @@ from pygments.lexers import get_lexer_by_name
 from assistants.ai.anthropic import Claude
 from assistants.ai.openai import Assistant, Completion
 from assistants.ai.types import AssistantProtocol
+from assistants.cli import output
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
 from assistants.user_data.sqlite_backend.threads import (
@@ -96,14 +97,25 @@ async def create_assistant_and_thread(
         else:
             instructions_text = environment.ASSISTANT_INSTRUCTIONS
 
-        assistant = Assistant(
-            name=environment.ASSISTANT_NAME,
-            model=environment.DEFAULT_MODEL,
-            instructions=instructions_text,
-            tools=[{"type": "code_interpreter"}],
-        )
-        await assistant.start()
-        thread = await get_last_thread_for_assistant(assistant.assistant_id)
+        if environment.DEFAULT_MODEL.startswith("claude-"):
+            # We can also use Claude as the default model
+            assistant = Completion(model=environment.DEFAULT_MODEL)
+            thread = None  # The Threads API is only available when using the OpenAI Assistants API
+            if args.continue_thread:
+                await assistant.start()
+                if instructions_text:
+                    output.warn(
+                        "Custom instructions are currently not supported with this assistant."
+                    )
+        else:
+            assistant = Assistant(
+                name=environment.ASSISTANT_NAME,
+                model=environment.DEFAULT_MODEL,
+                instructions=instructions_text,
+                tools=[{"type": "code_interpreter"}],
+            )
+            await assistant.start()
+            thread = await get_last_thread_for_assistant(assistant.assistant_id)
 
     assistant = cast(AssistantProtocol, assistant)
 
