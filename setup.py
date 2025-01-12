@@ -20,12 +20,14 @@ setup(
         "prompt-toolkit==3.0.48",
         "pygments==2.18.0",
         "anthropic==0.42.0",
+        "aiofiles==24.1.0",
+        "aiohttp==3.11.11",
+        0.0,
     ],
     extras_require={
         "telegram": [
             # Dependencies for the Telegram bot integration
             "python-telegram-bot==21.10",
-            "aiohttp==3.11.11",
         ],
     },
     classifiers=[

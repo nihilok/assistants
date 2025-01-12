@@ -1,5 +1,6 @@
 black
 isort
 flake8
-pytest
+pytest==8.3.4
 pytest-mock
+setuptools~=75.8.0

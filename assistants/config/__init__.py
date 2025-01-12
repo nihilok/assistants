@@ -1,3 +1,4 @@
+import json
 import os
 from enum import Enum
 from dataclasses import dataclass
@@ -38,6 +39,7 @@ class Config:
     ASSISTANT_NAME: str
     TELEGRAM_BOT_TOKEN: str
     CLAUDE_MAX_TOKENS: str
+    OPEN_IMAGES_IN_BROWSER: bool
 
 
 def get_config() -> Config:
@@ -54,6 +56,9 @@ def get_config() -> Config:
         ASSISTANT_NAME=os.environ.get("ASSISTANT_NAME", "DefaultAssistant"),
         TELEGRAM_BOT_TOKEN=os.environ.get("TG_BOT_TOKEN", None),
         CLAUDE_MAX_TOKENS=os.environ.get("CLAUDE_MAX_TOKENS", CLAUDE_CLI_MAX_TOKENS),
+        OPEN_IMAGES_IN_BROWSER=bool(
+            json.loads(os.environ.get("OPEN_IMAGES_IN_BROWSER", "true"))
+        ),
     )
 
 

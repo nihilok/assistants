@@ -1,8 +1,12 @@
 import json
 import re
+import webbrowser
 from dataclasses import dataclass
+from datetime import datetime, UTC
 from typing import Optional, Protocol
 
+import aiofiles
+import aiohttp
 import pyperclip
 
 from assistants.ai.memory import MemoryMixin
@@ -13,6 +17,8 @@ from assistants.cli.constants import IO_INSTRUCTIONS
 from assistants.cli.selector import TerminalSelector
 from assistants.cli.terminal import clear_screen
 from assistants.cli.utils import get_text_from_default_editor, highlight_code_blocks
+from assistants.config import environment
+from assistants.config.file_management import DATA_DIR
 from assistants.user_data import threads_table
 from assistants.user_data.sqlite_backend import conversations_table
 
@@ -109,8 +115,17 @@ class CopyResponse(Command):
             output.warn("No previous message to copy.")
             return
 
+        # Check if previous response is a URL
+        if re.match(
+            r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+",
+            previous_response,
+        ):
+            message = "image URL"
+        else:
+            message = "response"
+
         self.copy_to_clipboard(previous_response)
-        output.inform("Copied response to clipboard")
+        output.inform(f"Copied {message} to clipboard")
 
 
 copy_response: Command = CopyResponse()
@@ -281,15 +296,57 @@ select_thread: Command = SelectThread()
 
 
 class GenerateImage(Command):
+
+    @staticmethod
+    async def save_image(image_url: str, prompt: str) -> None:
+        """
+        Save the image URL to the database.
+
+        :param image_url: The URL of the image to save.
+        :param prompt: The prompt that was used to create the image.
+        """
+        # Get the image content
+        async with aiohttp.ClientSession() as session:
+            async with session.get(image_url) as response:
+                image_content = await response.read()
+
+        # Save the image to file
+        image_path = DATA_DIR / "images"
+        if not image_path.exists():
+            image_path.mkdir(parents=True)
+
+        filename = f"{'_'.join(prompt.split())}_{datetime.now(UTC).timestamp()}.png"
+        image_path /= filename
+
+        async with aiofiles.open(image_path, "wb") as file:
+            await file.write(image_content)
+
+        output.inform(f"Image saved to {image_path}")
+
     async def __call__(self, environ: IoEnviron, *args) -> None:
         assistant = environ.assistant
         if not isinstance(assistant, Assistant):
             raise NotImplemented
+
         prompt = " ".join(args)
+
         image_url = await assistant.image_prompt(prompt)
+
         if image_url:
-            output.default(f"Here's your image: {image_url}")
+            output.default(f"Here's your image:\n{image_url}")
             output.new_line(2)
+
+            environ.last_message = MessageData(
+                text_content=image_url, thread_id=environ.thread_id
+            )
+
+            if environment.OPEN_IMAGES_IN_BROWSER:
+                webbrowser.open(image_url)
+                output.inform("Opening image in browser...")
+
+            if input("Would you like to save this image? (y/N): ").lower() == "y":
+                await self.save_image(image_url, prompt)
+
         else:
             output.warn("No image returned...")
 
