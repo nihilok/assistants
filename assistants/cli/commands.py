@@ -250,10 +250,11 @@ class SelectThread(Command):
         selector = TerminalSelector(threads_output)
         result = selector.run()
         if not result:
-            output.warn("No thread selected.")
-            return
+            return # No change
 
         thread_id = result.split("|")[1].strip()
+        if thread_id == environ.thread_id:
+            return # No change
         environ.thread_id = thread_id
 
         if isinstance(environ.assistant, MemoryMixin):
