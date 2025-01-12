@@ -280,6 +280,22 @@ class SelectThread(Command):
 select_thread: Command = SelectThread()
 
 
+class GenerateImage(Command):
+    async def __call__(self, environ: IoEnviron, *args) -> None:
+        assistant = environ.assistant
+        if not isinstance(assistant, Assistant):
+            raise NotImplemented
+        prompt = " ".join(args)
+        image_url = await assistant.image_prompt(prompt)
+        if image_url:
+            output.default(f"Here's your image: {image_url}")
+            output.new_line(2)
+        else:
+            output.warn("No image returned...")
+
+
+generate_image: Command = GenerateImage()
+
 COMMAND_MAP = {
     "/e": editor,
     "/edit": editor,
@@ -295,6 +311,8 @@ COMMAND_MAP = {
     "/new-thread": new_thread,
     "/t": select_thread,
     "/threads": select_thread,
+    "/i": generate_image,
+    "/image": generate_image,
 }
 
 EXIT_COMMANDS = {
