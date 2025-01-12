@@ -73,7 +73,9 @@ def get_text_from_default_editor(initial_text=None):
 
 async def create_assistant_and_thread(
     args: Namespace,
-) -> tuple[AssistantProtocol, Optional[ThreadData]]:
+) -> tuple[AssistantProtocol, Optional[str]]:
+    thread_id = None
+
     if args.code:
         if environment.CODE_MODEL.startswith("o1"):
             # Create a completion model for code reasoning (slower and more expensive)
@@ -83,9 +85,9 @@ async def create_assistant_and_thread(
             assistant = Claude(model=environment.CODE_MODEL)
         else:
             raise ConfigError(f"Invalid code reasoning model: {environment.CODE_MODEL}")
-        thread = None  # Threads are not supported with code reasoning
         if args.continue_thread:
             await assistant.start()
+        thread_id = assistant.conversation_id
     else:
         # Create a default assistant
         if args.instructions:
@@ -100,13 +102,13 @@ async def create_assistant_and_thread(
         if environment.DEFAULT_MODEL.startswith("claude-"):
             # We can also use Claude as the default model
             assistant = Claude(model=environment.DEFAULT_MODEL)
-            thread = None  # The Threads API is only available when using the OpenAI Assistants API
             if args.continue_thread:
                 await assistant.start()
-                if instructions_text:
-                    output.warn(
-                        "Custom instructions are currently not supported with this assistant."
-                    )
+                thread_id = assistant.conversation_id
+            if instructions_text:
+                output.warn(
+                    "Custom instructions are currently not supported with this assistant."
+                )
         else:
             assistant = Assistant(
                 name=environment.ASSISTANT_NAME,
@@ -116,7 +118,8 @@ async def create_assistant_and_thread(
             )
             await assistant.start()
             thread = await get_last_thread_for_assistant(assistant.assistant_id)
+            thread_id = thread.thread_id if thread else None
 
     assistant = cast(AssistantProtocol, assistant)
 
-    return assistant, thread
+    return assistant, thread_id

@@ -52,18 +52,13 @@ Type '/help' (or '/h') for a list of commands.
 
     # Create assistant and get the last thread if one exists
     try:
-        assistant, thread = asyncio.run(create_assistant_and_thread(args))
+        assistant, thread_id = asyncio.run(create_assistant_and_thread(args))
     except ConfigError as e:
         output.fail(f"Error: {e}")
         sys.exit(1)
 
-    if thread is None and args.continue_thread and not args.code:
+    if thread_id is None and args.continue_thread and not args.code:
         output.warn("Warning: could not read last thread id; starting new thread.")
-        thread_id = None
-    elif thread is not None and args.continue_thread:
-        thread_id = thread.thread_id
-    else:
-        thread_id = None
 
     # IO Loop (takes user input and sends it to the assistant, or parses it as a command,
     # then prints the response before looping to do it all over again)
