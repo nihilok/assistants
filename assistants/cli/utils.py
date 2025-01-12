@@ -99,7 +99,7 @@ async def create_assistant_and_thread(
 
         if environment.DEFAULT_MODEL.startswith("claude-"):
             # We can also use Claude as the default model
-            assistant = Completion(model=environment.DEFAULT_MODEL)
+            assistant = Claude(model=environment.DEFAULT_MODEL)
             thread = None  # The Threads API is only available when using the OpenAI Assistants API
             if args.continue_thread:
                 await assistant.start()
