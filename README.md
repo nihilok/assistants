@@ -24,6 +24,8 @@ Welcome to the AI Assistants Framework! This repository contains the foundationa
 - **Thread Selection/Continuation**: The CLI can continue previous threads for a more seamless conversational experience. Previous thread ids are stored in the DB along with the initial prompt.
 - **Editor Integration**: The CLI can open the default editor to compose a prompt.
 - **File Input**: The CLI can read the initial prompt from a file.
+- **Generate Images**: Generate images using your favourite OpenAI image model (defaults to `dall-e-3`)
+- **Natural Interactive Prompt**: Prompt history, copy & paste, auxiliary commands, help menu
 
 ## Installation
 
@@ -137,6 +139,7 @@ In addition to `ASSISTANT_INSTRUCTIONS`, other environment variables that can be
 - `ANTHROPIC_API_KEY_NAME` - The name of the API key environment variable to use for authentication with Anthropic models (defaults to `ANTHROPIC_API_KEY`)
 - `DEFAULT_MODEL` - The default model to use for OpenAI API requests (defaults to `gpt-4o-mini`)
 - `CODE_MODEL` - more advanced reasoning model to use for OpenAI API requests (defaults to `o1-mini`)
+- `IMAGE_MODEL` - defaults to `dall-e-3`
 - `CLAUDE_MAX_TOKENS` - the maximum number of tokens claude-* models may use for their responses
 - `ASSISTANTS_DATA_DIR` - The directory to store user data (defaults to `~/.local/share/assistants`)
 - `ASSISTANTS_CONFIG_DIR` - The directory to store configuration files (defaults to `~/.config/assistants`)
