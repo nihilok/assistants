@@ -40,5 +40,5 @@ setup(
         ],
     },
     python_requires=">=3.10",
-    keywords="openai gpt3 gpt3.5 gpt4 o1 chatgpt chatbot assistant assistants cli telegram llm bot ui tui coding-assistant",
+    keywords="openai gpt3 gpt3.5 gpt4 o1 chatgpt chatbot assistant assistants claude anthropic cli telegram llm bot ui tui coding-assistant coding programming",
 )
