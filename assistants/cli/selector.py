@@ -1,9 +1,19 @@
 import curses
 import math
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass
+class TerminalSelectorOption:
+    label: str
+    value: Any
 
 
 class TerminalSelector:
-    def __init__(self, items: list[str], title: str = "Please select an item"):
+    def __init__(
+        self, items: list[TerminalSelectorOption], title: str = "Please select an item"
+    ):
         self.items = items
         self.title = title
         self.current_position = 0
@@ -41,7 +51,7 @@ class TerminalSelector:
         # Display items
         for idx in range(min(max_display_items, len(self.items) - self.window_start)):
             item_idx = idx + self.window_start
-            item = str(self.items[item_idx])
+            item = self.items[item_idx].label
 
             # Truncate item if it's too long
             item = self.truncate(item, width)
@@ -65,14 +75,15 @@ class TerminalSelector:
                 (self.window_start / len(self.items)) * max_display_items
             )
             for i in range(max_display_items):
-                if i >= scrollbar_pos and i < scrollbar_pos + scrollbar_height:
+                if scrollbar_pos <= i < scrollbar_pos + scrollbar_height:
                     stdscr.addstr(i + 1, width - 1, "█")
                 else:
                     stdscr.addstr(i + 1, width - 1, "│")
 
         stdscr.refresh()
 
-    def truncate(self, item, width):
+    @staticmethod
+    def truncate(item, width):
         if len(item) > width - 4:
             item = item[: width - 7] + "..."
         return item
@@ -95,7 +106,7 @@ class TerminalSelector:
                 ):
                     self.current_position += 1
                 elif key in [curses.KEY_ENTER, ord("\n"), ord("\r")]:
-                    return self.items[self.current_position]
+                    return self.items[self.current_position].value
                 elif key == ord("q"):
                     return None
 
@@ -105,9 +116,11 @@ class TerminalSelector:
 # Example usage
 if __name__ == "__main__":
     # Sample list of items
-    items = [f"Item {i}" for i in range(1, 101)]  # Create 100 items
+    _items = [
+        TerminalSelectorOption(label=f"Item {i}", value=i) for i in range(1, 101)
+    ]  # Create 100 items
 
-    selector = TerminalSelector(items, "Select an item from the list")
+    selector = TerminalSelector(_items, "Select an item from the list")
     selected_item = selector.run()
 
     # Print result after exiting curses window

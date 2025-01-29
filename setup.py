@@ -22,7 +22,6 @@ setup(
         "anthropic==0.42.0",
         "aiofiles==24.1.0",
         "aiohttp==3.11.11",
-        0.0,
     ],
     extras_require={
         "telegram": [

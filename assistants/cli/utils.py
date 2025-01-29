@@ -21,12 +21,6 @@ from assistants.user_data.sqlite_backend.threads import (
 )
 
 
-class GreyTextFormatter(Formatter):
-    def format(self, tokensource, outfile):
-        for ttype, value in tokensource:
-            outfile.write(f"\033[90m{value}\033[0m")
-
-
 def highlight_code_blocks(markdown_text):
     code_block_pattern = re.compile(r"```(\w+)?\n(.*?)```", re.DOTALL)
 
@@ -34,6 +28,8 @@ def highlight_code_blocks(markdown_text):
         lang = match.group(1)
         code = match.group(2)
         if lang:
+            if lang == "plaintext":
+                lang = "text"
             lexer = get_lexer_by_name(lang, stripall=True)
         else:
             lexer = get_lexer_by_name("text", stripall=True)

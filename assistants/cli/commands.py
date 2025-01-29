@@ -14,7 +14,7 @@ from assistants.ai.openai import Assistant
 from assistants.ai.types import AssistantProtocol, MessageData
 from assistants.cli import output
 from assistants.cli.constants import IO_INSTRUCTIONS
-from assistants.cli.selector import TerminalSelector
+from assistants.cli.selector import TerminalSelector, TerminalSelectorOption
 from assistants.cli.terminal import clear_screen
 from assistants.cli.utils import get_text_from_default_editor, highlight_code_blocks
 from assistants.config import environment
@@ -245,17 +245,23 @@ class SelectThread(Command):
         if isinstance(environ.assistant, MemoryMixin):
             threads = await conversations_table.get_all_conversations()
 
-            threads_output = [
-                f"{thread.last_updated} | {thread.id} | {json.loads(thread.conversation)[0]['content']}"
-                for i, thread in enumerate(threads)
+            thread_options = [
+                TerminalSelectorOption(
+                    label=f"{thread.last_updated} | {json.loads(thread.conversation)[0]['content']}",
+                    value=thread.id,
+                )
+                for thread in threads
             ]
         else:
             threads = await threads_table.get_by_assistant_id(
                 environ.assistant.assistant_id
             )
-            threads_output = [
-                f"{thread.last_run_dt} | {thread.thread_id} | {thread.initial_prompt}"
-                for i, thread in enumerate(threads)
+            thread_options = [
+                TerminalSelectorOption(
+                    label=f"{thread.last_run_dt} | {thread.initial_prompt}",
+                    value=thread.thread_id,
+                )
+                for thread in threads
             ]
 
         if not threads:
@@ -263,13 +269,12 @@ class SelectThread(Command):
             return
 
         selector = TerminalSelector(
-            threads_output, title="Select a thread to continue..."
+            thread_options, title="Select a thread to continue..."
         )
-        result = selector.run()
-        if not result:
+        thread_id = selector.run()
+        if not thread_id:
             return  # No change
 
-        thread_id = result.split(" | ")[1].strip()
         if thread_id == environ.thread_id:
             return  # No change
 
