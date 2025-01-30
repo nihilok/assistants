@@ -47,10 +47,22 @@ $ ai-cli
 
 NOTE: if your virtual environment is not activated, you may need to use /path/to/venv/bin/ai-cli instead of just ai-cli. Consider adding the virtual environment's bin directory to your PATH or otherwise linking the executable to a location in your PATH or creating an alias.
 
+There is an installation script that can be used to add the `ai-cli`, `ai-tg-bot` & `claude` commands to your PATH. You can run this script with the following command:
+
+```bash
+$ ai-cli install
+```
+
 If you wish to use the Telegram bot interface, you can install the additional dependencies:
 
 ```bash
 pip install assistants-framework[telegram]
+```
+
+To run the telegram bot polling loop, you can just use the following command:
+
+```bash
+$ ai-tg-bot
 ```
 
 ## Usage
@@ -119,17 +131,15 @@ Anything else you type will be sent to the assistant for processing.
 
 Note: prompt (& command) history is saved in `$ASSISTANTS_CONFIG_DIR/history` (default `~/.config/assistants/history`); responses are not saved here, just user input; this history file is used to provide a prompt history which can be accessed via up and down arrows as with your bash prompt. Bear this file in mind when auditing security as you would with shell history.
 
-### Telegram Bot
-
-To run the telegram bot polling loop, you can just use the following command:
-
-```bash
-$ ai-tg-bot
-```
-
 You can customize the behavior of the assistant by modifying the `ASSISTANT_INSTRUCTIONS` environment variable, which defaults to `"You are a helpful assistant."`
 
 To use with Claude.ai (Anthropic) models, you can set the `CODE_MODEL` environment variable to `claude-3.5-sonnet-latest` or another model of your choice and run the program with the `-C` option. You must have an API key for Anthropic models set in the `ANTHROPIC_API_KEY` environment variable (or another variable that you have specified; see below).
+
+There is also a `claude` command that can be used to automatically set the relevant environment variables to use the CLI with the `claude-3.5-sonnet-latest` model.
+
+```bash
+$ claude -e # open the editor to compose a prompt for Claude
+```
 
 ## Environment Variables
 
@@ -158,9 +168,9 @@ See the dev dependencies in the dev_requirements.txt file for formatting and lin
 
 #### TODOS: 
 
-- optional local threads API built on top of langchain
 - add postgresql support for data layer
 - add support for more models/APIs
+- improve local thread/conversation handling to better consider max tokens and truncation of conversation history
 
 ## License
 

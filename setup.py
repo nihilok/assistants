@@ -8,7 +8,7 @@ setup(
     author="Michael Jarvis",
     author_email="nihilok@jarv.dev",
     description="OpenAI Assistants Wrapper, with CLI and Telegram Bot",
-    long_description=open("README.md").read(),
+    long_description=open("README.md").read() + "\n\n" + open("CHANGELOG.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/nihilok/assistants",
     packages=find_packages(exclude=["assistants.tests*"]),
@@ -38,6 +38,7 @@ setup(
         "console_scripts": [
             "ai-cli=assistants.main:main",
             "ai-tg-bot=assistants.main_tg:main",
+            "claude=assistants.claude:main",
         ],
     },
     python_requires=">=3.10",
