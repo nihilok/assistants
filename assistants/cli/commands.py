@@ -1,9 +1,10 @@
 import json
 import re
 import webbrowser
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Optional, Protocol
+from typing import Optional
 
 import aiofiles
 import aiohttp
@@ -35,18 +36,19 @@ class IoEnviron:
     user_input: Optional[str] = None
 
 
-class Command(Protocol):
+class Command(ABC):
     """
     Command protocol for the input/output loop.
     """
 
+    @abstractmethod
     async def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command.
 
         :param environ: The environment variables for the input/output loop.
         """
-        ...
+        pass
 
 
 class Editor(Command):
