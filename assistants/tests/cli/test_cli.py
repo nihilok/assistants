@@ -6,6 +6,13 @@ from assistants.cli.cli import cli
 from assistants.lib.exceptions import ConfigError
 
 
+@pytest.fixture(autouse=True)
+def mock_select():
+    with patch("assistants.cli.cli.select") as mock_select:
+        mock_select.select.return_value = ([], [], [])
+        yield mock_select
+
+
 @patch(
     "assistants.cli.cli.get_args",
     return_value=MagicMock(
