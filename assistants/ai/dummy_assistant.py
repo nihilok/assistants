@@ -37,5 +37,5 @@ class DummyAssistant(MemoryMixin):
         if not user_input:
             return None
 
-        message = f"Response to ```{user_input}```"
+        message = f"Response to ```\n{user_input}\n```"
         return MessageData(text_content=message)

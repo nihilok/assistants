@@ -34,7 +34,7 @@ def cli():
         stdin = None
     if stdin:
         args.prompt = args.prompt or []
-        args.prompt += stdin.split()
+        args.prompt += stdin.split(" ")
 
     # Join all the positional arguments into a single string
     initial_input = " ".join(args.prompt) if args.prompt else None
