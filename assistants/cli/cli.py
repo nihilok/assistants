@@ -28,14 +28,6 @@ def cli():
     # Parse command line arguments, if --help is passed, it will exit here
     args = get_args()
 
-    if select.select([sys.stdin], [], [], 0.0)[0]:
-        stdin = sys.stdin.read()
-    else:
-        stdin = None
-    if stdin:
-        args.prompt = args.prompt or []
-        args.prompt += stdin.split()
-
     # Join all the positional arguments into a single string
     initial_input = " ".join(args.prompt) if args.prompt else None
 

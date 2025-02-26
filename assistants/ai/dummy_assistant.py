@@ -12,7 +12,7 @@ class DummyAssistant(MemoryMixin):
         - MemoryMixin: Mixin class to handle memory-related functionality.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         """
         Initialize the DummyAssistant instance.
         """
