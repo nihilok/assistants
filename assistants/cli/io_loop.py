@@ -104,6 +104,10 @@ async def io_loop_async(
                 initial_input = environ.user_input
             continue
 
+        if user_input.startswith("/"):
+            output.warn("Invalid command!")
+            continue
+
         environ.user_input = user_input
         await converse(environ)
 
