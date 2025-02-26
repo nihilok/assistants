@@ -72,7 +72,9 @@ async def create_assistant_and_thread(
     thread_id = None
 
     if args.code:
-        if environment.CODE_MODEL.startswith("o1"):
+        if environment.CODE_MODEL.startswith("o1") or environment.CODE_MODEL.startswith(
+            "o3"
+        ):
             # Create a completion model for code reasoning (slower and more expensive)
             assistant = Completion(model=environment.CODE_MODEL)
         elif environment.CODE_MODEL.startswith("claude-"):
