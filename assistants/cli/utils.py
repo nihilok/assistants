@@ -6,11 +6,11 @@ from argparse import Namespace
 from typing import Optional, cast
 
 from pygments import highlight
-from pygments.formatter import Formatter
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
 
 from assistants.ai.anthropic import Claude
+from assistants.ai.dummy_assistant import DummyAssistant
 from assistants.ai.openai import Assistant, Completion
 from assistants.ai.types import AssistantProtocol
 from assistants.cli import output
@@ -104,6 +104,10 @@ async def create_assistant_and_thread(
                 output.warn(
                     "Custom instructions are currently not supported with this assistant."
                 )
+        elif environment.DEFAULT_MODEL == "dummy-model":
+            assistant = DummyAssistant()
+            await assistant.start()
+            thread_id = assistant.conversation_id
         else:
             assistant = Assistant(
                 name=environment.ASSISTANT_NAME,
