@@ -148,7 +148,7 @@ In addition to `ASSISTANT_INSTRUCTIONS`, other environment variables that can be
 - `ASSISTANTS_API_KEY_NAME` - The name of the API key environment variable to use for authentication (defaults to `OPENAI_API_KEY`) - remember to also set the corresponding API key value to the environment variable you choose (or the default).
 - `ANTHROPIC_API_KEY_NAME` - The name of the API key environment variable to use for authentication with Anthropic models (defaults to `ANTHROPIC_API_KEY`)
 - `DEFAULT_MODEL` - The default model to use for OpenAI API requests (defaults to `gpt-4o-mini`)
-- `CODE_MODEL` - more advanced reasoning model to use for OpenAI API requests (defaults to `o1-mini`)
+- `CODE_MODEL` - more advanced reasoning model to use for OpenAI API requests (defaults to `o1-mini`, but also supports `o1`, `o3-mini` & `claude-3-5-sonnet-latest`)
 - `IMAGE_MODEL` - defaults to `dall-e-3`
 - `CLAUDE_MAX_TOKENS` - the maximum number of tokens claude-* models may use for their responses
 - `ASSISTANTS_DATA_DIR` - The directory to store user data (defaults to `~/.local/share/assistants`)
