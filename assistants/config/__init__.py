@@ -3,7 +3,7 @@ import os
 from dataclasses import dataclass
 from enum import Enum
 
-from assistants.cli.constants import CLAUDE_CLI_MAX_TOKENS
+from assistants.lib.constants import CLAUDE_CLI_MAX_TOKENS
 
 
 class CustomKeyNames(str, Enum):

@@ -14,7 +14,7 @@ from assistants.ai.memory import MemoryMixin
 from assistants.ai.openai import Assistant
 from assistants.ai.types import AssistantProtocol, MessageData
 from assistants.cli import output
-from assistants.cli.constants import IO_INSTRUCTIONS
+from assistants.lib.constants import IO_INSTRUCTIONS
 from assistants.cli.selector import TerminalSelector, TerminalSelectorOption
 from assistants.cli.terminal import clear_screen
 from assistants.cli.utils import get_text_from_default_editor, highlight_code_blocks

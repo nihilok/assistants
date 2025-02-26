@@ -5,13 +5,12 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-from assistants.telegram_ui.tg_bot import assistant
 from assistants.telegram_ui.auth import (
     restricted_access,
     requires_superuser,
     chat_data,
 )
-from assistants.telegram_ui.lib import requires_reply_to_message
+from assistants.telegram_ui.lib import requires_reply_to_message, assistant
 from assistants.user_data import threads_table
 from assistants.user_data.interfaces.telegram_chat_data import ChatHistory
 

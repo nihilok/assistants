@@ -6,8 +6,6 @@ from telegram.ext import (
     filters,
 )
 
-from assistants.ai.openai import Assistant
-from assistants.config import environment
 from assistants.log import logger
 from assistants.telegram_ui.commands import (
     promote_user,
@@ -21,14 +19,7 @@ from assistants.telegram_ui.commands import (
     message_handler,
     generate_image,
 )
-
-assistant = Assistant(
-    name=environment.ASSISTANT_NAME,
-    model=environment.DEFAULT_MODEL,
-    instructions=environment.ASSISTANT_INSTRUCTIONS,
-    tools=[{"type": "code_interpreter"}],
-    api_key=environment.OPENAI_API_KEY,
-)
+from assistants.telegram_ui.lib import assistant
 
 
 def build_bot(token: str) -> Application:
