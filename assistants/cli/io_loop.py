@@ -3,6 +3,7 @@ This module contains the main input/output loop for interacting with the assista
 """
 
 import asyncio
+import sys
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -58,6 +59,8 @@ def _(_event):
 
 def get_user_input() -> str:
     """Get user input from interactive/styled prompt (prompt_toolkit)."""
+    if not sys.stdin.isatty():
+        sys.stdin = open("/dev/tty")
     return prompt(PROMPT, style=config.style, history=history, in_thread=True)
 
 
