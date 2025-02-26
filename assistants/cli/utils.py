@@ -16,9 +16,6 @@ from assistants.ai.types import AssistantProtocol
 from assistants.cli import output
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
-from assistants.user_data.sqlite_backend.threads import (
-    get_last_thread_for_assistant,
-)
 
 
 def highlight_code_blocks(markdown_text):
@@ -36,11 +33,6 @@ def highlight_code_blocks(markdown_text):
         return f"```{lang if lang else ''}\n{highlight(code, lexer, TerminalFormatter())}```"
 
     return code_block_pattern.sub(replacer, markdown_text)
-
-
-async def get_thread_id(assistant_id: str):
-    last_thread = await get_last_thread_for_assistant(assistant_id)
-    return last_thread.thread_id if last_thread else None
 
 
 def get_text_from_default_editor(initial_text=None):
@@ -66,27 +58,35 @@ def get_text_from_default_editor(initial_text=None):
     return text
 
 
+MODEL_LOOKUP = {
+    "code": {
+        "o1": Completion,
+        "o3": Completion,
+        "claude-": Claude,
+    },
+    "default": {
+        "claude-": Claude,
+        "dummy-model": DummyAssistant,
+        "gpt-4o": Assistant,
+    },
+}
+
+
 async def create_assistant_and_thread(
     args: Namespace,
 ) -> tuple[AssistantProtocol, Optional[str]]:
     thread_id = None
 
+    def get_model_class(model_type: str, model_name: str):
+        for key, assistant_type in MODEL_LOOKUP[model_type].items():
+            if model_name.startswith(key):
+                return assistant_type
+        raise ConfigError(f"Invalid {model_type} model: {model_name}")
+
     if args.code:
-        if environment.CODE_MODEL.startswith("o1") or environment.CODE_MODEL.startswith(
-            "o3"
-        ):
-            # Create a completion model for code reasoning (slower and more expensive)
-            assistant = Completion(model=environment.CODE_MODEL)
-        elif environment.CODE_MODEL.startswith("claude-"):
-            # Create an Anthropic assistant for code reasoning
-            assistant = Claude(model=environment.CODE_MODEL)
-        else:
-            raise ConfigError(f"Invalid code reasoning model: {environment.CODE_MODEL}")
-        if args.continue_thread:
-            await assistant.start()
-        thread_id = assistant.conversation_id
+        model_class = get_model_class("code", environment.CODE_MODEL)
+        assistant = model_class(model=environment.CODE_MODEL)
     else:
-        # Create a default assistant
         if args.instructions:
             try:
                 with open(args.instructions, "r") as instructions_file:
@@ -96,30 +96,25 @@ async def create_assistant_and_thread(
         else:
             instructions_text = environment.ASSISTANT_INSTRUCTIONS
 
-        if environment.DEFAULT_MODEL.startswith("claude-"):
-            # We can also use Claude as the default model
-            assistant = Claude(model=environment.DEFAULT_MODEL)
-            if args.continue_thread:
-                await assistant.start()
-                thread_id = assistant.conversation_id
-            if instructions_text:
-                output.warn(
-                    "Custom instructions are currently not supported with this assistant."
-                )
-        elif environment.DEFAULT_MODEL == "dummy-model":
-            assistant = DummyAssistant()
-            await assistant.start()
-            thread_id = assistant.conversation_id
-        else:
-            assistant = Assistant(
+        model_class = get_model_class("default", environment.DEFAULT_MODEL)
+        assistant = (
+            model_class(
                 name=environment.ASSISTANT_NAME,
                 model=environment.DEFAULT_MODEL,
                 instructions=instructions_text,
                 tools=[{"type": "code_interpreter"}],
             )
-            await assistant.start()
-            thread = await get_last_thread_for_assistant(assistant.assistant_id)
-            thread_id = thread.thread_id if thread else None
+            if model_class == Assistant
+            else model_class(model=environment.DEFAULT_MODEL)
+        )
+        if instructions_text and isinstance(assistant, Claude):
+            output.warn(
+                "Custom instructions are currently not supported with this assistant."
+            )
+
+    if args.continue_thread:
+        await assistant.start()
+        thread_id = await assistant.async_get_conversation_id()
 
     assistant = cast(AssistantProtocol, assistant)
 

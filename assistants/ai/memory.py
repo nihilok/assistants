@@ -59,6 +59,9 @@ class MemoryMixin:
         self.memory = json.loads(conversation.conversation) if conversation else []
         self.conversation_id = conversation.id if conversation else uuid.uuid4().hex
 
+    async def async_get_conversation_id(self):
+        return self.conversation_id
+
     async def save_conversation_state(self) -> str:
         """
         Save the current conversation to the database.

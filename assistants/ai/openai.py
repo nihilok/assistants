@@ -26,6 +26,7 @@ from assistants.user_data.sqlite_backend.assistants import (
     get_assistant_data,
     save_assistant_id,
 )
+from assistants.user_data.sqlite_backend.threads import get_last_thread_for_assistant
 
 
 class Assistant:  # pylint: disable=too-many-instance-attributes
@@ -86,6 +87,11 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         if not self.__dict__.get("assistant"):
             self.assistant = await self.load_or_create_assistant()
         self.last_message = None
+
+    async def async_get_conversation_id(self):
+        if self.last_message:
+            return self.last_message.thread_id
+        return await get_last_thread_for_assistant(self.assistant_id)
 
     def __getattribute__(self, item):
         """
