@@ -112,8 +112,8 @@ async def create_assistant_and_thread(
                 "Custom instructions are currently not supported with this assistant."
             )
 
+    await assistant.start()
     if args.continue_thread:
-        await assistant.start()
         thread_id = await assistant.async_get_conversation_id()
 
     assistant = cast(AssistantProtocol, assistant)

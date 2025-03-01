@@ -1,6 +1,15 @@
 Changelog
 ---
 
+### 26/02/2025 v0.5.5
+
+- add support for stdin redirection
+- add support for new models
+- add dummy-model for testing/debugging
+- fix duplicated output when using the `/e` (editor) command
+
+---
+
 ### 31/01/2025 v0.5.3
 
 - add install command to add environment's bin directory to the PATH
