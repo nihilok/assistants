@@ -97,19 +97,24 @@ async def create_assistant_and_thread(
             instructions_text = environment.ASSISTANT_INSTRUCTIONS
 
         model_class = get_model_class("default", environment.DEFAULT_MODEL)
-        assistant = (
-            model_class(
+
+        if model_class == Assistant:
+            assistant = model_class(
                 name=environment.ASSISTANT_NAME,
                 model=environment.DEFAULT_MODEL,
                 instructions=instructions_text,
                 tools=[{"type": "code_interpreter"}],
             )
-            if model_class == Assistant
-            else model_class(model=environment.DEFAULT_MODEL)
-        )
+        elif model_class == Claude:
+            assistant = model_class(
+                model=environment.DEFAULT_MODEL, instructions=instructions_text
+            )
+        else:
+            assistant = model_class(model=environment.DEFAULT_MODEL)
+
         if instructions_text and isinstance(assistant, Claude):
             output.warn(
-                "Custom instructions are currently not supported with this assistant."
+                "Custom instructions are not fully supported with this assistant."
             )
 
     await assistant.start()
