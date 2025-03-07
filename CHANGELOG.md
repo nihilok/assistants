@@ -1,6 +1,12 @@
 Changelog
 ---
 
+### 07/03/2025 v0.5.8
+
+- add support for `claude-3-7-sonnet-latest` model with "thinking" param if used as code model
+- add support for `o1` and `o3-mini` used via the Assistants API (with reasoning_effort defaulting to "medium")
+- fix logic causing conversations to be continued even without passing the continue thread flag
+
 ### 26/02/2025 v0.5.5
 
 - add support for stdin redirection
