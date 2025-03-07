@@ -14,7 +14,6 @@ def main():
         sys.exit(1)
     environment.DEFAULT_MODEL = CLAUDE_MODEL
     environment.CODE_MODEL = CLAUDE_MODEL
-    environment.ASSISTANT_INSTRUCTIONS = ""
     asyncio.run(init_db())
     cli()
 
