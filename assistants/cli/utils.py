@@ -68,6 +68,8 @@ MODEL_LOOKUP = {
         "claude-": Claude,
         "dummy-model": DummyAssistant,
         "gpt-4o": Assistant,
+        "o1": Assistant,
+        "o3": Assistant,
     },
 }
 

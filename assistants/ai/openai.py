@@ -47,6 +47,8 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         last_message (Optional[str]): ID of the last message in the thread.
     """
 
+    REASONING_MODELS = ["o1", "o3-mini"]
+
     def __init__(  # pylint: disable=too-many-arguments
         self,
         *,
@@ -55,6 +57,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         instructions: str,
         tools: list | NotGiven = NOT_GIVEN,
         api_key: str = environment.OPENAI_API_KEY,
+        reasoning_effort: str = "medium",
     ):
         """
         Initialize the Assistant instance.
@@ -72,13 +75,18 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
             api_key=api_key, default_headers={"OpenAI-Beta": "assistants=v2"}
         )
         self.instructions = instructions
-        self.tools = tools
         self.model = model
+        print(self.model)
+        self.tools = tools if self.model not in self.REASONING_MODELS else []
+        print(self.tools)
         self.name = name
         self._config_hash = None
         self.assistant = None
         self.last_message = None
         self.last_prompt = None
+        self.reasoning_effort = (
+            reasoning_effort if self.model in self.REASONING_MODELS else None
+        )
 
     async def start(self):
         """
@@ -153,6 +161,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
                         model=self.model,
                         tools=self.tools,
                         name=self.name,
+                        reasoning_effort=self.reasoning_effort,
                     )
                     await save_assistant_id(self.name, assistant.id, self.config_hash)
                 return assistant
@@ -163,6 +172,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
             instructions=self.instructions,
             model=self.model,
             tools=self.tools,
+            reasoning_effort=self.reasoning_effort,
         )
         await save_assistant_id(self.name, assistant.id, self.config_hash)
         return assistant
@@ -349,11 +359,14 @@ class Completion(MemoryMixin):
         client (openai.OpenAI): Client for interacting with the OpenAI API.
     """
 
+    REASONING_MODELS = ["o1", "o3-mini"]
+
     def __init__(
         self,
         model: str,
         max_memory: int = 50,
         api_key: str = environment.OPENAI_API_KEY,
+        reasoning_effort: str = "medium",
     ):
         """
         Initialize the Completion instance.
@@ -368,6 +381,9 @@ class Completion(MemoryMixin):
         MemoryMixin.__init__(self, max_memory)
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
+        self.reasoning_effort = (
+            reasoning_effort if self.model in self.REASONING_MODELS else None
+        )
 
     async def start(self):
         """
@@ -390,6 +406,7 @@ class Completion(MemoryMixin):
         response = self.client.chat.completions.create(
             model=self.model,
             messages=self.memory,  # type: ignore
+            reasoning_effort=self.reasoning_effort,
         )
         message = response.choices[0].message
         self.remember({"role": "assistant", "content": message.content})
