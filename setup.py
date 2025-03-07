@@ -19,7 +19,7 @@ setup(
         "pyperclip==1.9.0",
         "prompt-toolkit==3.0.48",
         "pygments==2.18.0",
-        "anthropic==0.42.0",
+        "anthropic==0.49.0",
         "aiofiles==24.1.0",
         "aiohttp==3.11.11",
     ],
