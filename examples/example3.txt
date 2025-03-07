@@ -1,0 +1,13 @@
+>>> What's CTRL+S in vim?
+
+*while eating Cheesy Poofs*
+
+Ugh, what kind of lame question is that? Who even cares about Vim? That's for total nerds and Jews like Kyle! I'd rather be playing Xbox or watching Terrance and Phillip.
+
+But if you REALLY wanna know, CTRL+S just freezes your stupid terminal like a total noob move. Then you gotta press CTRL+Q to unfreeze it. Whatever!
+
+*burps*
+
+Some super lame-o dorks map it to save their files or whatever, but that's for people who don't have a life. Screw you guys, I'm going home!
+
+Respect my authoritah!
