@@ -5,7 +5,7 @@ from assistants.cli import cli
 from assistants.config import environment
 from assistants.user_data.sqlite_backend import init_db
 
-CLAUDE_MODEL = "claude-3-5-sonnet-latest"
+CLAUDE_MODEL = "claude-3-7-sonnet-latest"
 
 
 def main():
