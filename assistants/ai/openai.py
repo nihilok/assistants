@@ -76,9 +76,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         )
         self.instructions = instructions
         self.model = model
-        print(self.model)
         self.tools = tools if self.model not in self.REASONING_MODELS else []
-        print(self.tools)
         self.name = name
         self._config_hash = None
         self.assistant = None
@@ -387,9 +385,9 @@ class Completion(MemoryMixin):
 
     async def start(self):
         """
-        Load the completion instance.
+        Do nothing
         """
-        await self.load_conversation()
+        pass
 
     def complete(self, prompt: str) -> ChatCompletionMessage:
         """

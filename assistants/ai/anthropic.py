@@ -64,7 +64,7 @@ class Claude(MemoryMixin):
 
     async def start(self) -> None:
         """
-        Load the conversation instance.
+        Do nothing
         """
         await self.load_conversation()
 
