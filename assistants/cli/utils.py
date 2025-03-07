@@ -88,6 +88,9 @@ async def create_assistant_and_thread(
     if args.code:
         model_class = get_model_class("code", environment.CODE_MODEL)
         assistant = model_class(model=environment.CODE_MODEL)
+        if isinstance(assistant, Claude):
+            assistant.thinking = True
+
     else:
         if args.instructions:
             try:

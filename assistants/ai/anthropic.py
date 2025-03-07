@@ -41,6 +41,7 @@ class Claude(MemoryMixin):
         max_tokens: int = environment.CLAUDE_MAX_TOKENS,
         max_memory: int = 50,
         api_key: Optional[str] = environment.ANTHROPIC_API_KEY,
+        thinking: bool = False,
     ) -> None:
         """
         Initialize the Claude instance.
@@ -59,6 +60,7 @@ class Claude(MemoryMixin):
         self.model = model
         self.max_tokens = max_tokens
         self.instructions = instructions
+        self.thinking = thinking
 
     async def start(self) -> None:
         """
@@ -112,8 +114,19 @@ class Claude(MemoryMixin):
             return None
 
         self.remember({"role": "user", "content": user_input})
-        response = await self.client.messages.create(
-            max_tokens=self.max_tokens, model=self.model, messages=self.memory
-        )
+
+        kwargs = {
+            "max_tokens": self.max_tokens,
+            "model": self.model,
+            "messages": self.memory,
+        }
+
+        if self.thinking:
+            kwargs["thinking"] = {
+                "type": "enabled",
+                "budget_tokens": (self.max_tokens // 4) * 3,
+            }
+
+        response = await self.client.messages.create(**kwargs)
         self.remember({"role": "assistant", "content": response.content[0].text})
         return MessageData(text_content=response.content[0].text)
