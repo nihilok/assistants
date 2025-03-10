@@ -51,7 +51,7 @@ class TerminalSelector:
         # Display items
         for idx in range(min(max_display_items, len(self.items) - self.window_start)):
             item_idx = idx + self.window_start
-            item = self.items[item_idx].label
+            item = self.items[item_idx].label.split("\n")[0]
 
             # Truncate item if it's too long
             item = self.truncate(item, width)

@@ -30,6 +30,7 @@ OPENAI_API_KEY environment variable {'must be set to use the OpenAI API (not set
         "--instructions",
         metavar="INSTRUCTIONS_FILE",
         type=str,
+        default=environment.ASSISTANT_INSTRUCTIONS,
         help="read the initial instructions (system message) from a specified file; "
         "if this file is not provided, environment variable `ASSISTANT_INSTRUCTIONS` "
         "will be used (or a default of 'You are a helpful assistant').",
@@ -56,6 +57,32 @@ OPENAI_API_KEY environment variable {'must be set to use the OpenAI API (not set
         "...will be passed to the program as a single string (without the backslash). You "
         "can also use quotes to pass a single argument with spaces and special characters. "
         "See the -e and -f options for more advanced prompt options.",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {version.__VERSION__}",
+    )
+    parser.add_argument(
+        "-T",
+        "--thinking",
+        nargs="?",
+        const=1,
+        default=0,
+        type=int,
+        help="whether to use thinking mode or not. In the case of OpenAI models this can "
+        "be set to 2 for the highest level of thinking, 1 for medium, and so on. Defaults "
+        "to 0, or 1 if passed without an argument.",
+    )
+    parser.add_argument(
+        "-m",
+        "--model",
+        metavar="MODEL",
+        nargs="?",
+        default=environment.DEFAULT_MODEL,
+        const=environment.DEFAULT_MODEL,
+        type=str,
+        help="specify the model to use. Defaults to the environment variable DEFAULT_MODEL",
     )
     args = parser.parse_args()
     return args

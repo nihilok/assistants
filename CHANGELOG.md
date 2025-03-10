@@ -1,6 +1,12 @@
 Changelog
 ---
 
+### 10/03/2025 v0.5.9
+
+- Update CODE_MODEL default to "o3-mini"
+- add thinking mode options (command line option `-T`, `--thinking`)
+- implement last message retrieval cli command (`/l`, `/last`)
+
 ### 07/03/2025 v0.5.8
 
 - add support for `claude-3-7-sonnet-latest` model with "thinking" param if used as code model

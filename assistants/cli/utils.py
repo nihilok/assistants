@@ -13,7 +13,6 @@ from assistants.ai.anthropic import Claude
 from assistants.ai.dummy_assistant import DummyAssistant
 from assistants.ai.openai import Assistant, Completion
 from assistants.ai.types import AssistantProtocol
-from assistants.cli import output
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
 
@@ -90,39 +89,32 @@ async def create_assistant_and_thread(
         assistant = model_class(model=environment.CODE_MODEL)
         if isinstance(assistant, Claude):
             assistant.thinking = True
-
     else:
-        if args.instructions:
-            try:
-                with open(args.instructions, "r") as instructions_file:
-                    instructions_text = instructions_file.read()
-            except FileNotFoundError:
-                raise ConfigError(f"Instructions file not found: '{args.instructions}'")
-        else:
-            instructions_text = environment.ASSISTANT_INSTRUCTIONS
-
-        model_class = get_model_class("default", environment.DEFAULT_MODEL)
+        model_class = get_model_class("default", args.model)
 
         if model_class == Assistant:
             assistant = model_class(
                 name=environment.ASSISTANT_NAME,
-                model=environment.DEFAULT_MODEL,
-                instructions=instructions_text,
+                model=args.model,
+                instructions=args.instructions,
                 tools=[{"type": "code_interpreter"}],
+                thinking=args.thinking,
             )
         elif model_class == Claude:
             assistant = model_class(
-                model=environment.DEFAULT_MODEL, instructions=instructions_text
+                model=args.model,
+                instructions=(
+                    args.instructions
+                    if args.instructions != environment.ASSISTANT_INSTRUCTIONS
+                    else None
+                ),
+                thinking=bool(args.thinking),
             )
         else:
-            assistant = model_class(model=environment.DEFAULT_MODEL)
-
-        if instructions_text and isinstance(assistant, Claude):
-            output.warn(
-                "Custom instructions are not fully supported with this assistant."
-            )
+            assistant = model_class(model=args.model)
 
     await assistant.start()
+
     if args.continue_thread:
         thread_id = await assistant.async_get_conversation_id()
 

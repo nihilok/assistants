@@ -29,6 +29,12 @@ def default(text: str):
     print(f"{ANSIEscapeSequence.ENDC}{text if text else ''}", end="")
 
 
+def output(text: str):
+    default(text)
+    new_line(2)
+    reset()
+
+
 def warn(text: str):
     warning(text)
     new_line(2)

@@ -73,31 +73,33 @@ For help running the assistant through the CLI, simply run:
 
 ```
 $ ai-cli --help
-usage: ai-cli [-h] [-e] [-f INPUT_FILE] [-i INSTRUCTIONS_FILE] [-t] [-C] [prompt ...]
+usage: ai-cli [-h] [-e] [-f INPUT_FILE] [-i INSTRUCTIONS_FILE] [-t] [-C] [--version] [-T [THINKING]] [-m [MODEL]] [prompt ...]
 
-CLI for AI Assistant
+CLI for assistants-framework v0.5.9
 
 positional arguments:
-  prompt                Positional arguments concatenate into a single prompt. E.g. `ai-cli
-                        Is this a single prompt\?` (question mark escaped) ...will be passed
-                        to the program as a single string (without the backslash). You can
-                        also use quotes to pass a single argument with spaces and special
-                        characters. See the -e and -f options for more advanced prompt
-                        options.
+  prompt                positional arguments concatenate into a single prompt. E.g. `ai-cli Is this a single prompt\?` (question mark escaped) ...will be passed to the
+                        program as a single string (without the backslash). You can also use quotes to pass a single argument with spaces and special characters. See the -e
+                        and -f options for more advanced prompt options.
 
 options:
   -h, --help            show this help message and exit
-  -e, --editor          Open the default editor to compose a prompt.
+  -e, --editor          open the default editor to compose a prompt.
   -f INPUT_FILE, --input-file INPUT_FILE
-                        Read the initial prompt from a file (e.g., 'input.txt').
+                        read the initial prompt from a file (e.g., 'input.txt').
   -i INSTRUCTIONS_FILE, --instructions INSTRUCTIONS_FILE
-                        Read the initial instructions (system message) from a specified
-                        file; if not provided, environment variable `ASSISTANT_INSTRUCTIONS`
-                        or defaults will be used.
+                        read the initial instructions (system message) from a specified file; if this file is not provided, environment variable `ASSISTANT_INSTRUCTIONS`
+                        will be used (or a default of 'You are a helpful assistant').
   -t, --continue-thread
-                        Continue previous thread. (not currently possible with `-C` option)
-  -C, --code            Use specialised reasoning/code model. WARNING: This model will be
-                        slower and more expensive to use.
+                        continue previous thread.
+  -C, --code            use specialised reasoning/code model. WARNING: This model may be slower and more expensive to use (use the CODE_MODEL environment variable to change
+                        the model used. Defaults to 'o1-mini').
+  --version             show program's version number and exit
+  -T [THINKING], --thinking [THINKING]
+                        whether to use thinking mode or not. In the case of OpenAI models this can be set to 2 for the highest level of thinking, 1 for medium, and so on.
+                        Defaults to 0, or 1 if passed without an argument.
+  -m [MODEL], --model [MODEL]
+                        specify the model to use. Defaults to the environment variable DEFAULT_MODEL
 ```
 
 There are also a number if commands that can be invoked in the CLI and these are all prefixed with a forward slash (`/`)
@@ -120,6 +122,7 @@ Commands:
                 (an optional index can be supplied to copy a single code block)
 /n,  /new       Start a new thread and clear the terminal screen
 /t,  /threads:  List all the threads, and select one to continue
+/l,  /last      Retrieve the last message in the current thread
 /clear, C-l     Clear the terminal screen without starting a new thread
 
 Press Ctrl+C or Ctrl+D to exit the program

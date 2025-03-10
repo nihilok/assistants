@@ -358,6 +358,21 @@ class GenerateImage(Command):
 
 generate_image: Command = GenerateImage()
 
+
+class ShowLastMessage(Command):
+    async def __call__(self, environ: IoEnviron, *args) -> None:
+        if not environ.thread_id:
+            output.warn("No thread selected.")
+            return
+        last_message = environ.assistant.get_last_message(environ.thread_id)
+        if last_message:
+            output.output(last_message.text_content)
+        else:
+            output.warn("No last message found.")
+
+
+show_last_message: Command = ShowLastMessage()
+
 COMMAND_MAP = {
     "/e": editor,
     "/edit": editor,
@@ -375,6 +390,8 @@ COMMAND_MAP = {
     "/threads": select_thread,
     "/i": generate_image,
     "/image": generate_image,
+    "/last": show_last_message,
+    "/l": show_last_message,
 }
 
 EXIT_COMMANDS = {

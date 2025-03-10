@@ -9,6 +9,7 @@ import select
 import sys
 
 from assistants import version
+from assistants.ai.constants import REASONING_MODELS
 from assistants.cli import output
 from assistants.cli.arg_parser import get_args
 from assistants.cli.io_loop import io_loop
@@ -39,9 +40,19 @@ def cli():
     # Join all the positional arguments into a single string
     initial_input = " ".join(args.prompt) if args.prompt else None
 
+    if args.thinking and args.thinking > 2:
+        output.fail("Error: The 'thinking' level must be between 0 and 2.")
+        sys.exit(1)
+
     # First line of output (version and basic instructions)
     output.default(
-        f"""Assistant CLI v{version.__VERSION__}; using '{environment.CODE_MODEL if args.code else environment.DEFAULT_MODEL}' model{' (reasoning model)' if args.code else ''}.
+        f"""\
+Assistant CLI v{version.__VERSION__}; using '{environment.CODE_MODEL if args.code else args.model}' \
+model{
+        ' (reasoning mode)' if args.code else ' (thinking level ' + str(args.thinking) + ')' 
+        if args.thinking and args.model in REASONING_MODELS else ' (thinking)' 
+        if args.model.startswith("claude") and args.thinking else ''
+}.
 Type '/help' (or '/h') for a list of commands.
 """
     )
@@ -70,6 +81,8 @@ Type '/help' (or '/h') for a list of commands.
 
     if thread_id is None and args.continue_thread:
         output.warn("Warning: could not read last thread id; starting new thread.")
+    elif args.continue_thread:
+        output.inform("Continuing previous thread...")
 
     # IO Loop (takes user input and sends it to the assistant, or parses it as a command,
     # then prints the response before looping to do it all over again)

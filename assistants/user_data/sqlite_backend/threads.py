@@ -93,7 +93,8 @@ class ThreadsTable:
 threads_table = ThreadsTable()
 
 
-async def get_last_thread_for_assistant(assistant_id: str):
+async def get_last_thread_for_assistant(assistant_id: str) -> Optional[ThreadData]:
     result = await threads_table.get_by_assistant_id(assistant_id, limit=1)
     if result:
         return result[0]
+    return None

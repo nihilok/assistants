@@ -16,6 +16,7 @@ from openai.types.beta import Thread
 from openai.types.beta.threads import Message, Run
 from openai.types.chat import ChatCompletionMessage
 
+from assistants.ai.constants import REASONING_MODELS
 from assistants.ai.memory import MemoryMixin
 from assistants.ai.types import MessageData, MessageDict
 from assistants.config import environment
@@ -27,6 +28,12 @@ from assistants.user_data.sqlite_backend.assistants import (
     save_assistant_id,
 )
 from assistants.user_data.sqlite_backend.threads import get_last_thread_for_assistant
+
+THINKING_MAP = {
+    0: "low",
+    1: "medium",
+    2: "high",
+}
 
 
 class Assistant:  # pylint: disable=too-many-instance-attributes
@@ -47,7 +54,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         last_message (Optional[str]): ID of the last message in the thread.
     """
 
-    REASONING_MODELS = ["o1", "o3-mini"]
+    REASONING_MODELS = REASONING_MODELS
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
@@ -57,7 +64,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         instructions: str,
         tools: list | NotGiven = NOT_GIVEN,
         api_key: str = environment.OPENAI_API_KEY,
-        reasoning_effort: str = "medium",
+        thinking: int = 1,
     ):
         """
         Initialize the Assistant instance.
@@ -83,7 +90,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         self.last_message = None
         self.last_prompt = None
         self.reasoning_effort = (
-            reasoning_effort if self.model in self.REASONING_MODELS else None
+            THINKING_MAP[int(thinking)] if self.model in self.REASONING_MODELS else None
         )
 
     async def start(self):
@@ -97,7 +104,8 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
     async def async_get_conversation_id(self):
         if self.last_message:
             return self.last_message.thread_id
-        return await get_last_thread_for_assistant(self.assistant_id)
+        thread = await get_last_thread_for_assistant(self.assistant_id)
+        return thread.thread_id
 
     def __getattribute__(self, item):
         """
@@ -357,14 +365,14 @@ class Completion(MemoryMixin):
         client (openai.OpenAI): Client for interacting with the OpenAI API.
     """
 
-    REASONING_MODELS = ["o1", "o3-mini"]
+    REASONING_MODELS = REASONING_MODELS
 
     def __init__(
         self,
         model: str,
         max_memory: int = 50,
         api_key: str = environment.OPENAI_API_KEY,
-        reasoning_effort: str = "medium",
+        thinking: int = 2,
     ):
         """
         Initialize the Completion instance.
@@ -380,7 +388,7 @@ class Completion(MemoryMixin):
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
         self.reasoning_effort = (
-            reasoning_effort if self.model in self.REASONING_MODELS else None
+            THINKING_MAP[int(thinking)] if self.model in self.REASONING_MODELS else None
         )
 
     async def start(self):
