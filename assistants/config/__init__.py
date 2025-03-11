@@ -1,6 +1,7 @@
 import json
 import os
-from dataclasses import dataclass
+from argparse import Namespace
+from dataclasses import dataclass, asdict
 from enum import Enum
 
 from assistants.lib.constants import CLAUDE_CLI_MAX_TOKENS
@@ -40,6 +41,24 @@ class Config:
     TELEGRAM_BOT_TOKEN: str
     CLAUDE_MAX_TOKENS: str
     OPEN_IMAGES_IN_BROWSER: bool
+
+    def update_from_config_yaml(self, config):
+        """
+        Update the environment variables from a YAML file.
+        """
+        env_dict = asdict(self)
+        for key, value in config.items():
+            if key in env_dict:
+                setattr(self, key, value)
+
+
+def update_args_from_config_file(config, args: Namespace):
+    """
+    Update the command line arguments from a YAML file.
+    """
+    for key, value in config.items():
+        if key in args:
+            setattr(args, key, value)
 
 
 def get_config() -> Config:

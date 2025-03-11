@@ -13,6 +13,15 @@ OPENAI_API_KEY environment variable {'must be set to use the OpenAI API (not set
 """,
     )
     parser.add_argument(
+        "prompt",
+        nargs="*",
+        help="positional arguments concatenate into a single prompt. E.g. `ai-cli "
+        "Is this a single prompt\\?` (question mark escaped)\n"
+        "...will be passed to the program as a single string (without the backslash). You "
+        "can also use quotes to pass a single argument with spaces and special characters. "
+        "See the -e and -f options for more advanced prompt options.",
+    )
+    parser.add_argument(
         "-e",
         "--editor",
         action="store_true",
@@ -26,20 +35,27 @@ OPENAI_API_KEY environment variable {'must be set to use the OpenAI API (not set
         help="read the initial prompt from a file (e.g., 'input.txt').",
     )
     parser.add_argument(
+        "-t",
+        "--continue-thread",
+        action="store_true",
+        help="continue previous thread.",
+    )
+    parser.add_argument(
         "-i",
         "--instructions",
         metavar="INSTRUCTIONS_FILE",
         type=str,
-        default=environment.ASSISTANT_INSTRUCTIONS,
         help="read the initial instructions (system message) from a specified file; "
         "if this file is not provided, environment variable `ASSISTANT_INSTRUCTIONS` "
         "will be used (or a default of 'You are a helpful assistant').",
     )
     parser.add_argument(
-        "-t",
-        "--continue-thread",
-        action="store_true",
-        help="continue previous thread.",
+        "-c",
+        "--config-file",
+        metavar="CONFIG_FILE",
+        type=str,
+        help="read config (instructions, model, thinking level, prompt etc.) from file. "
+        "This is used to overwrite environment variables or command line arguments",
     )
     parser.add_argument(
         "-C",
@@ -47,21 +63,14 @@ OPENAI_API_KEY environment variable {'must be set to use the OpenAI API (not set
         action="store_true",
         help="use specialised reasoning/code model. WARNING: This model may be slower "
         "and more expensive to use (use the CODE_MODEL environment variable to change "
-        "the model used. Defaults to 'o1-mini').",
+        "the model used. Defaults to 'o3-mini' with reasoning_effort set to 'high').",
     )
     parser.add_argument(
-        "prompt",
-        nargs="*",
-        help="positional arguments concatenate into a single prompt. E.g. `ai-cli "
-        "Is this a single prompt\\?` (question mark escaped)\n"
-        "...will be passed to the program as a single string (without the backslash). You "
-        "can also use quotes to pass a single argument with spaces and special characters. "
-        "See the -e and -f options for more advanced prompt options.",
-    )
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=f"%(prog)s {version.__VERSION__}",
+        "-m",
+        "--model",
+        metavar="MODEL",
+        type=str,
+        help="specify the model to use. Defaults to the environment variable DEFAULT_MODEL",
     )
     parser.add_argument(
         "-T",
@@ -75,14 +84,9 @@ OPENAI_API_KEY environment variable {'must be set to use the OpenAI API (not set
         "to 0, or 1 if passed without an argument.",
     )
     parser.add_argument(
-        "-m",
-        "--model",
-        metavar="MODEL",
-        nargs="?",
-        default=environment.DEFAULT_MODEL,
-        const=environment.DEFAULT_MODEL,
-        type=str,
-        help="specify the model to use. Defaults to the environment variable DEFAULT_MODEL",
+        "--version",
+        action="version",
+        version=f"%(prog)s {version.__VERSION__}",
     )
     args = parser.parse_args()
     return args

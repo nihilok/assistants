@@ -73,9 +73,9 @@ For help running the assistant through the CLI, simply run:
 
 ```
 $ ai-cli --help
-usage: ai-cli [-h] [-e] [-f INPUT_FILE] [-i INSTRUCTIONS_FILE] [-t] [-C] [--version] [-T [THINKING]] [-m [MODEL]] [prompt ...]
+usage: ai-cli [-h] [-e] [-f INPUT_FILE] [-t] [-i INSTRUCTIONS_FILE] [-c CONFIG_FILE] [-C] [-m MODEL] [-T [THINKING]] [--version] [prompt ...]
 
-CLI for assistants-framework v0.5.9
+CLI for assistants-framework v0.5.10
 
 positional arguments:
   prompt                positional arguments concatenate into a single prompt. E.g. `ai-cli Is this a single prompt\?` (question mark escaped) ...will be passed to the
@@ -87,19 +87,21 @@ options:
   -e, --editor          open the default editor to compose a prompt.
   -f INPUT_FILE, --input-file INPUT_FILE
                         read the initial prompt from a file (e.g., 'input.txt').
+  -t, --continue-thread
+                        continue previous thread.
   -i INSTRUCTIONS_FILE, --instructions INSTRUCTIONS_FILE
                         read the initial instructions (system message) from a specified file; if this file is not provided, environment variable `ASSISTANT_INSTRUCTIONS`
                         will be used (or a default of 'You are a helpful assistant').
-  -t, --continue-thread
-                        continue previous thread.
+  -c CONFIG_FILE, --config-file CONFIG_FILE
+                        read config (instructions, model, thinking level, prompt etc.) from file. This is used to overwrite environment variables or command line arguments
   -C, --code            use specialised reasoning/code model. WARNING: This model may be slower and more expensive to use (use the CODE_MODEL environment variable to change
-                        the model used. Defaults to 'o1-mini').
-  --version             show program's version number and exit
+                        the model used. Defaults to 'o3-mini' with reasoning_effort set to 'high').
+  -m MODEL, --model MODEL
+                        specify the model to use. Defaults to the environment variable DEFAULT_MODEL
   -T [THINKING], --thinking [THINKING]
                         whether to use thinking mode or not. In the case of OpenAI models this can be set to 2 for the highest level of thinking, 1 for medium, and so on.
                         Defaults to 0, or 1 if passed without an argument.
-  -m [MODEL], --model [MODEL]
-                        specify the model to use. Defaults to the environment variable DEFAULT_MODEL
+  --version             show program's version number and exit
 ```
 
 There are also a number if commands that can be invoked in the CLI and these are all prefixed with a forward slash (`/`)

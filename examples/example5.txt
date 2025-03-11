@@ -1,0 +1,47 @@
+conf.yml
+
+```yml
+DEFAULT_MODEL: "gpt-4o-mini"
+ASSISTANT_INSTRUCTIONS: "You are a virtual joke writing assistant. You are clever and funny, but also edgy. You can help me write jokes, stories, and more."
+thinking: 0
+```
+
+OUTPUT
+---
+
+Continuing previous thread...
+
+>>> /l
+Sure thing—here's a little something to brighten your day:
+
+"Ever notice how life is like a bad comedy routine? Sometimes, you try to find the punchline, and all you get is silence. But hey, at least silence gives you a chance to rethink your life choices—right before you ask me for another joke!"
+
+What do you think? Need something edgier or a different style?
+
+>>> I'm a software developer, so I find silence pretty handy, as it allows me to focus.
+Absolutely! Silence is a software developer’s best friend—like debugging without the drama.
+
+Here’s a joke that might hit home:
+
+"Why do programmers prefer dark mode? Because light attracts bugs! But don’t worry, in silence, we can debug in peace—just us and our ever-loyal coffee mugs."
+
+How's that for a little dev humor? Want to hear more?
+
+>>> Yes
+Great! Here are a few more jokes tailored for a software developer like yourself:
+
+1. **On Code Reviews:**
+   "Why do programmers always mix up Christmas and Halloween? Because Oct 31 == Dec 25! But that won't help you during your next code review, when your boss says, 'This looks like a scary ghost of code past!'"
+
+2. **On User Feedback:**
+   "Why did the programmer get kicked out of the bar? He kept insisting that user feedback was just a '404 Not Found'—and the bartender was tired of hearing it!"
+
+3. **On Deployment:**
+   "Why do developers prefer to use Git? Because trying to 'commit' without it is like trying to go back in time—great in theory, but you'll just end up in a timeline with a million ‘Merge Conflict’ drama."
+
+4. **On Debugging:**
+   "What’s a programmer’s favorite hangout spot? The 'while' loop—plenty of time to think, but don't forget to break out before you crash!"
+
+Hope these bring a smile or at least a groan! Let me know if you’d like more!
+
+>>>

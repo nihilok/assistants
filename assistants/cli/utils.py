@@ -13,7 +13,7 @@ from assistants.ai.anthropic import Claude
 from assistants.ai.dummy_assistant import DummyAssistant
 from assistants.ai.openai import Assistant, Completion
 from assistants.ai.types import AssistantProtocol
-from assistants.config import environment
+from assistants.config import Config
 from assistants.lib.exceptions import ConfigError
 
 
@@ -74,9 +74,14 @@ MODEL_LOOKUP = {
 
 
 async def create_assistant_and_thread(
-    args: Namespace,
+    args: Namespace, environment: Config
 ) -> tuple[AssistantProtocol, Optional[str]]:
     thread_id = None
+    instructions = environment.ASSISTANT_INSTRUCTIONS
+
+    if args.instructions:
+        with open(args.instructions, "r") as file:
+            instructions = file.read()
 
     def get_model_class(model_type: str, model_name: str):
         for key, assistant_type in MODEL_LOOKUP[model_type].items():
@@ -96,7 +101,7 @@ async def create_assistant_and_thread(
             assistant = model_class(
                 name=environment.ASSISTANT_NAME,
                 model=args.model,
-                instructions=args.instructions,
+                instructions=instructions,
                 tools=[{"type": "code_interpreter"}],
                 thinking=args.thinking,
             )
@@ -104,8 +109,8 @@ async def create_assistant_and_thread(
             assistant = model_class(
                 model=args.model,
                 instructions=(
-                    args.instructions
-                    if args.instructions != environment.ASSISTANT_INSTRUCTIONS
+                    instructions
+                    if instructions != environment.ASSISTANT_INSTRUCTIONS
                     else None
                 ),
                 thinking=bool(args.thinking),
