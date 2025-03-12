@@ -1,6 +1,12 @@
 Changelog
 ---
 
+### 13/03/2025 v0.5.13
+
+- fix dependency issue with pygments-tsx
+
+---
+
 ### 13/03/2025 v0.5.12
 
 - fix issue with thinking mode in Claude where ThinkingBlock objects were not being handled correctly

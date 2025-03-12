@@ -18,7 +18,7 @@ setup(
         "loguru==0.7.3",
         "pyperclip==1.9.0",
         "prompt-toolkit==3.0.48",
-        "pygments==2.18.0",
+        # "pygments==2.18.0",
         "pygments-tsx == 1.0.3",
         "pyyaml==6.0.2",
         "anthropic==0.49.0",
