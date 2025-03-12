@@ -18,7 +18,7 @@ from openai.types.chat import ChatCompletionMessage
 
 from assistants.ai.constants import REASONING_MODELS
 from assistants.ai.memory import MemoryMixin
-from assistants.ai.types import MessageData, MessageDict
+from assistants.ai.types import MessageData, MessageDict, AssistantInterface
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError, NoResponseError
 from assistants.log import logger
@@ -36,7 +36,7 @@ THINKING_MAP = {
 }
 
 
-class Assistant:  # pylint: disable=too-many-instance-attributes
+class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attributes
     """
     Encapsulates interactions with the OpenAI Assistants API.
 
@@ -350,7 +350,7 @@ class Assistant:  # pylint: disable=too-many-instance-attributes
         return self.last_message.thread_id
 
 
-class Completion(MemoryMixin):
+class Completion(MemoryMixin, AssistantInterface):
     """
     Encapsulates interactions with the OpenAI Chat Completion API.
 

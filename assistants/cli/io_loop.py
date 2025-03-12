@@ -5,8 +5,7 @@ This module contains the main input/output loop for interacting with the assista
 import asyncio
 from typing import Optional
 
-from assistants.ai.memory import MemoryMixin
-from assistants.ai.types import AssistantProtocol
+from assistants.ai.types import AssistantInterface
 from assistants.cli import output
 from assistants.cli.commands import COMMAND_MAP, EXIT_COMMANDS, IoEnviron
 from assistants.cli.prompt import get_user_input
@@ -15,7 +14,7 @@ from assistants.log import logger
 
 
 async def io_loop_async(
-    assistant: AssistantProtocol | MemoryMixin,
+    assistant: AssistantInterface,
     initial_input: str = "",
     thread_id: Optional[str] = None,
 ):
@@ -102,7 +101,7 @@ async def converse(
 
 
 def io_loop(
-    assistant: AssistantProtocol | MemoryMixin,
+    assistant: AssistantInterface,
     initial_input: str = "",
     thread_id: Optional[str] = None,
 ):

@@ -11,8 +11,8 @@ from pygments.lexers import get_lexer_by_name
 
 from assistants.ai.anthropic import Claude
 from assistants.ai.dummy_assistant import DummyAssistant
+from assistants.ai.types import AssistantInterface
 from assistants.ai.openai import Assistant, Completion
-from assistants.ai.types import AssistantProtocol
 from assistants.config import Config
 from assistants.lib.exceptions import ConfigError
 
@@ -75,7 +75,7 @@ MODEL_LOOKUP = {
 
 async def create_assistant_and_thread(
     args: Namespace, environment: Config
-) -> tuple[AssistantProtocol, Optional[str]]:
+) -> tuple[AssistantInterface, Optional[str]]:
     thread_id = None
     instructions = environment.ASSISTANT_INSTRUCTIONS
 
@@ -122,7 +122,5 @@ async def create_assistant_and_thread(
 
     if args.continue_thread:
         thread_id = await assistant.async_get_conversation_id()
-
-    assistant = cast(AssistantProtocol, assistant)
 
     return assistant, thread_id

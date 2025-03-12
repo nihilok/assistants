@@ -12,7 +12,7 @@ import pyperclip
 
 from assistants.ai.memory import MemoryMixin
 from assistants.ai.openai import Assistant
-from assistants.ai.types import AssistantProtocol, MessageData
+from assistants.ai.types import MessageData, AssistantInterface
 from assistants.cli import output
 from assistants.lib.constants import IO_INSTRUCTIONS
 from assistants.cli.selector import TerminalSelector, TerminalSelectorOption
@@ -30,7 +30,7 @@ class IoEnviron:
     Environment variables for the input/output loop.
     """
 
-    assistant: AssistantProtocol | MemoryMixin | Assistant
+    assistant: AssistantInterface
     last_message: Optional[MessageData] = None
     thread_id: Optional[str] = None
     user_input: Optional[str] = None

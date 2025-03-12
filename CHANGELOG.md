@@ -1,6 +1,16 @@
 Changelog
 ---
 
+### 12/03/2025 v0.5.11
+
+- update README.md
+- other refactors and improvements
+
+### 12/03/2025 v0.5.10
+
+- add CLI option to set variables and options from a config file (`-c`, `--config-file`)
+- fixes bug where instructions were not being passed to the model via environment variable
+
 ### 10/03/2025 v0.5.9
 
 - Update CODE_MODEL default to "o3-mini"

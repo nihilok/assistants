@@ -16,7 +16,13 @@ def mock_select():
 @patch(
     "assistants.cli.cli.get_args",
     return_value=MagicMock(
-        prompt=None, editor=False, input_file=False, code=False, continue_thread=False
+        prompt=None,
+        editor=False,
+        input_file=False,
+        code=False,
+        continue_thread=False,
+        config_file=None,
+        thinking=0,
     ),
 )
 @patch(
@@ -34,7 +40,13 @@ def test_cli_runs_successfully(
 @patch(
     "assistants.cli.cli.get_args",
     return_value=MagicMock(
-        prompt=None, editor=False, input_file=False, code=False, continue_thread=False
+        prompt=None,
+        editor=False,
+        input_file=False,
+        code=False,
+        continue_thread=False,
+        config_file=None,
+        thinking=0,
     ),
 )
 @patch(
@@ -55,9 +67,76 @@ def test_cli_exits_on_config_error(
     return_value=MagicMock(
         prompt=None,
         editor=False,
+        input_file=None,
+        code=False,
+        continue_thread=False,
+        config_file="nonexistent_file.txt",
+        thinking=0,
+    ),
+)
+@patch("assistants.cli.cli.output")
+def test_cli_exits_on_config_file_not_found(mock_output, mock_get_args):
+    with pytest.raises(SystemExit):
+        cli()
+    mock_output.fail.assert_called_once_with(
+        "Error: The file 'nonexistent_file.txt' was not found."
+    )
+
+
+@patch(
+    "assistants.cli.cli.get_args",
+    return_value=MagicMock(
+        prompt=None,
+        editor=False,
+        input_file=None,
+        code=False,
+        continue_thread=False,
+        config_file=None,
+        thinking=-1,
+        model="dummy-model",
+    ),
+)
+@patch("assistants.cli.cli.output")
+def test_cli_exits_on_thinking_less_than_0(mock_output, mock_get_args):
+    with pytest.raises(SystemExit):
+        cli()
+    mock_output.fail.assert_called_once_with(
+        "Error: The 'thinking' level must be between 0 and 2."
+    )
+
+
+@patch(
+    "assistants.cli.cli.get_args",
+    return_value=MagicMock(
+        prompt=None,
+        editor=False,
+        input_file=None,
+        code=False,
+        continue_thread=False,
+        config_file=None,
+        thinking=3,
+        model="dummy-model",
+    ),
+)
+@patch("assistants.cli.cli.output")
+def test_cli_exits_on_thinking_more_than_2(mock_output, mock_get_args):
+    with pytest.raises(SystemExit):
+        cli()
+    mock_output.fail.assert_called_once_with(
+        "Error: The 'thinking' level must be between 0 and 2."
+    )
+
+
+@patch(
+    "assistants.cli.cli.get_args",
+    return_value=MagicMock(
+        prompt=None,
+        editor=False,
         input_file="nonexistent_file.txt",
         code=False,
         continue_thread=False,
+        config_file=None,
+        thinking=0,
     ),
 )
 @patch("assistants.cli.cli.output")
@@ -72,7 +151,13 @@ def test_cli_exits_on_file_not_found(mock_output, mock_get_args):
 @patch(
     "assistants.cli.cli.get_args",
     return_value=MagicMock(
-        prompt=None, editor=True, input_file=False, code=False, continue_thread=False
+        prompt=None,
+        editor=True,
+        input_file=False,
+        code=False,
+        continue_thread=False,
+        config_file=None,
+        thinking=0,
     ),
 )
 @patch("assistants.cli.cli.get_text_from_default_editor", return_value="Edited text")
@@ -95,7 +180,13 @@ def test_cli_opens_editor(
 @patch(
     "assistants.cli.cli.get_args",
     return_value=MagicMock(
-        prompt=None, editor=False, input_file=False, code=False, continue_thread=True
+        prompt=None,
+        editor=False,
+        input_file=False,
+        code=False,
+        continue_thread=True,
+        config_file=None,
+        thinking=0,
     ),
 )
 @patch(

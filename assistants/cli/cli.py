@@ -62,7 +62,7 @@ def cli():
     initial_input = " ".join(args.prompt) if args.prompt else None
 
     # Validate the 'thinking' level
-    if args.thinking and args.thinking > 2:
+    if args.thinking and args.thinking > 2 or args.thinking < 0:
         output.fail("Error: The 'thinking' level must be between 0 and 2.")
         sys.exit(1)
 

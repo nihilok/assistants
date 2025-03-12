@@ -8,6 +8,7 @@ Classes:
     - MessageDict: Typed dictionary for message data.
 """
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Protocol, TypedDict
 
@@ -26,51 +27,6 @@ class MessageData:
     thread_id: Optional[str] = None
 
 
-class AssistantProtocol(Protocol):
-    """
-    Protocol defining the interface for assistant classes.
-
-    Attributes:
-        assistant_id (Optional[str]): The ID of the assistant.
-    """
-
-    assistant_id: Optional[str]
-
-    async def start(self) -> None:
-        """
-        Load the assistant etc. (async init if needed).
-        """
-        ...
-
-    async def converse(
-        self, user_input: str, thread_id: Optional[str] = None
-    ) -> Optional[MessageData]:
-        """
-        Converse with the assistant.
-
-        :param user_input: The user's input message.
-        :param thread_id: Optional ID of the thread to continue.
-        :return: The last message in the thread or a string response.
-        """
-        ...
-
-    def get_last_message(self, thread_id: str) -> Optional[MessageData]:
-        """
-        Get the last message in the thread.
-
-        :param thread_id: the ID of the thread to continue.
-        :return: last message in the thread if one exists.
-        """
-        ...
-
-    def save_conversation_state(self) -> str:
-        """
-        Save the current state of the conversation.
-        :return: The conversation ID/ Thread ID.
-        """
-        ...
-
-
 class MessageDict(TypedDict):
     """
     Typed dictionary for message data.
@@ -82,3 +38,52 @@ class MessageDict(TypedDict):
 
     role: str
     content: str | None
+
+
+class AssistantInterface(ABC):
+    """
+    Interface for the Assistant class.
+    This interface defines the methods that must be implemented by any Assistant class.
+    """
+
+    @abstractmethod
+    async def start(self) -> None:
+        """
+        Start the assistant.
+        This method should be overridden by subclasses to implement the specific startup logic.
+        """
+        pass
+
+    @abstractmethod
+    async def save_conversation_state(self) -> str:
+        """
+        Save the current conversation state.
+        This method should be overridden by subclasses to implement the specific logic for saving the conversation state.
+        """
+        pass
+
+    @abstractmethod
+    async def get_last_message(self, thread_id: str) -> Optional[MessageData]:
+        """
+        Get the last message from the conversation.
+        This method should be overridden by subclasses to implement the specific logic for getting the last message.
+        """
+        pass
+
+    @abstractmethod
+    async def async_get_conversation_id(self) -> str:
+        """
+        Get the conversation ID.
+        This method should be overridden by subclasses to implement the specific logic for getting the conversation ID.
+        """
+        pass
+
+    @abstractmethod
+    async def converse(
+        self, user_input: str, thread_id: Optional[str] = None
+    ) -> Optional[MessageData]:
+        """
+        Converse with the assistant.
+        This method should be overridden by subclasses to implement the specific logic for conversing with the assistant.
+        """
+        pass

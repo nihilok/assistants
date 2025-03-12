@@ -10,12 +10,12 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from assistants.ai.types import MessageData, MessageDict
+from assistants.ai.types import MessageData, MessageDict, AssistantInterface
 from assistants.user_data.sqlite_backend import conversations_table
 from assistants.user_data.sqlite_backend.conversations import Conversation
 
 
-class MemoryMixin:
+class MemoryMixin(AssistantInterface):
     """
     Mixin class to handle memory-related functionality.
     """
@@ -97,3 +97,9 @@ class MemoryMixin:
         return MessageData(
             text_content=self.memory[-1]["content"], thread_id=self.conversation_id
         )
+
+    async def converse(self, *args, **kwargs) -> Optional[MessageData]:
+        raise NotImplementedError
+
+    async def start(self) -> None:
+        raise NotImplementedError

@@ -27,7 +27,7 @@ class ThreadsTable:
 
     async def get_by_thread_id(self, thread_id: str) -> Optional[ThreadData]:
         async with aiosqlite.connect(self.db_path) as conn:
-            cur = conn.cursor()
+            cur = await conn.cursor()
             cur.execute(
                 "SELECT thread_id, last_run_dt, assistant_id, initial_prompt FROM threads WHERE thread_id = ?",
                 (thread_id,),
@@ -72,6 +72,7 @@ class ThreadsTable:
             results = []
             for row in rows:
                 results.append(ThreadData(*row))
+            return results
 
     async def save_thread(
         self, thread_id: str, assistant_id: str, initial_prompt: Optional[str] = None
@@ -79,7 +80,8 @@ class ThreadsTable:
         async with aiosqlite.connect(self.db_path) as conn:
             # Select the initial prompt for the thread_id if it exists
             async with await conn.execute(
-                f"SELECT initial_prompt FROM {TABLE_NAME} WHERE thread_id = '{thread_id}';"
+                "SELECT initial_prompt FROM {TABLE_NAME} WHERE thread_id = ?;",
+                (thread_id,),
             ) as cursor:
                 result = await cursor.fetchone()
                 initial_prompt = result[0] if result else initial_prompt

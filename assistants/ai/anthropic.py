@@ -10,7 +10,7 @@ Classes:
 from typing import Optional
 
 from assistants.ai.memory import MemoryMixin
-from assistants.ai.types import MessageData
+from assistants.ai.types import MessageData, AssistantInterface
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
 
@@ -19,7 +19,7 @@ from anthropic import AsyncAnthropic
 INSTRUCTIONS_UNDERSTOOD = "Instructions understood."
 
 
-class Claude(MemoryMixin):
+class Claude(MemoryMixin, AssistantInterface):
     """
     Claude class encapsulates interactions with the Anthropic API.
 
@@ -78,7 +78,7 @@ class Claude(MemoryMixin):
         """
         await super().load_conversation(conversation_id)
         if self.instructions:
-            # Check if the instructions are already in memory
+            # Check if the instructions are already the most recent in the memory
             for idx, message in enumerate(self.memory):
                 if (
                     message.get("role") == "user"
