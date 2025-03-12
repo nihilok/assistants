@@ -8,6 +8,9 @@ from typing import Optional, cast
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
+from pygments.lexers.special import TextLexer
+from pygments.util import ClassNotFound
+from pygments_tsx.tsx import patch_pygments, TypeScriptXLexer
 
 from assistants.ai.anthropic import Claude
 from assistants.ai.dummy_assistant import DummyAssistant
@@ -16,17 +19,28 @@ from assistants.ai.openai import Assistant, Completion
 from assistants.config import Config
 from assistants.lib.exceptions import ConfigError
 
+fallback_lexers = {
+    "tsx": TypeScriptXLexer,
+    "plaintext": TextLexer,
+}
+
 
 def highlight_code_blocks(markdown_text):
+    patch_pygments()
     code_block_pattern = re.compile(r"```(\w+)?\n(.*?)```", re.DOTALL)
 
     def replacer(match):
         lang = match.group(1)
         code = match.group(2)
         if lang:
-            if lang == "plaintext":
-                lang = "text"
-            lexer = get_lexer_by_name(lang, stripall=True)
+            lexer_class = fallback_lexers.get(lang)
+            if not lexer_class:
+                try:
+                    lexer = get_lexer_by_name(lang, stripall=True)
+                except ClassNotFound:
+                    lexer = TextLexer()
+            else:
+                lexer = lexer_class()
         else:
             lexer = get_lexer_by_name("text", stripall=True)
         return f"```{lang if lang else ''}\n{highlight(code, lexer, TerminalFormatter())}```"

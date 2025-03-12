@@ -1,15 +1,27 @@
 Changelog
 ---
 
+### 13/03/2025 v0.5.12
+
+- fix issue with thinking mode in Claude where ThinkingBlock objects were not being handled correctly
+- fix issue with code highlighting where tsx was not supported by Pygments
+- adds pygments-tsx as a dependency
+
+---
+
 ### 12/03/2025 v0.5.11
 
 - update README.md
 - other refactors and improvements
 
+---
+
 ### 12/03/2025 v0.5.10
 
 - add CLI option to set variables and options from a config file (`-c`, `--config-file`)
 - fixes bug where instructions were not being passed to the model via environment variable
+
+---
 
 ### 10/03/2025 v0.5.9
 
@@ -17,11 +29,15 @@ Changelog
 - add thinking mode options (command line option `-T`, `--thinking`)
 - implement last message retrieval cli command (`/l`, `/last`)
 
+---
+
 ### 07/03/2025 v0.5.8
 
 - add support for `claude-3-7-sonnet-latest` model with "thinking" param if used as code model
 - add support for `o1` and `o3-mini` used via the Assistants API (with reasoning_effort defaulting to "medium")
 - fix logic causing conversations to be continued even without passing the continue thread flag
+
+---
 
 ### 26/02/2025 v0.5.5
 

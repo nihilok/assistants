@@ -128,5 +128,12 @@ class Claude(MemoryMixin, AssistantInterface):
             }
 
         response = await self.client.messages.create(**kwargs)
-        self.remember({"role": "assistant", "content": response.content[0].text})
-        return MessageData(text_content=response.content[0].text)
+        text_content = next(
+            (block for block in response.content if hasattr(block, "text")), None
+        )
+
+        if not text_content:
+            return None
+
+        self.remember({"role": "assistant", "content": text_content.text})
+        return MessageData(text_content=text_content.text)
