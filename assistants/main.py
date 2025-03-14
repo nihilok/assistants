@@ -1,4 +1,5 @@
 import asyncio
+import getpass
 import os
 import sys
 from pathlib import Path
@@ -12,32 +13,95 @@ def install():
     bin_dir = Path(sys.prefix) / "bin"
     path_update = f"export PATH=$PATH:{bin_dir}\n"
 
-    # Check that the bin directory is not in the PATH environment variable already
-    # and has not already been added to the path by this script
+    # Check if we need to update PATH
     path = os.environ.get("PATH", "")
-    if str(bin_dir) in path:
-        print(f"{bin_dir} is already in PATH")
-        return
+    path_needs_update = str(bin_dir) not in path
 
-    with open(Path.home() / ".profile", "r") as f:
-        if path_update in f.read():
+    # Get API keys if not in environment variables
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    openai_key_to_add = None
+    if not openai_key:
+        if (
+            input("Would you like to set your OpenAI API key now? (y/N): ").lower()
+            == "y"
+        ):
+            openai_key_to_add = getpass.getpass("Enter your OpenAI API key: ")
+
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+    anthropic_key_to_add = None
+    if not anthropic_key:
+        if (
+            input("Would you like to set your Anthropic API key now? (y/N): ").lower()
+            == "y"
+        ):
+            anthropic_key_to_add = getpass.getpass("Enter your Anthropic API key: ")
+
+    # Only proceed with RC file operations if we have something to update
+    if path_needs_update or openai_key_to_add or anthropic_key_to_add:
+        # Detect user's shell
+        shell = os.environ.get("SHELL", "")
+        if not shell:
+            print("Could not determine shell type. Using ~/.profile as default")
+            rc_file = Path.home() / ".profile"
+        elif "zsh" in shell:
+            rc_file = Path.home() / ".zshrc"
+        elif "bash" in shell:
+            # Check for .bash_profile first, then .bashrc
+            if (Path.home() / ".bash_profile").exists():
+                rc_file = Path.home() / ".bash_profile"
+            else:
+                rc_file = Path.home() / ".bashrc"
+        else:
+            # Default to .profile for other shells
+            rc_file = Path.home() / ".profile"
+
+        # Create or read the file
+        if not rc_file.exists():
+            rc_file.touch()
+            print(f"Created {rc_file}")
+            rc_content = "\n\n# Added by assistants-framework:\n"
+        else:
+            rc_content = rc_file.read_text()
+
+        # Update PATH if needed
+        if path_needs_update and path_update not in rc_content:
+            print(f"Adding {bin_dir} to PATH in {rc_file}")
+            rc_content += f"\n{path_update}"
+        elif path_needs_update:
+            print(f"{bin_dir} is already configured in {rc_file}")
+        else:
             print(f"{bin_dir} is already in PATH")
-            return
 
-    # Add the bin directory to the PATH environment variable in .profile
-    print(f"Adding {bin_dir} to PATH in .profile")
-    with open(Path.home() / ".profile", "a") as f:
-        f.write(f"export PATH=$PATH:{bin_dir}\n")
+        # Add API keys only if they were newly provided
+        if openai_key_to_add:
+            rc_content += f"\nexport OPENAI_API_KEY={openai_key_to_add}\n"
+            print("Added OpenAI API key to configuration")
+        if anthropic_key_to_add:
+            rc_content += f"\nexport ANTHROPIC_API_KEY={anthropic_key_to_add}\n"
+            print("Added Anthropic API key to configuration")
 
-    os.system("source ~/.profile")
+        # Write back to the file
+        rc_file.write_text(rc_content)
+        print(f"Updated {rc_file}")
+        os.system("source " + str(rc_file))
+    else:
+        print(
+            "Binaries are already on the PATH, and API keys were either not provided, or are already available."
+        )
+        print("No changes have been made.")
+
     print("Done!")
 
 
 def main():
 
     if len(sys.argv) > 1 and sys.argv[1] == "install":
-        install()
-        return
+        try:
+            install()
+            return
+        except (KeyboardInterrupt, EOFError):
+            print("\nInstallation cancelled.")
+            sys.exit(1)
 
     asyncio.run(init_db())
     cli()
