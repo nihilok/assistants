@@ -311,7 +311,7 @@ class SelectThread(Command):
 
         output.inform(f"Selected thread '{thread_id}'")
 
-        last_message = environ.assistant.get_last_message(thread_id)
+        last_message = await environ.assistant.get_last_message(thread_id)
         environ.last_message = last_message
 
         if last_message:
