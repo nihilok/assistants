@@ -47,11 +47,12 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
         model (str): The model to be used by the assistant.
         instructions (str): Instructions for the assistant.
         tools (list | NotGiven): Optional tools for the assistant.
-        api_key (str): API key for OpenAI.
         client (openai.OpenAI): Client for interacting with the OpenAI API.
         _config_hash (Optional[str]): Hash of the current configuration.
         assistant (Optional[object]): The assistant object.
         last_message (Optional[str]): ID of the last message in the thread.
+        last_prompt (Optional[str]): The last prompt sent to the assistant.
+        reasoning_effort (Optional[str]): Reasoning effort for the assistant.
     """
 
     REASONING_MODELS = REASONING_MODELS
@@ -348,6 +349,27 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
             self.last_message.thread_id, self.assistant_id, self.last_prompt
         )
         return self.last_message.thread_id
+
+    async def get_whole_thread(self) -> list[MessageDict]:
+        """
+        Get the whole thread of messages.
+        :return: The list of messages in the thread.
+        """
+        if not self.last_message:
+            return []
+
+        messages = self.client.beta.threads.messages.list(
+            thread_id=self.last_message.thread_id,
+            order="asc",
+        ).data
+
+        return [
+            {
+                "role": message.role,
+                "content": message.content[0].text.value,
+            }
+            for message in messages
+        ]
 
 
 class Completion(MemoryMixin, AssistantInterface):

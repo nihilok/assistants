@@ -373,6 +373,27 @@ class ShowLastMessage(Command):
 
 show_last_message: Command = ShowLastMessage()
 
+
+class CopyEntireThread(Command):
+    async def __call__(self, environ: IoEnviron, *args) -> None:
+        if not environ.thread_id or not environ.last_message:
+            output.warn("No thread selected.")
+            return
+        history = await environ.assistant.get_whole_thread()
+        history_text = ""
+        for message in history:
+            if message["role"] == "user":
+                history_text += f"User:\n{message['content']}\n\n"
+            else:
+                history_text += f"Assistant:\n{message['content']}\n\n"
+
+        pyperclip.copy(history_text)
+        output.inform("Copied thread to clipboard")
+
+
+copy_thread = CopyEntireThread()
+
+
 COMMAND_MAP = {
     "/e": editor,
     "/edit": editor,
@@ -381,6 +402,8 @@ COMMAND_MAP = {
     "/copy": copy_response,
     "/cc": copy_code_blocks,
     "/copy-code": copy_code_blocks,
+    "/ct": copy_thread,
+    "/copy-thread": copy_thread,
     "/h": print_usage,
     "/help": print_usage,
     "/n": new_thread,

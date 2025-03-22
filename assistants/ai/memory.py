@@ -103,3 +103,10 @@ class MemoryMixin(AssistantInterface):
 
     async def start(self) -> None:
         raise NotImplementedError
+
+    async def get_whole_thread(self) -> list[MessageDict]:
+        """
+        Get the whole thread of messages.
+        :return: List of messages in the thread.
+        """
+        return self.memory

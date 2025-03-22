@@ -87,3 +87,11 @@ class AssistantInterface(ABC):
         This method should be overridden by subclasses to implement the specific logic for conversing with the assistant.
         """
         pass
+
+    @abstractmethod
+    async def get_whole_thread(self) -> list[MessageDict]:
+        """
+        Get the whole thread of messages.
+        This method should be overridden by subclasses to implement the specific logic for getting the whole thread.
+        """
+        pass
