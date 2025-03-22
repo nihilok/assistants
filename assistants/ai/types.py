@@ -1,6 +1,7 @@
 """
 This module defines the types used by the generic assistants API.
-These components are used to represent and manage message data and interactions with assistant classes.
+These components are used to represent and manage message data and interactions
+with assistant classes.
 
 Classes:
     - MessageData: Data class representing message data.
@@ -10,7 +11,7 @@ Classes:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Protocol, TypedDict
+from typing import Optional, TypedDict
 
 
 @dataclass
@@ -50,33 +51,33 @@ class AssistantInterface(ABC):
     async def start(self) -> None:
         """
         Start the assistant.
-        This method should be overridden by subclasses to implement the specific startup logic.
+        This method should be overridden by subclasses to implement the specific startup
+        logic.
         """
-        pass
 
     @abstractmethod
     async def save_conversation_state(self) -> str:
         """
         Save the current conversation state.
-        This method should be overridden by subclasses to implement the specific logic for saving the conversation state.
+        This method should be overridden by subclasses to implement the specific logic for
+        saving the conversation state.
         """
-        pass
 
     @abstractmethod
     async def get_last_message(self, thread_id: str) -> Optional[MessageData]:
         """
         Get the last message from the conversation.
-        This method should be overridden by subclasses to implement the specific logic for getting the last message.
+        This method should be overridden by subclasses to implement the specific logic for
+        getting the last message.
         """
-        pass
 
     @abstractmethod
     async def async_get_conversation_id(self) -> str:
         """
         Get the conversation ID.
-        This method should be overridden by subclasses to implement the specific logic for getting the conversation ID.
+        This method should be overridden by subclasses to implement the specific logic for
+        getting the conversation ID.
         """
-        pass
 
     @abstractmethod
     async def converse(
@@ -84,14 +85,14 @@ class AssistantInterface(ABC):
     ) -> Optional[MessageData]:
         """
         Converse with the assistant.
-        This method should be overridden by subclasses to implement the specific logic for conversing with the assistant.
+        This method should be overridden by subclasses to implement the specific logic for
+        conversing with the assistant.
         """
-        pass
 
     @abstractmethod
     async def get_whole_thread(self) -> list[MessageDict]:
         """
         Get the whole thread of messages.
-        This method should be overridden by subclasses to implement the specific logic for getting the whole thread.
+        This method should be overridden by subclasses to implement the specific logic for
+        getting the whole thread.
         """
-        pass

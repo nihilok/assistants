@@ -9,12 +9,13 @@ Classes:
 
 from typing import Optional
 
+from anthropic import AsyncAnthropic
+
 from assistants.ai.memory import MemoryMixin
 from assistants.ai.types import MessageData, AssistantInterface
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
 
-from anthropic import AsyncAnthropic
 
 INSTRUCTIONS_UNDERSTOOD = "Instructions understood."
 
@@ -66,7 +67,6 @@ class Claude(MemoryMixin, AssistantInterface):
         """
         Do nothing
         """
-        pass
 
     async def load_conversation(self, conversation_id: Optional[str] = None):
         """
@@ -101,7 +101,9 @@ class Claude(MemoryMixin, AssistantInterface):
             ]
 
     async def converse(
-        self, user_input: str, thread_id: Optional[str] = None
+        self,
+        user_input: str,
+        thread_id: Optional[str] = None,  # pylint: disable=unused-argument
     ) -> Optional[MessageData]:
         """
         Converse with the assistant by creating or continuing a thread.

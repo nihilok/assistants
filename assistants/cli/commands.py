@@ -48,13 +48,23 @@ class Command(ABC):
 
         :param environ: The environment variables for the input/output loop.
         """
-        pass
+
+    @property
+    @abstractmethod
+    def help(self) -> str:
+        """
+        Get the help text for the command.
+
+        :return: The help text for the command.
+        """
 
 
 class Editor(Command):
     """
     Command to open the default text editor.
     """
+
+    help = "Open the default text editor to compose a prompt"
 
     async def __call__(self, environ: IoEnviron, *args) -> None:
         """
@@ -72,6 +82,8 @@ class CopyResponse(Command):
     """
     Command to copy the response to the clipboard.
     """
+
+    help = "Copy the last response to the clipboard"
 
     @staticmethod
     def copy_to_clipboard(text: str) -> None:
@@ -137,6 +149,11 @@ class CopyCodeBlocks(CopyResponse):
     Command to copy the code blocks from the response to the clipboard.
     """
 
+    help = (
+        "Copy code blocks from the last response to the clipboard; optionally specify an index "
+        "to copy a specific code block"
+    )
+
     async def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to copy the code blocks from the response to the clipboard.
@@ -200,6 +217,8 @@ class PrintUsage(Command):
     Command to print the usage instructions.
     """
 
+    help = "Print the usage instructions"
+
     async def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to print the usage instructions.
@@ -216,6 +235,8 @@ class NewThread(Command):
     """
     Command to start a new thread.
     """
+
+    help = "Start a new thread and clear the screen"
 
     async def __call__(self, environ: IoEnviron, *args) -> None:
         """
@@ -236,6 +257,8 @@ class SelectThread(Command):
     """
     Command to select a thread.
     """
+
+    help = "Select a previous thread to load/continue"
 
     async def __call__(self, environ: IoEnviron, *args) -> None:
         """
@@ -302,6 +325,12 @@ select_thread: Command = SelectThread()
 
 
 class GenerateImage(Command):
+    """
+    Command to generate an image from a prompt.
+    """
+
+    help = "Generate an image from a prompt"
+
     @staticmethod
     async def save_image(image_url: str, prompt: str) -> None:
         """
@@ -360,11 +389,20 @@ generate_image: Command = GenerateImage()
 
 
 class ShowLastMessage(Command):
+    """
+    Command to show the last message in the current thread.
+    """
+
+    help = "Show the last message in the current thread"
+
     async def __call__(self, environ: IoEnviron, *args) -> None:
+        """
+        Call the command to show the last message in the current thread.
+        """
         if not environ.thread_id:
             output.warn("No thread selected.")
             return
-        last_message = environ.assistant.get_last_message(environ.thread_id)
+        last_message = await environ.assistant.get_last_message(environ.thread_id)
         if last_message:
             output.output(last_message.text_content)
         else:
@@ -375,7 +413,16 @@ show_last_message: Command = ShowLastMessage()
 
 
 class CopyEntireThread(Command):
+    """
+    Command to copy the entire thread to the clipboard.
+    """
+
+    help = "Copy the entire thread to the clipboard"
+
     async def __call__(self, environ: IoEnviron, *args) -> None:
+        """
+        Call the command to copy the entire thread to the clipboard.
+        """
         if not environ.thread_id or not environ.last_message:
             output.warn("No thread selected.")
             return
@@ -425,3 +472,35 @@ EXIT_COMMANDS = {
     "/quit",
     "/exit",
 }
+
+
+def generate_help_text() -> str:
+    """
+    Generate the help text for the commands.
+
+    :return: The help text for the commands with commands sharing the same help grouped together.
+    """
+    # Group commands by their help text
+    help_to_commands = {}
+    for command, cmd in COMMAND_MAP.items():
+        if cmd.help in help_to_commands:
+            help_to_commands[cmd.help].append(command)
+        else:
+            help_to_commands[cmd.help] = [command]
+
+    # Format each entry with grouped commands
+    formatted_lines = []
+    for help_text, commands in help_to_commands.items():
+        # Sort commands to group aliases together
+        commands.sort(key=len)  # Sort by length to put short commands first
+        command_group = ", ".join(commands)
+        formatted_lines.append(f"{command_group}: {help_text}")
+
+    return (
+        "\n".join(formatted_lines)
+        + "\nCTRL+L to clear the screen\nCTRL+C or CTRL+D to exit"
+    )
+
+
+if __name__ == "__main__":
+    print(generate_help_text())

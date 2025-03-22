@@ -1,3 +1,7 @@
+"""
+Dummy Assistant
+"""
+
 from typing import Optional
 
 from assistants.ai.memory import MemoryMixin

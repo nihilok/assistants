@@ -1,8 +1,10 @@
 """
-This module provides the `MemoryMixin` class, which handles memory-related functionality for managing conversations.
+This module provides the `MemoryMixin` class, which handles memory-related functionality
+for managing conversations.
 
 Classes:
-    - MemoryMixin: Mixin class to handle memory-related functionality, including remembering messages, truncating memory, and loading/saving conversations from/to a database.
+    - MemoryMixin: Mixin class to handle memory-related functionality, including remembering
+        messages, truncating memory, and loading/saving conversations from/to a database.
 """
 
 import json
@@ -84,7 +86,7 @@ class MemoryMixin(AssistantInterface):
         )
         return self.conversation_id
 
-    def get_last_message(self, thread_id: str) -> Optional[MessageData]:
+    async def get_last_message(self, thread_id: str) -> Optional[MessageData]:
         """
         Get the last message from the conversation or None if no message exists.
         Conversation must have already been loaded.
@@ -98,7 +100,9 @@ class MemoryMixin(AssistantInterface):
             text_content=self.memory[-1]["content"], thread_id=self.conversation_id
         )
 
-    async def converse(self, *args, **kwargs) -> Optional[MessageData]:
+    async def converse(
+        self, user_input: str, thread_id: Optional[str] = None
+    ) -> Optional[MessageData]:
         raise NotImplementedError
 
     async def start(self) -> None:

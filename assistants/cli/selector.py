@@ -1,3 +1,7 @@
+"""
+TerminalSelector
+"""
+
 import curses
 import math
 from dataclasses import dataclass
@@ -11,6 +15,10 @@ class TerminalSelectorOption:
 
 
 class TerminalSelector:
+    """
+    TerminalSelector class for creating a terminal-based selection menu.
+    """
+
     def __init__(
         self, items: list[TerminalSelectorOption], title: str = "Please select an item"
     ):
@@ -20,6 +28,9 @@ class TerminalSelector:
         self.window_start = 0
 
     def draw_menu(self, stdscr):
+        """
+        Draw the menu on the terminal screen.
+        """
         height, width = stdscr.getmaxyx()
         # Reserve one line for title, one for instructions
         max_display_items = height - 3
@@ -84,11 +95,18 @@ class TerminalSelector:
 
     @staticmethod
     def truncate(item, width):
+        """
+        Truncate the item string to fit within the specified width.
+        """
         if len(item) > width - 4:
             item = item[: width - 7] + "..."
         return item
 
     def run(self):
+        """
+        Run the terminal selector.
+        """
+
         def _inner(stdscr):
             # Setup
             curses.curs_set(0)  # Hide cursor
