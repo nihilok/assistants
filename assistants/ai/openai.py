@@ -8,11 +8,12 @@ Classes:
 
 import asyncio
 import hashlib
-from typing import Optional
+from typing import Optional, Literal, Any, cast, TypeGuard
 
 import openai
+
 from openai._types import NOT_GIVEN, NotGiven
-from openai.types.beta import Thread
+from openai.types.beta import Thread, Assistant as OpenAIAssistant
 from openai.types.beta.threads import Message, Run
 from openai.types.chat import ChatCompletionMessage
 
@@ -29,18 +30,70 @@ from assistants.user_data.sqlite_backend.assistants import (
 )
 from assistants.user_data.sqlite_backend.threads import get_last_thread_for_assistant
 
-THINKING_MAP = {
+ThinkingLevel = Literal[0, 1, 2]
+OpenAIThinkingLevel = Literal["low", "medium", "high"]
+
+THINKING_MAP: dict[ThinkingLevel, OpenAIThinkingLevel] = {
     0: "low",
     1: "medium",
     2: "high",
 }
 
 
-class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attributes
+def is_valid_thinking_level(level: int) -> TypeGuard[ThinkingLevel]:
+    """
+    Check if the provided thinking level is valid.
+
+    :param level: The thinking level to check.
+    :return: True if the level is valid, False otherwise.
+    """
+    return level in THINKING_MAP.keys()
+
+
+class ReasoningModelMixin:
+    """
+    Mixin class to handle reasoning model initialization.
+
+    Attributes:
+        reasoning_effort (Optional[OpenAIThinkingLevel]): Reasoning effort for the model.
+    """
+
+    def reasoning_model_init(self, thinking: ThinkingLevel) -> None:
+        """
+        Initialize the reasoning model.
+        """
+        if self.model not in REASONING_MODELS:
+            return
+
+        self._set_reasoning_effort(thinking)
+
+        if getattr(self, "tools", None):
+            self.tools = NOT_GIVEN
+
+    def _set_reasoning_effort(self, thinking: ThinkingLevel) -> None:
+        valid = False
+        try:
+            thinking = int(thinking)
+        except (ValueError, TypeError):
+            valid = False
+
+        if is_valid_thinking_level(thinking):
+            self.reasoning_effort = THINKING_MAP[thinking]
+            valid = True
+
+        if not valid:
+            raise ConfigError(
+                f"Invalid thinking level: {thinking}. Must be 0, 1, or 2."
+            )
+
+
+class Assistant(
+    ReasoningModelMixin, AssistantInterface
+):  # pylint: disable=too-many-instance-attributes
     """
     Encapsulates interactions with the OpenAI Assistants API.
 
-    Fits AssistantProtocol: Protocol defining the interface for assistant classes.
+    Implements AssistantInterface: Interface for assistant classes.
 
     Attributes:
         name (str): The name of the assistant.
@@ -49,10 +102,10 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
         tools (list | NotGiven): Optional tools for the assistant.
         client (openai.OpenAI): Client for interacting with the OpenAI API.
         _config_hash (Optional[str]): Hash of the current configuration.
-        assistant (Optional[object]): The assistant object.
-        last_message (Optional[str]): ID of the last message in the thread.
+        assistant (Optional[openai.types.beta.Assistant]): The assistant object.
+        last_message (Optional[Message]): The last message in the thread.
         last_prompt (Optional[str]): The last prompt sent to the assistant.
-        reasoning_effort (Optional[str]): Reasoning effort for the assistant.
+        reasoning_effort (Optional[OpenAIThinkingLevel]): Reasoning effort for the assistant.
     """
 
     REASONING_MODELS = REASONING_MODELS
@@ -65,7 +118,7 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
         instructions: str,
         tools: list | NotGiven = NOT_GIVEN,
         api_key: str = environment.OPENAI_API_KEY,
-        thinking: int = 1,
+        thinking: ThinkingLevel = 1,
     ):
         """
         Initialize the Assistant instance.
@@ -75,6 +128,7 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
         :param instructions: Instructions for the assistant.
         :param tools: Optional tools for the assistant.
         :param api_key: API key for OpenAI.
+        :param thinking: Level of reasoning effort (0=low, 1=medium, 2=high).
         """
         if not api_key:
             raise ConfigError("Missing 'OPENAI_API_KEY' environment variable")
@@ -84,17 +138,16 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
         )
         self.instructions = instructions
         self.model = model
-        self.tools = tools if self.model not in self.REASONING_MODELS else []
+        self.tools = tools
         self.name = name
-        self._config_hash = None
-        self.assistant = None
-        self.last_message = None
-        self.last_prompt = None
-        self.reasoning_effort = (
-            THINKING_MAP[int(thinking)] if self.model in self.REASONING_MODELS else None
-        )
+        self._config_hash: Optional[str] = None
+        self.assistant: Optional[OpenAIAssistant] = None
+        self.last_message: Optional[Message] = None
+        self.last_prompt: Optional[str] = None
+        self.reasoning_effort: Optional[OpenAIThinkingLevel] = None
+        self.reasoning_model_init(thinking)
 
-    async def start(self):
+    async def start(self) -> None:
         """
         Load the assistant_id from DB if exists or create a new assistant.
         """
@@ -102,13 +155,18 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
             self.assistant = await self.load_or_create_assistant()
         self.last_message = None
 
-    async def async_get_conversation_id(self):
+    async def async_get_conversation_id(self) -> str:
+        """
+        Get the current conversation/thread ID.
+
+        :return: The thread ID of the current conversation.
+        """
         if self.last_message:
             return self.last_message.thread_id
         thread = await get_last_thread_for_assistant(self.assistant_id)
         return thread.thread_id
 
-    def __getattribute__(self, item):
+    def __getattribute__(self, item: str) -> Any:
         """
         Override to check if the assistant is loaded before accessing it.
 
@@ -121,7 +179,7 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
         return super().__getattribute__(item)
 
     @property
-    def assistant_id(self):
+    def assistant_id(self) -> str:
         """
         Get the assistant ID.
 
@@ -130,7 +188,7 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
         return self.assistant.id
 
     @property
-    def config_hash(self):
+    def config_hash(self) -> str:
         """
         A hash of the current config options to prevent regeneration of the same assistant.
 
@@ -140,7 +198,7 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
             self._config_hash = self._generate_config_hash()
         return self._config_hash
 
-    def _generate_config_hash(self):
+    def _generate_config_hash(self) -> str:
         """
         Generate a hash based on the current configuration.
 
@@ -150,7 +208,7 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
             f"{self.name}{self.instructions}{self.model}{self.tools}".encode()
         ).hexdigest()
 
-    async def load_or_create_assistant(self):
+    async def load_or_create_assistant(self) -> Any:
         """
         Get any existing assistant ID / config hash from the database or create a new assistant.
 
@@ -285,7 +343,7 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
         Request an image to be generated using a separate image model.
 
         :param prompt: The image prompt.
-        :return: The URL of the generated image.
+        :return: The URL of the generated image or None if generation failed.
         """
         self.last_prompt = prompt
         response = self.client.images.generate(
@@ -298,16 +356,23 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
         return response.data[0].url
 
     def get_last_message(self, thread_id: str) -> Optional[MessageData]:
+        """
+        Get the last message from the specified thread.
+
+        :param thread_id: The ID of the thread to get the last message from.
+        :return: MessageData containing the text content and thread ID, or None if no message exists.
+        :raises NoResponseError: If no new message is found after the current last_message.
+        """
         messages = self.client.beta.threads.messages.list(
             thread_id=thread_id,
             order="asc",
             after=self.last_message.id if self.last_message else NOT_GIVEN,
         ).data
 
-        last_message_in_thread = messages[-1]
-
-        if not last_message_in_thread:
+        if not messages:
             return None
+
+        last_message_in_thread = messages[-1]
 
         if self.last_message and last_message_in_thread.id == self.last_message.id:
             raise NoResponseError
@@ -327,7 +392,7 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
 
         :param user_input: The user's input message.
         :param thread_id: Optional ID of the thread to continue.
-        :return: The last message in the thread.
+        :return: MessageData containing the assistant's response and thread ID, or None if no input.
         """
         if not user_input:
             return None
@@ -342,18 +407,23 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
 
     async def save_conversation_state(self) -> str:
         """
-        Save the state of the conversation.
-        :return: The thread ID of the conversation.
+        Save the state of the conversation to the database.
+
+        :return: The thread ID of the saved conversation.
         """
+        if not self.last_message:
+            raise ValueError("No conversation to save")
+
         await threads_table.save_thread(
-            self.last_message.thread_id, self.assistant_id, self.last_prompt
+            self.last_message.thread_id, self.assistant_id, self.last_prompt or ""
         )
         return self.last_message.thread_id
 
     async def get_whole_thread(self) -> list[MessageDict]:
         """
         Get the whole thread of messages.
-        :return: The list of messages in the thread.
+
+        :return: List of messages in the thread, each containing role and content.
         """
         if not self.last_message:
             return []
@@ -372,19 +442,18 @@ class Assistant(AssistantInterface):  # pylint: disable=too-many-instance-attrib
         ]
 
 
-class Completion(MemoryMixin, AssistantInterface):
+class Completion(ReasoningModelMixin, MemoryMixin, AssistantInterface):
     """
     Encapsulates interactions with the OpenAI Chat Completion API.
 
     Inherits from:
-        - AssistantProtocol: Protocol defining the interface for assistant classes.
         - MemoryMixin: Mixin class to handle memory-related functionality.
+        - AssistantInterface: Interface for assistant classes.
 
     Attributes:
         model (str): The model to be used for completions.
-        max_memory (int): Maximum number of messages to retain in memory.
-        api_key (str): API key for OpenAI.
         client (openai.OpenAI): Client for interacting with the OpenAI API.
+        reasoning_effort (Optional[OpenAIThinkingLevel]): Reasoning effort for the model.
     """
 
     REASONING_MODELS = REASONING_MODELS
@@ -394,7 +463,7 @@ class Completion(MemoryMixin, AssistantInterface):
         model: str,
         max_memory: int = 50,
         api_key: str = environment.OPENAI_API_KEY,
-        thinking: int = 2,
+        thinking: ThinkingLevel = 2,
     ):
         """
         Initialize the Completion instance.
@@ -402,6 +471,7 @@ class Completion(MemoryMixin, AssistantInterface):
         :param model: The model to be used for completions.
         :param max_memory: Maximum number of messages to retain in memory.
         :param api_key: API key for OpenAI.
+        :param thinking: Level of reasoning effort (0=low, 1=medium, 2=high).
         """
         if not api_key:
             raise ConfigError("Missing 'OPENAI_API_KEY' environment variable")
@@ -409,13 +479,12 @@ class Completion(MemoryMixin, AssistantInterface):
         MemoryMixin.__init__(self, max_memory)
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
-        self.reasoning_effort = (
-            THINKING_MAP[int(thinking)] if self.model in self.REASONING_MODELS else None
-        )
+        self.reasoning_effort: Optional[OpenAIThinkingLevel] = None
+        self.reasoning_model_init(thinking)
 
-    async def start(self):
+    async def start(self) -> None:
         """
-        Do nothing
+        Initialize the assistant (no-op for Completion).
         """
         pass
 
@@ -433,24 +502,27 @@ class Completion(MemoryMixin, AssistantInterface):
         self.remember(new_prompt)
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=self.memory,  # type: ignore
+            messages=cast(list[dict[str, str]], self.memory),
             reasoning_effort=self.reasoning_effort,
         )
         message = response.choices[0].message
-        self.remember({"role": "assistant", "content": message.content})
+        self.remember({"role": "assistant", "content": message.content or ""})
         return response.choices[0].message
 
     async def converse(
-        self, user_input: str, *args, **kwargs  # pylint: disable=unused-argument
+        self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[MessageData]:
         """
         Converse with the assistant using the chat completion API.
 
         :param user_input: The user's input message.
-        :return: The completion message.
+        :param thread_id: Optional thread ID (not used in Completion, required by interface).
+        :return: MessageData containing the assistant's response and thread ID (if applicable).
         """
         if not user_input:
             return None
 
         message = self.complete(user_input)
-        return MessageData(text_content=message.content or "")
+        return MessageData(
+            text_content=message.content or "", thread_id=self.conversation_id
+        )
