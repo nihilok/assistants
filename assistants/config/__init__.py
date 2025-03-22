@@ -31,16 +31,16 @@ def get_keynames():
 
 @dataclass
 class Config:
-    OPENAI_API_KEY: str
-    ANTHROPIC_API_KEY: str
-    DEFAULT_MODEL: str
-    CODE_MODEL: str
-    IMAGE_MODEL: str
-    ASSISTANT_INSTRUCTIONS: str
-    ASSISTANT_NAME: str
-    TELEGRAM_BOT_TOKEN: str
-    CLAUDE_MAX_TOKENS: str
-    OPEN_IMAGES_IN_BROWSER: bool
+    OPENAI_API_KEY: str  # pylint: disable=invalid-name
+    ANTHROPIC_API_KEY: str  # pylint: disable=invalid-name
+    DEFAULT_MODEL: str  # pylint: disable=invalid-name
+    CODE_MODEL: str  # pylint: disable=invalid-name
+    IMAGE_MODEL: str  # pylint: disable=invalid-name
+    ASSISTANT_INSTRUCTIONS: str  # pylint: disable=invalid-name
+    ASSISTANT_NAME: str  # pylint: disable=invalid-name
+    TELEGRAM_BOT_TOKEN: str  # pylint: disable=invalid-name
+    CLAUDE_MAX_TOKENS: str  # pylint: disable=invalid-name
+    OPEN_IMAGES_IN_BROWSER: bool  # pylint: disable=invalid-name
 
     def update_from_config_yaml(self, config):
         """
@@ -62,6 +62,9 @@ def update_args_from_config_file(config, args: Namespace):
 
 
 def get_config() -> Config:
+    """
+    Get the configuration from environment variables.
+    """
     custom_keys = get_keynames()
     return Config(
         OPENAI_API_KEY=os.environ.get(custom_keys.ASSISTANTS_API_KEY_NAME, None),
