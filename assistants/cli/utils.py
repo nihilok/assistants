@@ -5,7 +5,7 @@ import subprocess
 import sys
 import tempfile
 from argparse import Namespace
-from typing import Optional, cast
+from typing import Optional
 
 import yaml
 from pygments import highlight
