@@ -100,10 +100,10 @@ MODEL_LOOKUP = {
 
 
 async def create_assistant_and_thread(
-    args: Namespace, environment: Config
+    args: Namespace, env: Config
 ) -> tuple[AssistantInterface, Optional[str]]:
     thread_id = None
-    instructions = environment.ASSISTANT_INSTRUCTIONS
+    instructions = env.ASSISTANT_INSTRUCTIONS
 
     if args.instructions:
         with open(args.instructions, "r", encoding="utf-8") as file:
@@ -116,8 +116,8 @@ async def create_assistant_and_thread(
         raise ConfigError(f"Invalid {model_type} model: {model_name}")
 
     if args.code:
-        model_class = get_model_class("code", environment.CODE_MODEL)
-        assistant = model_class(model=environment.CODE_MODEL)
+        model_class = get_model_class("code", env.CODE_MODEL)
+        assistant = model_class(model=env.CODE_MODEL)
         if isinstance(assistant, Claude):
             assistant.thinking = True
     else:
@@ -125,7 +125,7 @@ async def create_assistant_and_thread(
 
         if model_class == Assistant:
             assistant = model_class(
-                name=environment.ASSISTANT_NAME,
+                name=env.ASSISTANT_NAME,
                 model=args.model,
                 instructions=instructions,
                 tools=[{"type": "code_interpreter"}],
@@ -135,9 +135,7 @@ async def create_assistant_and_thread(
             assistant = model_class(
                 model=args.model,
                 instructions=(
-                    instructions
-                    if instructions != environment.ASSISTANT_INSTRUCTIONS
-                    else None
+                    instructions if instructions != env.ASSISTANT_INSTRUCTIONS else None
                 ),
                 thinking=bool(args.thinking),
             )
@@ -217,8 +215,7 @@ def display_welcome_message(args):
     elif args.model.startswith("claude") and args.thinking:
         mode_info = " (thinking)"
 
-    output.default(
-        f"Assistant CLI v{version.__VERSION__}; using {model_info} model{mode_info}."
+    output.output(
+        f"Assistant CLI v{version.__VERSION__}; using {model_info} model{mode_info}.\n"
+        "Type '/help' (or '/h') for a list of commands."
     )
-    output.default("Type '/help' (or '/h') for a list of commands.")
-    output.default("")
