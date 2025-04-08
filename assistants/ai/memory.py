@@ -21,26 +21,28 @@ from assistants.user_data.sqlite_backend.conversations import Conversation
 encoding = tiktoken.encoding_for_model("gpt-4o-mini")
 
 
-class MemoryMixin(AssistantInterface):
+class ConversationHistoryMixin(AssistantInterface):
     """
     Mixin class to handle memory-related functionality.
     """
 
-    def __init__(self, max_tokens: int = environment.DEFAULT_MAX_TOKENS) -> None:
+    def __init__(
+        self, max_tokens: int = environment.DEFAULT_MAX_HISTORY_TOKENS
+    ) -> None:
         """
         Initialize the MemoryMixin instance.
 
         :param max_tokens: Maximum number of messages to retain in memory.
         """
         self.memory: list[MessageDict] = []
-        self.max_memory_tokens = max_tokens
+        self.max_history_tokens = max_tokens
         self.conversation_id = None
 
     def truncate_memory(self):
         """
         Use the tiktoken library to truncate memory if it exceeds the maximum token limit.
         """
-        while self.memory and self.max_memory_tokens < self._get_token_count():
+        while self.memory and self.max_history_tokens < self._get_token_count():
             self.memory.pop(0)
 
     def remember(self, message: MessageDict):

@@ -4,11 +4,11 @@ Dummy Assistant
 
 from typing import Optional
 
-from assistants.ai.memory import MemoryMixin
+from assistants.ai.memory import ConversationHistoryMixin
 from assistants.ai.types import MessageData
 
 
-class DummyAssistant(MemoryMixin):
+class DummyAssistant(ConversationHistoryMixin):
     """
     DummyAssistant class encapsulates interactions with the Dummy API.
 
@@ -20,7 +20,7 @@ class DummyAssistant(MemoryMixin):
         """
         Initialize the DummyAssistant instance.
         """
-        MemoryMixin.__init__(self, 1)
+        ConversationHistoryMixin.__init__(self, 1)
 
     async def start(self):
         """

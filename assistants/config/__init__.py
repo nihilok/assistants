@@ -39,7 +39,8 @@ class Config:
     ASSISTANT_INSTRUCTIONS: str  # pylint: disable=invalid-name
     ASSISTANT_NAME: str  # pylint: disable=invalid-name
     TELEGRAM_BOT_TOKEN: str  # pylint: disable=invalid-name
-    DEFAULT_MAX_TOKENS: str  # pylint: disable=invalid-name
+    DEFAULT_MAX_HISTORY_TOKENS: str  # pylint: disable=invalid-name
+    DEFAULT_MAX_RESPONSE_TOKENS: str  # pylint: disable=invalid-name
     OPEN_IMAGES_IN_BROWSER: bool  # pylint: disable=invalid-name
 
     def update_from_config_yaml(self, config):

@@ -10,7 +10,7 @@ import aiofiles
 import aiohttp
 import pyperclip
 
-from assistants.ai.memory import MemoryMixin
+from assistants.ai.memory import ConversationHistoryMixin
 from assistants.ai.openai import Assistant
 from assistants.ai.types import MessageData, AssistantInterface
 from assistants.cli import output
@@ -280,7 +280,7 @@ class SelectThread(Command):
 
         :param environ: The environment variables for the input/output loop.
         """
-        if isinstance(environ.assistant, MemoryMixin):
+        if isinstance(environ.assistant, ConversationHistoryMixin):
             threads = await conversations_table.get_all_conversations()
             thread_options = [
                 TerminalSelectorOption(
@@ -308,7 +308,7 @@ class SelectThread(Command):
 
         environ.thread_id = thread_id
 
-        if isinstance(environ.assistant, MemoryMixin):
+        if isinstance(environ.assistant, ConversationHistoryMixin):
             await environ.assistant.load_conversation(thread_id)
         else:
             await environ.assistant.start()

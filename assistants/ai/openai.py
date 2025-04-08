@@ -15,7 +15,7 @@ from openai._types import NOT_GIVEN, NotGiven
 from openai.types.chat import ChatCompletionMessage
 
 from assistants.ai.constants import REASONING_MODELS
-from assistants.ai.memory import MemoryMixin
+from assistants.ai.memory import ConversationHistoryMixin
 from assistants.ai.types import MessageData, MessageDict, AssistantInterface
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError, NoResponseError
@@ -79,7 +79,7 @@ class ReasoningModelMixin:
 
 
 class Assistant(
-    ReasoningModelMixin, MemoryMixin, AssistantInterface
+    ReasoningModelMixin, ConversationHistoryMixin, AssistantInterface
 ):  # pylint: disable=too-many-instance-attributes
     """
     Encapsulates interactions with the OpenAI Responses API.
@@ -133,7 +133,7 @@ class Assistant(
         self.last_message: Optional[dict] = None
         self.last_prompt: Optional[str] = None
         self.reasoning: Optional[Dict[str, OpenAIThinkingLevel]] = None
-        MemoryMixin.__init__(self)
+        ConversationHistoryMixin.__init__(self)
         self.reasoning_model_init(thinking)
 
     async def start(self) -> None:
@@ -256,7 +256,7 @@ class Assistant(
         )
 
 
-class Completion(ReasoningModelMixin, MemoryMixin, AssistantInterface):
+class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterface):
     """
     Encapsulates interactions with the OpenAI Chat Completion API.
 
@@ -290,7 +290,7 @@ class Completion(ReasoningModelMixin, MemoryMixin, AssistantInterface):
         if not api_key:
             raise ConfigError("Missing 'OPENAI_API_KEY' environment variable")
 
-        MemoryMixin.__init__(self, max_tokens)
+        ConversationHistoryMixin.__init__(self, max_tokens)
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
         self.reasoning: Optional[OpenAIThinkingLevel] = None
