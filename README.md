@@ -28,6 +28,8 @@ Add commands to your PATH:
 ai-cli install
 ```
 
+
+
 ## Usage
 
 ### Command Line Interface
@@ -49,6 +51,13 @@ Use the `claude` command for Anthropic models:
 
 ```bash
 claude -e  # Open editor for Claude
+```
+
+
+Rebuild the database:
+
+```bash
+ai-cli rebuild
 ```
 
 ## Environment Variables

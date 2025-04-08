@@ -4,7 +4,8 @@ import sys
 
 from assistants.log import logger
 
-if __name__ == "__main__":
+
+def main():
     backend = os.environ.get("ASSISTANTS_DATA_LAYER", "sqlite")
     if backend == "sqlite":
         from assistants.user_data.sqlite_backend import init_db, rebuild_db
@@ -26,3 +27,7 @@ if __name__ == "__main__":
     else:
         asyncio.run(init_db())
         logger.info("Database ready.")
+
+
+if __name__ == "__main__":
+    main()
