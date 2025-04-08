@@ -78,7 +78,12 @@ def get_config() -> Config:
         ),
         ASSISTANT_NAME=os.environ.get("ASSISTANT_NAME", "DefaultAssistant"),
         TELEGRAM_BOT_TOKEN=os.environ.get("TG_BOT_TOKEN", None),
-        DEFAULT_MAX_TOKENS=os.environ.get("CLAUDE_MAX_TOKENS", CLAUDE_CLI_MAX_TOKENS),
+        DEFAULT_MAX_HISTORY_TOKENS=os.environ.get(
+            "DEFAULT_MAX_TOKENS", CLAUDE_CLI_MAX_TOKENS
+        ),
+        DEFAULT_MAX_RESPONSE_TOKENS=os.environ.get(
+            "DEFAULT_MAX_RESPONSE_TOKENS", CLAUDE_CLI_MAX_TOKENS
+        ),
         OPEN_IMAGES_IN_BROWSER=bool(
             json.loads(os.environ.get("OPEN_IMAGES_IN_BROWSER", "true"))
         ),

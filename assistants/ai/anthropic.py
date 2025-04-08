@@ -77,6 +77,28 @@ class Claude(ConversationHistoryMixin, AssistantInterface):
         :param conversation_id: Optional ID of the conversation to load.
         """
         await super().load_conversation(conversation_id)
+
+        # replace any instances of `{"role": "system", ...}` with `{"role": "user", ...}, {"role": "assistant", "content": INSTRUCTIONS_UNDERSTOOD}`
+        temp_memory = []
+        for message in self.memory:
+            if message["role"] == "system":
+                temp_memory.extend(
+                    [
+                        {
+                            "role": "user",
+                            "content": message["content"],
+                        },
+                        {
+                            "role": "assistant",
+                            "content": INSTRUCTIONS_UNDERSTOOD,
+                        },
+                    ]
+                )
+            else:
+                temp_memory.append(message)
+
+        self.memory = temp_memory
+
         if self.instructions:
             # Check if the instructions are already the most recent in the memory
             for idx, message in enumerate(self.memory):
