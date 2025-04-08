@@ -63,6 +63,8 @@ claude -e  # Open editor for Claude
 - `ASSISTANTS_CONFIG_DIR` - Config directory (default: `~/.config/assistants`)
 - `TG_BOT_TOKEN` - Telegram bot token
 - `OPEN_IMAGES_IN_BROWSER` - Open images automatically (default: `true`)
+- `DEFAULT_MAX_RESPONSE_TOKENS` - Default max response tokens (default: `4096`)
+- `DEFAULT_MAX_HISTORY_TOKENS` - Default max history tokens (default: `4096`)
 
 ## Contributing
 
