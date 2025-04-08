@@ -18,12 +18,13 @@ setup(
         "loguru==0.7.3",
         "pyperclip==1.9.0",
         "prompt-toolkit==3.0.48",
-        # "pygments==2.18.0",
+        # "pygments==2.18.0", # not compatible with pygments-tsx
         "pygments-tsx == 1.0.3",
         "pyyaml==6.0.2",
         "anthropic==0.49.0",
         "aiofiles==24.1.0",
         "aiohttp==3.11.11",
+        "setproctitle==1.3.5",
     ],
     extras_require={
         "telegram": [

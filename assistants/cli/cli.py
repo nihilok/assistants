@@ -7,6 +7,8 @@ and starting the IO loop.
 import asyncio
 import sys
 
+import setproctitle
+
 from assistants.cli import output
 from assistants.cli.arg_parser import get_args
 from assistants.cli.io_loop import io_loop
@@ -28,6 +30,8 @@ def cli():
     """
     Main function (entrypoint) for the Assistant CLI.
     """
+    setproctitle.setproctitle("assistant-cli")
+
     # Parse command line arguments
     args = get_args()
 

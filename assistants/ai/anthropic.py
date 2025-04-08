@@ -31,7 +31,7 @@ class Claude(MemoryMixin, AssistantInterface):
     Attributes:
         model (str): The model to be used by the assistant.
         max_tokens (int): Maximum number of tokens for the response.
-        max_memory (int): Maximum number of messages to retain in memory.
+        max_memory_tokens (int): Maximum number of messages to retain in memory.
         client (AsyncAnthropic): Client for interacting with the Anthropic API.
     """
 
@@ -40,7 +40,6 @@ class Claude(MemoryMixin, AssistantInterface):
         model: str,
         instructions: Optional[str] = None,
         max_tokens: int = environment.CLAUDE_MAX_TOKENS,
-        max_memory: int = 50,
         api_key: Optional[str] = environment.ANTHROPIC_API_KEY,
         thinking: bool = False,
     ) -> None:
@@ -49,14 +48,14 @@ class Claude(MemoryMixin, AssistantInterface):
 
         :param model: The model to be used by the assistant.
         :param max_tokens: Maximum number of tokens for the response.
-        :param max_memory: Maximum number of messages to retain in memory.
+        :param max_tokens: Maximum number of messages to retain in memory.
         :param api_key: API key for Anthropic. Defaults to ANTHROPIC_API_KEY.
         :raises ConfigError: If the API key is missing.
         """
         if not api_key:
             raise ConfigError("Missing 'ANTHROPIC_API_KEY' environment variable")
 
-        MemoryMixin.__init__(self, max_memory)
+        MemoryMixin.__init__(self, max_tokens)
         self.client = AsyncAnthropic(api_key=api_key)
         self.model = model
         self.max_tokens = max_tokens

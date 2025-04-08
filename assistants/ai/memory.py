@@ -11,10 +11,13 @@ import json
 import uuid
 from datetime import datetime
 from typing import Optional
+import tiktoken
 
 from assistants.ai.types import MessageData, MessageDict, AssistantInterface
 from assistants.user_data.sqlite_backend import conversations_table
 from assistants.user_data.sqlite_backend.conversations import Conversation
+
+encoding = tiktoken.encoding_for_model("gpt-4o-mini")
 
 
 class MemoryMixin(AssistantInterface):
@@ -22,21 +25,22 @@ class MemoryMixin(AssistantInterface):
     Mixin class to handle memory-related functionality.
     """
 
-    def __init__(self, max_memory: int = 50):
+    def __init__(self, max_tokens: int = 4096):
         """
         Initialize the MemoryMixin instance.
 
-        :param max_memory: Maximum number of messages to retain in memory.
+        :param max_tokens: Maximum number of messages to retain in memory.
         """
         self.memory: list[MessageDict] = []
-        self.max_memory = max_memory
+        self.max_memory_tokens = max_tokens
         self.conversation_id = None
 
     def truncate_memory(self):
         """
-        Truncate the memory to the maximum allowed messages.
+        Use the tiktoken library to truncate memory if it exceeds the maximum token limit.
         """
-        self.memory = self.memory[-self.max_memory :]
+        while self.memory and self.max_memory_tokens < self._get_token_count():
+            self.memory.pop(0)
 
     def remember(self, message: MessageDict):
         """
@@ -66,13 +70,13 @@ class MemoryMixin(AssistantInterface):
             await self.load_conversation()
         return self.conversation_id
 
-    async def save_conversation_state(self) -> str:
+    async def save_conversation_state(self) -> Optional[str]:
         """
         Save the current conversation to the database.
         :return: The conversation ID.
         """
         if not self.memory:
-            return
+            return None
 
         if self.conversation_id is None:
             self.conversation_id = uuid.uuid4().hex
@@ -114,3 +118,6 @@ class MemoryMixin(AssistantInterface):
         :return: List of messages in the thread.
         """
         return self.memory
+
+    def _get_token_count(self):
+        return len(encoding.encode(json.dumps(self.memory)))

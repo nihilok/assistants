@@ -22,6 +22,7 @@ from assistants.config import environment
 from assistants.config.file_management import DATA_DIR
 from assistants.user_data import threads_table
 from assistants.user_data.sqlite_backend import conversations_table
+from assistants.user_data.sqlite_backend.conversations import Conversation
 
 
 @dataclass
@@ -260,6 +261,19 @@ class SelectThread(Command):
 
     help = "Select a previous thread to load/continue"
 
+    @staticmethod
+    def get_first_prompt(thread: Conversation) -> str:
+        """
+        Get the first prompt from the thread.
+
+        :param thread: The thread to get the first prompt from.
+        :return: The first prompt from the thread.
+        """
+        conversation = json.loads(thread.conversation)
+        if not conversation:
+            return ""
+        return next((p["content"] for p in conversation if p["role"] == "user"), "")
+
     async def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to select a thread.
@@ -268,25 +282,15 @@ class SelectThread(Command):
         """
         if isinstance(environ.assistant, MemoryMixin):
             threads = await conversations_table.get_all_conversations()
-
             thread_options = [
                 TerminalSelectorOption(
-                    label=f"{thread.last_updated} | {json.loads(thread.conversation)[0]['content']}",
+                    label=f"{thread.last_updated} | {self.get_first_prompt(thread)}",
                     value=thread.id,
                 )
                 for thread in threads
             ]
         else:
-            threads = await threads_table.get_by_assistant_id(
-                environ.assistant.assistant_id
-            )
-            thread_options = [
-                TerminalSelectorOption(
-                    label=f"{thread.last_run_dt} | {thread.initial_prompt}",
-                    value=thread.thread_id,
-                )
-                for thread in threads
-            ]
+            raise ValueError("Unsupported Interface")
 
         if not threads:
             output.warn("No threads found.")

@@ -47,7 +47,7 @@ class AssistantInterface(ABC):
     This interface defines the methods that must be implemented by any Assistant class.
     """
 
-    assistant_id = None
+    conversation_id = None
 
     @abstractmethod
     async def start(self) -> None:

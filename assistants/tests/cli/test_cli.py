@@ -8,7 +8,7 @@ from assistants.lib.exceptions import ConfigError
 
 @pytest.fixture(autouse=True)
 def mock_select():
-    with patch("assistants.cli.cli.select") as mock_select:
+    with patch("assistants.cli.utils.select") as mock_select:
         mock_select.select.return_value = ([], [], [])
         yield mock_select
 
