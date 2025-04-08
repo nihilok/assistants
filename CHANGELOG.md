@@ -1,6 +1,14 @@
 Changelog
 ---
 
+### 08/04/2025 v0.6
+
+- switch out "Assistants API" for "Responses API" when using OpenAI models
+- all interfaces now use the local Conversations API (Formerly MemoryMixin)
+- MemoryMixin renamed to ConversationHistoryMixin
+- remove threads table no longer required, drop table in rebuild db function.
+- minor version upgrade requires rebuild of database
+
 ### 13/03/2025 v0.5.13
 
 - fix dependency issue with pygments-tsx
