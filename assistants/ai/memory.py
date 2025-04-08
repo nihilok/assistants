@@ -14,6 +14,7 @@ from typing import Optional
 import tiktoken
 
 from assistants.ai.types import MessageData, MessageDict, AssistantInterface
+from assistants.config import environment
 from assistants.user_data.sqlite_backend import conversations_table
 from assistants.user_data.sqlite_backend.conversations import Conversation
 
@@ -25,7 +26,7 @@ class MemoryMixin(AssistantInterface):
     Mixin class to handle memory-related functionality.
     """
 
-    def __init__(self, max_tokens: int = 4096):
+    def __init__(self, max_tokens: int = environment.DEFAULT_MAX_TOKENS) -> None:
         """
         Initialize the MemoryMixin instance.
 

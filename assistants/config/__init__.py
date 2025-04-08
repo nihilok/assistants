@@ -39,7 +39,7 @@ class Config:
     ASSISTANT_INSTRUCTIONS: str  # pylint: disable=invalid-name
     ASSISTANT_NAME: str  # pylint: disable=invalid-name
     TELEGRAM_BOT_TOKEN: str  # pylint: disable=invalid-name
-    CLAUDE_MAX_TOKENS: str  # pylint: disable=invalid-name
+    DEFAULT_MAX_TOKENS: str  # pylint: disable=invalid-name
     OPEN_IMAGES_IN_BROWSER: bool  # pylint: disable=invalid-name
 
     def update_from_config_yaml(self, config):
@@ -77,7 +77,7 @@ def get_config() -> Config:
         ),
         ASSISTANT_NAME=os.environ.get("ASSISTANT_NAME", "DefaultAssistant"),
         TELEGRAM_BOT_TOKEN=os.environ.get("TG_BOT_TOKEN", None),
-        CLAUDE_MAX_TOKENS=os.environ.get("CLAUDE_MAX_TOKENS", CLAUDE_CLI_MAX_TOKENS),
+        DEFAULT_MAX_TOKENS=os.environ.get("CLAUDE_MAX_TOKENS", CLAUDE_CLI_MAX_TOKENS),
         OPEN_IMAGES_IN_BROWSER=bool(
             json.loads(os.environ.get("OPEN_IMAGES_IN_BROWSER", "true"))
         ),

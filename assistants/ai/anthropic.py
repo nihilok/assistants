@@ -39,7 +39,7 @@ class Claude(MemoryMixin, AssistantInterface):
         self,
         model: str,
         instructions: Optional[str] = None,
-        max_tokens: int = environment.CLAUDE_MAX_TOKENS,
+        max_tokens: int = environment.DEFAULT_MAX_TOKENS,
         api_key: Optional[str] = environment.ANTHROPIC_API_KEY,
         thinking: bool = False,
     ) -> None:
