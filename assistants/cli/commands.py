@@ -20,7 +20,6 @@ from assistants.cli.terminal import clear_screen
 from assistants.cli.utils import get_text_from_default_editor, highlight_code_blocks
 from assistants.config import environment
 from assistants.config.file_management import DATA_DIR
-from assistants.user_data import threads_table
 from assistants.user_data.sqlite_backend import conversations_table
 from assistants.user_data.sqlite_backend.conversations import Conversation
 

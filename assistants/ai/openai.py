@@ -19,7 +19,6 @@ from assistants.ai.memory import ConversationHistoryMixin
 from assistants.ai.types import MessageData, MessageDict, AssistantInterface
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError, NoResponseError
-from assistants.user_data import threads_table
 
 ThinkingLevel = Literal[0, 1, 2]
 OpenAIThinkingLevel = Literal["low", "medium", "high"]

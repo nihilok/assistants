@@ -8,12 +8,6 @@ from assistants.user_data.sqlite_backend.assistants import TABLE_NAME as ASSISTA
 from assistants.user_data.sqlite_backend.chat_history import TABLE_NAME as CHAT_HISTORY
 from assistants.user_data.sqlite_backend.conversations import conversations_table
 from assistants.user_data.sqlite_backend.telegram_chat_data import telegram_data
-from assistants.user_data.sqlite_backend.threads import (
-    TABLE_NAME as THREADS,
-    threads_table,
-)
-
-OLD_THREADS_TABLE = "threads"
 
 
 async def table_exists(db_path, table_name):
@@ -44,7 +38,6 @@ async def init_db():
     if not DB_PATH.parent.exists():
         DB_PATH.parent.mkdir(parents=True)
 
-    await threads_table.create_table()
     await conversations_table.create_table()
 
     if os.getenv("TELEGRAM_DATA"):
@@ -64,7 +57,7 @@ async def rebuild_db():
 
     await drop_table(DB_PATH, ASSISTANTS)
     await drop_table(DB_PATH, CHAT_HISTORY)
-    await drop_table(DB_PATH, THREADS)
-    await drop_table(DB_PATH, OLD_THREADS_TABLE)
+    await drop_table(DB_PATH, "responses")
+    await drop_table(DB_PATH, "threads")
 
     await init_db()
