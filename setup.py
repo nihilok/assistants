@@ -25,6 +25,7 @@ setup(
         "aiofiles==24.1.0",
         "aiohttp==3.11.11",
         "setproctitle==1.3.5",
+        "tiktoken==0.9.0",
     ],
     extras_require={
         "telegram": [

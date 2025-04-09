@@ -1,6 +1,10 @@
 Changelog
 ---
 
+### 09/04/2025 v0.6.1
+
+- add `tiktoken` as a dependency to setup.py
+
 ### 08/04/2025 v0.6
 
 - switch out "Assistants API" for "Responses API" when using OpenAI models
