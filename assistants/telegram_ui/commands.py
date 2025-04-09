@@ -11,7 +11,6 @@ from assistants.telegram_ui.auth import (
     chat_data,
 )
 from assistants.telegram_ui.lib import requires_reply_to_message, assistant
-from assistants.user_data import threads_table
 from assistants.user_data.interfaces.telegram_chat_data import ChatHistory
 
 
@@ -114,9 +113,8 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 auto_reply=existing_chat.auto_reply,
             )
         )
-        await threads_table.save_thread(
-            response_message.thread_id, assistant.assistant_id, message_text
-        )
+
+    await assistant.save_conversation_state()
 
     response = response_message.text_content
 
