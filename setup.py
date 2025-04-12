@@ -13,7 +13,7 @@ setup(
     url="https://github.com/nihilok/assistants",
     packages=find_packages(exclude=["assistants.tests*"]),
     install_requires=[
-        "openai==1.65.4",
+        "openai==1.71.0",
         "aiosqlite==0.20.0",
         "loguru==0.7.3",
         "pyperclip==1.9.0",
