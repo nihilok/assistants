@@ -1,6 +1,10 @@
 Changelog
 ---
 
+### 10/04/2025 v0.6.6
+
+- update default code model to `o4-mini`
+
 ### 10/04/2025 v0.6.5
 
 - improved README.md with more detailed description of the Telegram UI

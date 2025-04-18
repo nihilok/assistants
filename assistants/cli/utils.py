@@ -88,6 +88,7 @@ MODEL_LOOKUP = {
         "o1": Completion,
         "o3": Completion,
         "claude-": Claude,
+        "o4-mini": Completion,
     },
     "default": {
         "claude-": Claude,

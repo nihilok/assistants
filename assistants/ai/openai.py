@@ -68,7 +68,7 @@ class ReasoningModelMixin:
             valid = False
 
         if is_valid_thinking_level(thinking):
-            self.reasoning = {"effort": THINKING_MAP[thinking]}
+            self.reasoning = THINKING_MAP[thinking]
             valid = True
 
         if not valid:
