@@ -1,6 +1,12 @@
 Changelog
 ---
 
+### 10/04/2025 v0.6.5
+
+- improved README.md with more detailed description of the Telegram UI
+- added mention of voice response capability in documentation
+- various minor improvements and bug fixes
+
 ### 09/04/2025 v0.6.1
 
 - add `tiktoken` as a dependency to setup.py

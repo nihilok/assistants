@@ -53,12 +53,27 @@ Use the `claude` command for Anthropic models:
 claude -e  # Open editor for Claude
 ```
 
-
 Rebuild the database:
 
 ```bash
 ai-cli rebuild
 ```
+
+### Telegram Interface
+
+The framework includes a Telegram bot interface with the following features:
+
+- **User Management**: Authorize/deauthorize users and chats, promote/demote users
+- **Thread Management**: Start new conversation threads
+- **Auto-Reply Toggle**: Enable/disable automatic responses
+- **Media Generation**: Generate images from text prompts
+- **Voice Responses**: Generate audio responses with the `/voice` command
+
+Key Telegram commands:
+- `/new_thread` - Clear conversation history and start a new thread
+- `/auto_reply` - Toggle automatic responses on/off
+- `/image <prompt>` - Generate an image from a text prompt
+- `/voice <text>` - Generate an audio response. NB the history for voice conversations is currently separate from other messages.
 
 ## Environment Variables
 
