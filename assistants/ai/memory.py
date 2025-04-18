@@ -66,7 +66,7 @@ class ConversationHistoryMixin(AssistantInterface):
             if not conversation:
                 conversation = Conversation(
                     id=conversation_id,
-                    conversation=json.dumps([{"role": "system", "content": initial_system_message}]),
+                    conversation=json.dumps([{"role": "system", "content": initial_system_message}]) if initial_system_message else "[]",
                     last_updated=datetime.now(),
                 )
         else:
