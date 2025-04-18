@@ -54,14 +54,21 @@ class ConversationHistoryMixin(AssistantInterface):
         self.truncate_memory()
         self.memory.append(message)
 
-    async def load_conversation(self, conversation_id: Optional[str] = None):
+    async def load_conversation(self, conversation_id: Optional[str] = None, initial_system_message: Optional[str] = None):
         """
         Load the last conversation from the database.
 
         :param conversation_id: Optional ID of the conversation to load.
+        :param initial_system_message: Optional initial system message to add to the conversation.
         """
         if conversation_id:
             conversation = await conversations_table.get_conversation(conversation_id)
+            if not conversation:
+                conversation = Conversation(
+                    id=conversation_id,
+                    conversation=json.dumps([{"role": "system", "content": initial_system_message}]),
+                    last_updated=datetime.now(),
+                )
         else:
             conversation = await conversations_table.get_last_conversation()
 

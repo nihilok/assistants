@@ -3,7 +3,7 @@ from functools import wraps
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from assistants.ai.openai import Assistant
+from assistants.ai.openai import Assistant, Completion
 from assistants.config import environment
 
 
@@ -26,5 +26,10 @@ assistant = Assistant(
     model=environment.DEFAULT_MODEL,
     instructions=environment.ASSISTANT_INSTRUCTIONS,
     tools=[{"type": "code_interpreter"}],
+    api_key=environment.OPENAI_API_KEY,
+)
+
+audio_completion = Completion(
+    model="gpt-4o-audio-preview",
     api_key=environment.OPENAI_API_KEY,
 )

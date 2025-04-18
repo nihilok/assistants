@@ -15,7 +15,7 @@ def main():
     environment.DEFAULT_MODEL = CLAUDE_MODEL
     environment.CODE_MODEL = CLAUDE_MODEL
     asyncio.run(init_db())
-    cli()
+    cli.run()
 
 
 if __name__ == "__main__":

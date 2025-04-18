@@ -110,7 +110,7 @@ def main():
             return
 
     asyncio.run(init_db())
-    cli()
+    cli.run()
 
 
 if __name__ == "__main__":

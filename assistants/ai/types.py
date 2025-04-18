@@ -27,6 +27,19 @@ class MessageData:
     text_content: str
     thread_id: Optional[str] = None
 
+@dataclass
+class AudioData:
+    """
+    Data class representing audio data.
+
+    Attributes:
+        audio_content (bytes): The audio content of the message.
+        thread_id (Optional[str]): The ID of the thread the message belongs to.
+    """
+
+    audio_content: bytes
+    thread_id: Optional[str] = None
+
 
 class MessageDict(TypedDict):
     """
