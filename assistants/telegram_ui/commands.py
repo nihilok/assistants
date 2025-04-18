@@ -162,11 +162,26 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @restricted_access
 async def respond_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    existing_chat = await chat_data.get_chat_history(update.effective_chat.id)
+
     await audio_completion.load_conversation(
-        update.effective_chat.id,
+        existing_chat.thread_id or update.effective_chat.id,
         initial_system_message=f"You are a Telegram bot called {context.bot.first_name or context.bot.username}.\n{environment.ASSISTANT_INSTRUCTIONS}",
     )
+
     audio_bytes = await audio_completion.complete_audio(update.message.text)
+
+    if not existing_chat.thread_id:
+        await chat_data.save_chat_history(
+            ChatHistory(
+                chat_id=update.effective_chat.id,
+                thread_id=audio_completion.conversation_id,
+                auto_reply=existing_chat.auto_reply,
+            )
+        )
+
+    await audio_completion.save_conversation_state()
+
     await context.bot.send_voice(
         chat_id=update.effective_chat.id,
         voice=audio_bytes,

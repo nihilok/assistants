@@ -73,7 +73,7 @@ Key Telegram commands:
 - `/new_thread` - Clear conversation history and start a new thread
 - `/auto_reply` - Toggle automatic responses on/off
 - `/image <prompt>` - Generate an image from a text prompt
-- `/voice <text>` - Generate an audio response. NB the history for voice conversations is currently separate from other messages.
+- `/voice <text>` - Generate an audio response.
 
 ## Environment Variables
 
