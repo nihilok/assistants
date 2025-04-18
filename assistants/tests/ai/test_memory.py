@@ -14,9 +14,12 @@ class TestConversationHistoryMixin:
     @pytest.fixture
     def memory_mixin(self):
         """Create a concrete implementation of ConversationHistoryMixin for testing."""
+
         class ConcreteMemoryMixin(ConversationHistoryMixin):
             async def converse(self, user_input, thread_id=None):
-                return MessageData(text_content="Response", thread_id=self.conversation_id)
+                return MessageData(
+                    text_content="Response", thread_id=self.conversation_id
+                )
 
             async def start(self):
                 pass
@@ -35,7 +38,7 @@ class TestConversationHistoryMixin:
         memory_mixin.remember(message)
         assert memory_mixin.memory == [message]
 
-    @patch('assistants.ai.memory.ConversationHistoryMixin._get_token_count')
+    @patch("assistants.ai.memory.ConversationHistoryMixin._get_token_count")
     def test_truncate_memory(self, mock_get_token_count, memory_mixin):
         """Test truncating memory when it exceeds the maximum token limit."""
         # Setup memory with multiple messages
@@ -55,13 +58,13 @@ class TestConversationHistoryMixin:
         assert memory_mixin.memory[0]["content"] == "Response 1"
 
     @pytest.mark.asyncio
-    @patch('assistants.user_data.sqlite_backend.conversations_table.get_conversation')
+    @patch("assistants.user_data.sqlite_backend.conversations_table.get_conversation")
     async def test_load_conversation_with_id(self, mock_get_conversation, memory_mixin):
         """Test loading a conversation with a specific ID."""
         conversation = Conversation(
             id="test-id",
             conversation=json.dumps([{"role": "user", "content": "Hello"}]),
-            last_updated=datetime.now()
+            last_updated=datetime.now(),
         )
         mock_get_conversation.return_value = conversation
 
@@ -72,13 +75,17 @@ class TestConversationHistoryMixin:
         assert memory_mixin.conversation_id == "test-id"
 
     @pytest.mark.asyncio
-    @patch('assistants.user_data.sqlite_backend.conversations_table.get_last_conversation')
-    async def test_load_conversation_without_id(self, mock_get_last_conversation, memory_mixin):
+    @patch(
+        "assistants.user_data.sqlite_backend.conversations_table.get_last_conversation"
+    )
+    async def test_load_conversation_without_id(
+        self, mock_get_last_conversation, memory_mixin
+    ):
         """Test loading the last conversation when no ID is provided."""
         conversation = Conversation(
             id="last-id",
             conversation=json.dumps([{"role": "user", "content": "Last message"}]),
-            last_updated=datetime.now()
+            last_updated=datetime.now(),
         )
         mock_get_last_conversation.return_value = conversation
 
@@ -89,7 +96,7 @@ class TestConversationHistoryMixin:
         assert memory_mixin.conversation_id == "last-id"
 
     @pytest.mark.asyncio
-    @patch('assistants.user_data.sqlite_backend.conversations_table.save_conversation')
+    @patch("assistants.user_data.sqlite_backend.conversations_table.save_conversation")
     async def test_save_conversation_state(self, mock_save_conversation, memory_mixin):
         """Test saving the conversation state."""
         memory_mixin.memory = [{"role": "user", "content": "Hello"}]
@@ -102,11 +109,15 @@ class TestConversationHistoryMixin:
         # Check that the conversation was saved with the correct ID and content
         saved_conversation = mock_save_conversation.call_args[0][0]
         assert saved_conversation.id == "test-id"
-        assert json.loads(saved_conversation.conversation) == [{"role": "user", "content": "Hello"}]
+        assert json.loads(saved_conversation.conversation) == [
+            {"role": "user", "content": "Hello"}
+        ]
 
     @pytest.mark.asyncio
-    @patch('assistants.user_data.sqlite_backend.conversations_table.save_conversation')
-    async def test_save_conversation_state_empty_memory(self, mock_save_conversation, memory_mixin):
+    @patch("assistants.user_data.sqlite_backend.conversations_table.save_conversation")
+    async def test_save_conversation_state_empty_memory(
+        self, mock_save_conversation, memory_mixin
+    ):
         """Test saving an empty conversation state."""
         memory_mixin.memory = []
 
@@ -116,9 +127,11 @@ class TestConversationHistoryMixin:
         mock_save_conversation.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch('uuid.uuid4')
-    @patch('assistants.user_data.sqlite_backend.conversations_table.save_conversation')
-    async def test_save_conversation_state_no_id(self, mock_save_conversation, mock_uuid4, memory_mixin):
+    @patch("uuid.uuid4")
+    @patch("assistants.user_data.sqlite_backend.conversations_table.save_conversation")
+    async def test_save_conversation_state_no_id(
+        self, mock_save_conversation, mock_uuid4, memory_mixin
+    ):
         """Test saving a conversation state without an existing ID."""
         mock_uuid4.return_value.hex = "new-id"
         memory_mixin.memory = [{"role": "user", "content": "Hello"}]
@@ -135,7 +148,7 @@ class TestConversationHistoryMixin:
         """Test getting the last message from the conversation."""
         memory_mixin.memory = [
             {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there"}
+            {"role": "assistant", "content": "Hi there"},
         ]
         memory_mixin.conversation_id = "test-id"
 
@@ -172,7 +185,9 @@ class TestConversationHistoryMixin:
             memory_mixin.conversation_id = "loaded-id"
 
         # Patch the load_conversation method
-        with patch.object(memory_mixin, 'load_conversation', side_effect=mock_load_conversation):
+        with patch.object(
+            memory_mixin, "load_conversation", side_effect=mock_load_conversation
+        ):
             # Call the method under test
             result = await memory_mixin.async_get_conversation_id()
 
@@ -184,7 +199,7 @@ class TestConversationHistoryMixin:
         """Test getting the whole thread of messages."""
         memory_mixin.memory = [
             {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there"}
+            {"role": "assistant", "content": "Hi there"},
         ]
 
         result = await memory_mixin.get_whole_thread()
@@ -195,7 +210,7 @@ class TestConversationHistoryMixin:
         """Test getting the token count of the memory."""
         memory_mixin.memory = [
             {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there"}
+            {"role": "assistant", "content": "Hi there"},
         ]
 
         # The exact token count will depend on the encoding, but it should be > 0

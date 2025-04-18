@@ -1,7 +1,12 @@
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 
-from assistants.ai.openai import Assistant, Completion, ReasoningModelMixin, is_valid_thinking_level
+from assistants.ai.openai import (
+    Assistant,
+    Completion,
+    ReasoningModelMixin,
+    is_valid_thinking_level,
+)
 from assistants.ai.types import MessageData
 from assistants.lib.exceptions import ConfigError
 
@@ -12,6 +17,7 @@ class TestReasoningModelMixin:
     @pytest.fixture
     def reasoning_mixin(self):
         """Create a concrete implementation of ReasoningModelMixin for testing."""
+
         class ConcreteReasoningMixin(ReasoningModelMixin):
             def __init__(self, model, thinking):
                 self.model = model
@@ -27,22 +33,23 @@ class TestReasoningModelMixin:
 
     def test_reasoning_model_init_reasoning_model(self, reasoning_mixin):
         """Test initialization with a reasoning model."""
-        with patch('assistants.ai.openai.REASONING_MODELS', ["reasoning-model"]):
+        with patch("assistants.ai.openai.REASONING_MODELS", ["reasoning-model"]):
             mixin = reasoning_mixin("reasoning-model", 1)
             assert mixin.reasoning == {"effort": "medium"}
 
     def test_reasoning_model_init_with_tools(self, reasoning_mixin):
         """Test initialization with tools."""
-        with patch('assistants.ai.openai.REASONING_MODELS', ["reasoning-model"]):
+        with patch("assistants.ai.openai.REASONING_MODELS", ["reasoning-model"]):
             mixin = reasoning_mixin("reasoning-model", 1)
             mixin.tools = ["tool1", "tool2"]
             mixin.reasoning_model_init(1)
             from openai._types import NOT_GIVEN
+
             assert mixin.tools is NOT_GIVEN
 
     def test_set_reasoning_effort_valid(self, reasoning_mixin):
         """Test setting reasoning effort with valid thinking level."""
-        with patch('assistants.ai.openai.REASONING_MODELS', ["reasoning-model"]):
+        with patch("assistants.ai.openai.REASONING_MODELS", ["reasoning-model"]):
             mixin = reasoning_mixin("reasoning-model", 0)
             assert mixin.reasoning == {"effort": "low"}
 
@@ -54,7 +61,7 @@ class TestReasoningModelMixin:
 
     def test_set_reasoning_effort_invalid(self, reasoning_mixin):
         """Test setting reasoning effort with invalid thinking level."""
-        with patch('assistants.ai.openai.REASONING_MODELS', ["reasoning-model"]):
+        with patch("assistants.ai.openai.REASONING_MODELS", ["reasoning-model"]):
             with pytest.raises(ConfigError):
                 reasoning_mixin("reasoning-model", 3)
 
@@ -78,12 +85,12 @@ class TestAssistant:
     @pytest.fixture
     def assistant(self, mock_openai_client):
         """Create an Assistant instance for testing."""
-        with patch('openai.OpenAI', return_value=mock_openai_client):
+        with patch("openai.OpenAI", return_value=mock_openai_client):
             return Assistant(
                 name="Test Assistant",
                 model="gpt-4",
                 instructions="You are a helpful assistant.",
-                api_key="test-key"
+                api_key="test-key",
             )
 
     def test_init(self, assistant, mock_openai_client):
@@ -97,19 +104,21 @@ class TestAssistant:
     def test_init_missing_api_key(self):
         """Test initialization with missing API key."""
         with pytest.raises(ConfigError):
-            with patch('assistants.ai.openai.environment.OPENAI_API_KEY', ""):
+            with patch("assistants.ai.openai.environment.OPENAI_API_KEY", ""):
                 Assistant(
                     name="Test Assistant",
                     model="gpt-4",
                     instructions="You are a helpful assistant.",
-                    api_key=""
+                    api_key="",
                 )
 
     @pytest.mark.asyncio
     async def test_start(self, assistant):
         """Test starting the assistant."""
         await assistant.start()
-        assert assistant.memory == [{"role": "system", "content": "You are a helpful assistant."}]
+        assert assistant.memory == [
+            {"role": "system", "content": "You are a helpful assistant."}
+        ]
         assert assistant.last_message is None
 
     @pytest.mark.asyncio
@@ -178,7 +187,7 @@ class TestAssistant:
         assert result is None
 
     @pytest.mark.asyncio
-    @patch('assistants.ai.openai.Assistant.load_conversation')
+    @patch("assistants.ai.openai.Assistant.load_conversation")
     async def test_converse_with_thread_id(self, mock_load_conversation, assistant):
         """Test conversing with a thread ID."""
         await assistant.converse("Hello", "thread-id")
@@ -202,11 +211,8 @@ class TestCompletion:
     @pytest.fixture
     def completion(self, mock_openai_client):
         """Create a Completion instance for testing."""
-        with patch('openai.OpenAI', return_value=mock_openai_client):
-            return Completion(
-                model="gpt-4",
-                api_key="test-key"
-            )
+        with patch("openai.OpenAI", return_value=mock_openai_client):
+            return Completion(model="gpt-4", api_key="test-key")
 
     def test_init(self, completion, mock_openai_client):
         """Test initialization of Completion."""
@@ -217,7 +223,7 @@ class TestCompletion:
     def test_init_missing_api_key(self):
         """Test initialization with missing API key."""
         with pytest.raises(ConfigError):
-            with patch('assistants.ai.openai.environment.OPENAI_API_KEY', ""):
+            with patch("assistants.ai.openai.environment.OPENAI_API_KEY", ""):
                 Completion(model="gpt-4", api_key="")
 
     @pytest.mark.asyncio
@@ -240,7 +246,7 @@ class TestCompletion:
     @pytest.mark.asyncio
     async def test_converse(self, completion):
         """Test conversing with the completion."""
-        with patch.object(completion, 'complete') as mock_complete:
+        with patch.object(completion, "complete") as mock_complete:
             mock_complete.return_value = MagicMock(content="AI response")
 
             result = await completion.converse("Hello")
@@ -259,10 +265,12 @@ class TestCompletion:
     @pytest.mark.asyncio
     async def test_complete_audio(self, completion, mock_openai_client):
         """Test completing an audio prompt."""
-        with patch('base64.b64decode') as mock_b64decode:
+        with patch("base64.b64decode") as mock_b64decode:
             mock_b64decode.return_value = b"audio data"
             mock_openai_client.chat.completions.create.return_value = MagicMock(
-                choices=[MagicMock(message=MagicMock(audio=MagicMock(data="base64data")))]
+                choices=[
+                    MagicMock(message=MagicMock(audio=MagicMock(data="base64data")))
+                ]
             )
 
             result = await completion.complete_audio("Hello")

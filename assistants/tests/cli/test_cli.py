@@ -16,10 +16,12 @@ from assistants.lib.exceptions import ConfigError
 def cli():
     return CLI()
 
+
 @patch("assistants.cli.cli.setproctitle.setproctitle")
 def test_set_process_title(mock_setproctitle, cli):
     cli.set_process_title()
     mock_setproctitle.assert_called_once_with("assistant-cli")
+
 
 @patch("assistants.cli.cli.get_args")
 def test_parse_arguments(mock_get_args, cli):
@@ -31,11 +33,14 @@ def test_parse_arguments(mock_get_args, cli):
     mock_get_args.assert_called_once()
     assert cli.args == mock_args
 
+
 @patch("assistants.cli.cli.yaml.safe_load")
 @patch("assistants.cli.cli.open", new_callable=mock_open, read_data="config_data")
 @patch("assistants.cli.cli.environment")
 @patch("assistants.cli.cli.update_args_from_config_file")
-def test_update_from_config_success(mock_update_args, mock_env, mock_file, mock_yaml_load, cli):
+def test_update_from_config_success(
+    mock_update_args, mock_env, mock_file, mock_yaml_load, cli
+):
     mock_config = {"key": "value"}
     mock_yaml_load.return_value = mock_config
 
@@ -49,6 +54,7 @@ def test_update_from_config_success(mock_update_args, mock_env, mock_file, mock_
     mock_env.update_from_config_yaml.assert_called_once_with(mock_config)
     mock_update_args.assert_called_once_with(mock_config, cli.args)
 
+
 @patch("assistants.cli.cli.output.fail")
 @patch("assistants.cli.cli.sys.exit")
 @patch("assistants.cli.cli.open", side_effect=FileNotFoundError)
@@ -58,14 +64,19 @@ def test_update_from_config_file_not_found(mock_open, mock_exit, mock_fail, cli)
 
     cli.update_from_config()
 
-    mock_fail.assert_called_once_with("Error: The file 'nonexistent.yaml' was not found.")
+    mock_fail.assert_called_once_with(
+        "Error: The file 'nonexistent.yaml' was not found."
+    )
     mock_exit.assert_called_once_with(1)
+
 
 @patch("assistants.cli.cli.output.fail")
 @patch("assistants.cli.cli.sys.exit")
 @patch("assistants.cli.cli.yaml.safe_load", side_effect=yaml.YAMLError("YAML error"))
 @patch("assistants.cli.cli.open", new_callable=mock_open, read_data="invalid yaml")
-def test_update_from_config_yaml_error(mock_file, mock_yaml_load, mock_exit, mock_fail, cli):
+def test_update_from_config_yaml_error(
+    mock_file, mock_yaml_load, mock_exit, mock_fail, cli
+):
     cli.args = MagicMock()
     cli.args.config_file = "invalid.yaml"
 
@@ -73,6 +84,7 @@ def test_update_from_config_yaml_error(mock_file, mock_yaml_load, mock_exit, moc
 
     mock_fail.assert_called_once_with("Error: YAML error")
     mock_exit.assert_called_once_with(1)
+
 
 @patch("assistants.cli.cli.output.fail")
 @patch("assistants.cli.cli.sys.exit")
@@ -83,8 +95,11 @@ def test_validate_arguments_invalid_thinking(mock_env, mock_exit, mock_fail, cli
 
     cli.validate_arguments()
 
-    mock_fail.assert_called_once_with("Error: The 'thinking' level must be between 0 and 2.")
+    mock_fail.assert_called_once_with(
+        "Error: The 'thinking' level must be between 0 and 2."
+    )
     mock_exit.assert_called_once_with(1)
+
 
 @patch("assistants.cli.cli.environment")
 def test_validate_arguments_default_model(mock_env, cli):
@@ -96,6 +111,7 @@ def test_validate_arguments_default_model(mock_env, cli):
     cli.validate_arguments()
 
     assert cli.args.model == "default-model"
+
 
 @patch("assistants.cli.cli.select.select")
 def test_prepare_initial_input_from_stdin(mock_select, cli):
@@ -112,6 +128,7 @@ def test_prepare_initial_input_from_stdin(mock_select, cli):
 
         assert cli.args.prompt == ["stdin", "input"]
 
+
 @patch("assistants.cli.cli.get_text_from_default_editor")
 def test_prepare_initial_input_editor_mode(mock_get_text, cli):
     mock_get_text.return_value = "edited text"
@@ -125,6 +142,7 @@ def test_prepare_initial_input_editor_mode(mock_get_text, cli):
     mock_get_text.assert_called_once_with("initial prompt")
     assert cli.initial_input == "edited text"
 
+
 @patch("assistants.cli.cli.open", new_callable=mock_open, read_data="file content")
 def test_prepare_initial_input_from_file(mock_file, cli):
     cli.args = MagicMock()
@@ -137,6 +155,7 @@ def test_prepare_initial_input_from_file(mock_file, cli):
     mock_file.assert_called_once_with("input.txt", "r", encoding="utf-8")
     assert cli.initial_input == "file content"
 
+
 @patch("assistants.cli.cli.output.fail")
 @patch("assistants.cli.cli.sys.exit")
 @patch("assistants.cli.cli.open", side_effect=FileNotFoundError)
@@ -148,8 +167,11 @@ def test_prepare_initial_input_file_not_found(mock_open, mock_exit, mock_fail, c
 
     cli.prepare_initial_input()
 
-    mock_fail.assert_called_once_with("Error: The file 'nonexistent.txt' was not found.")
+    mock_fail.assert_called_once_with(
+        "Error: The file 'nonexistent.txt' was not found."
+    )
     mock_exit.assert_called_once_with(1)
+
 
 def test_prepare_initial_input_from_prompt(cli):
     cli.args = MagicMock()
@@ -161,6 +183,7 @@ def test_prepare_initial_input_from_prompt(cli):
 
     assert cli.initial_input == "hello world"
 
+
 @patch("assistants.cli.cli.display_welcome_message")
 def test_show_welcome_message(mock_display, cli):
     cli.args = MagicMock()
@@ -168,6 +191,7 @@ def test_show_welcome_message(mock_display, cli):
     cli.show_welcome_message()
 
     mock_display.assert_called_once_with(cli.args)
+
 
 @patch("assistants.cli.cli.create_assistant_and_thread")
 def test_create_assistant(mock_create, cli):
@@ -180,6 +204,7 @@ def test_create_assistant(mock_create, cli):
     mock_create.assert_called_once_with(cli.args, mock.ANY)
     assert result == expected_result
 
+
 @patch("assistants.cli.cli.output.warn")
 def test_handle_conversation_status_no_thread_with_continue(mock_warn, cli):
     cli.thread_id = None
@@ -188,7 +213,10 @@ def test_handle_conversation_status_no_thread_with_continue(mock_warn, cli):
 
     cli.handle_conversation_status()
 
-    mock_warn.assert_called_once_with("Warning: could not read last thread id; starting new thread.")
+    mock_warn.assert_called_once_with(
+        "Warning: could not read last thread id; starting new thread."
+    )
+
 
 @patch("assistants.cli.cli.output.inform")
 def test_handle_conversation_status_with_thread_and_continue(mock_inform, cli):
@@ -200,6 +228,7 @@ def test_handle_conversation_status_with_thread_and_continue(mock_inform, cli):
 
     mock_inform.assert_called_once_with("Continuing previous thread...")
 
+
 @patch("assistants.cli.cli.io_loop")
 def test_start_io_loop(mock_io_loop, cli):
     cli.assistant = MagicMock()
@@ -208,7 +237,10 @@ def test_start_io_loop(mock_io_loop, cli):
 
     cli.start_io_loop()
 
-    mock_io_loop.assert_called_once_with(cli.assistant, "initial input", thread_id="thread-id")
+    mock_io_loop.assert_called_once_with(
+        cli.assistant, "initial input", thread_id="thread-id"
+    )
+
 
 @patch("assistants.cli.cli.io_loop", side_effect=KeyboardInterrupt)
 @patch("assistants.cli.cli.sys.exit")
@@ -218,6 +250,7 @@ def test_start_io_loop_keyboard_interrupt(mock_exit, mock_io_loop, cli):
     cli.start_io_loop()
 
     mock_exit.assert_called_once_with(0)
+
 
 @patch.object(CLI, "set_process_title")
 @patch.object(CLI, "parse_arguments")
@@ -229,9 +262,16 @@ def test_start_io_loop_keyboard_interrupt(mock_exit, mock_io_loop, cli):
 @patch.object(CLI, "start_io_loop")
 @patch("asyncio.run")
 def test_run_success(
-    mock_asyncio_run, mock_start_io, mock_handle_conv, 
-    mock_welcome, mock_prepare, mock_validate, mock_update, 
-    mock_parse, mock_set_title, cli
+    mock_asyncio_run,
+    mock_start_io,
+    mock_handle_conv,
+    mock_welcome,
+    mock_prepare,
+    mock_validate,
+    mock_update,
+    mock_parse,
+    mock_set_title,
+    cli,
 ):
     mock_assistant = MagicMock()
     mock_thread_id = "thread-id"
@@ -250,6 +290,7 @@ def test_run_success(
     assert cli.assistant == mock_assistant
     assert cli.thread_id == mock_thread_id
 
+
 @patch.object(CLI, "handle_conversation_status", Mock())
 @patch.object(CLI, "start_io_loop", Mock())
 @patch.object(CLI, "set_process_title")
@@ -262,9 +303,16 @@ def test_run_success(
 @patch("assistants.cli.cli.output.fail")
 @patch("assistants.cli.cli.sys.exit")
 def test_run_config_error(
-    mock_exit, mock_fail, mock_asyncio_run, 
-    mock_welcome, mock_prepare, mock_validate, 
-    mock_update, mock_parse, mock_set_title, cli
+    mock_exit,
+    mock_fail,
+    mock_asyncio_run,
+    mock_welcome,
+    mock_prepare,
+    mock_validate,
+    mock_update,
+    mock_parse,
+    mock_set_title,
+    cli,
 ):
     mock_parse.return_value = MagicMock()
     cli.run()

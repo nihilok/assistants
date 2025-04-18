@@ -43,6 +43,7 @@ class CLI:
     """
     Class that maintains state and manages the IO loop for the Assistant CLI.
     """
+
     def __init__(self):
         """Initialize the CLI class with default state."""
         self.args = None

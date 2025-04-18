@@ -17,7 +17,8 @@ from assistants.telegram_ui.commands import (
     new_thread,
     toggle_auto_reply,
     message_handler,
-    generate_image, respond_voice,
+    generate_image,
+    respond_voice,
 )
 from assistants.telegram_ui.lib import assistant
 

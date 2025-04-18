@@ -350,6 +350,7 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
         if not user_input:
             return b""
         import base64
+
         new_prompt = MessageDict(
             role="user",
             content=user_input,

@@ -12,7 +12,11 @@ from assistants.telegram_ui.auth import (
     requires_superuser,
     chat_data,
 )
-from assistants.telegram_ui.lib import requires_reply_to_message, assistant, audio_completion
+from assistants.telegram_ui.lib import (
+    requires_reply_to_message,
+    assistant,
+    audio_completion,
+)
 from assistants.user_data.interfaces.telegram_chat_data import ChatHistory
 
 
@@ -155,9 +159,13 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_photo(image_content)
 
+
 @restricted_access
 async def respond_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await audio_completion.load_conversation(update.effective_chat.id, initial_system_message=f"You are a Telegram bot called {context.bot.first_name or context.bot.username}.\n{environment.ASSISTANT_INSTRUCTIONS}")
+    await audio_completion.load_conversation(
+        update.effective_chat.id,
+        initial_system_message=f"You are a Telegram bot called {context.bot.first_name or context.bot.username}.\n{environment.ASSISTANT_INSTRUCTIONS}",
+    )
     audio_bytes = await audio_completion.complete_audio(update.message.text)
     await context.bot.send_voice(
         chat_id=update.effective_chat.id,
