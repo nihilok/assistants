@@ -18,6 +18,7 @@ from assistants.telegram_ui.commands import (
     toggle_auto_reply,
     message_handler,
     generate_image,
+    respond_voice,
 )
 from assistants.telegram_ui.lib import assistant
 
@@ -33,6 +34,7 @@ def build_bot(token: str) -> Application:
     application.add_handler(CommandHandler("new_thread", new_thread))
     application.add_handler(CommandHandler("auto_reply", toggle_auto_reply))
     application.add_handler(CommandHandler("image", generate_image))
+    application.add_handler(CommandHandler("voice", respond_voice))
     application.add_handler(MessageHandler(filters.TEXT, message_handler))
     logger.info("Setup complete!")
     return application

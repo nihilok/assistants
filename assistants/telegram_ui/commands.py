@@ -5,12 +5,18 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
+from assistants.ai.openai import Completion
+from assistants.config import environment
 from assistants.telegram_ui.auth import (
     restricted_access,
     requires_superuser,
     chat_data,
 )
-from assistants.telegram_ui.lib import requires_reply_to_message, assistant
+from assistants.telegram_ui.lib import (
+    requires_reply_to_message,
+    assistant,
+    audio_completion,
+)
 from assistants.user_data.interfaces.telegram_chat_data import ChatHistory
 
 
@@ -152,3 +158,17 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
             image_content = await response.read()
 
     await update.message.reply_photo(image_content)
+
+
+@restricted_access
+async def respond_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await audio_completion.load_conversation(
+        update.effective_chat.id,
+        initial_system_message=f"You are a Telegram bot called {context.bot.first_name or context.bot.username}.\n{environment.ASSISTANT_INSTRUCTIONS}",
+    )
+    audio_bytes = await audio_completion.complete_audio(update.message.text)
+    await context.bot.send_voice(
+        chat_id=update.effective_chat.id,
+        voice=audio_bytes,
+        caption="Audio response",
+    )

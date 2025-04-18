@@ -12,7 +12,7 @@ from typing import Optional, Literal, Any, cast, TypeGuard, Dict
 import openai
 
 from openai._types import NOT_GIVEN, NotGiven
-from openai.types.chat import ChatCompletionMessage
+from openai.types.chat import ChatCompletionMessage, ChatCompletionAudioParam
 
 from assistants.ai.constants import REASONING_MODELS
 from assistants.ai.memory import ConversationHistoryMixin
@@ -274,7 +274,7 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
     def __init__(
         self,
         model: str,
-        max_tokens: int = 50,
+        max_tokens: int = 4096,
         api_key: str = environment.OPENAI_API_KEY,
         thinking: ThinkingLevel = 2,
     ):
@@ -339,3 +339,30 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
         return MessageData(
             text_content=message.content or "", thread_id=self.conversation_id
         )
+
+    async def complete_audio(self, user_input: str) -> bytes:
+        """
+        Converse with the assistant using the chat completion API.
+
+        :param user_input: The user's input message.
+        :return: bytes containing the assistant's response in wav format.
+        """
+        if not user_input:
+            return b""
+        import base64
+
+        new_prompt = MessageDict(
+            role="user",
+            content=user_input,
+        )
+        self.remember(new_prompt)
+        completion = self.client.chat.completions.create(
+            model="gpt-4o-audio-preview",
+            modalities=["text", "audio"],
+            audio=ChatCompletionAudioParam(
+                voice="ballad",
+                format="wav",
+            ),
+            messages=self.memory,
+        )
+        return base64.b64decode(completion.choices[0].message.audio.data)
