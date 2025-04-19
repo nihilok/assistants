@@ -109,6 +109,11 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             bot_username, os.getenv("ASSISTANT_NAME", "[ASSISTANT NAME]")
         )
 
+    await assistant.load_conversation(
+        existing_chat.thread_id or update.effective_chat.id,
+        initial_system_message=f"You are a Telegram bot called {context.bot.first_name or context.bot.username}.\n{environment.ASSISTANT_INSTRUCTIONS}",
+    )
+
     response_message = await assistant.converse(message_text, existing_chat.thread_id)
 
     if not existing_chat.thread_id:
