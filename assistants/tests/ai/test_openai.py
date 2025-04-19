@@ -284,7 +284,7 @@ class TestCompletion:
         """Test completing an audio prompt with empty input."""
         result = await completion.complete_audio("")
 
-        assert result == b""
+        assert result is None
 
 
 def test_is_valid_thinking_level():
