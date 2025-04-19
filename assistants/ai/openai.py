@@ -196,8 +196,10 @@ class Assistant(
             input_messages.append({"role": "system", "content": self.instructions})
 
         # If we have history, use it
-        if self.memory:
-            input_messages.extend(self.memory)
+        temp_memory = self.clean_audio_messages()
+        if temp_memory:
+            input_messages.extend(temp_memory)
+
 
         # Add the new user message
         input_messages.append({"role": "user", "content": prompt})
@@ -317,12 +319,7 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
             content=prompt,
         )
         self.remember(new_prompt)
-        temp_memory = deepcopy(self.memory)
-        for item in temp_memory:
-            if "audio" in item:
-                del item["audio"]
-            if item["content"].startswith("[AUDIO TRANSCRIPTION] "):
-                item["content"] = item["content"].replace("[AUDIO TRANSCRIPTION]: ", "")
+        temp_memory = self.clean_audio_messages()
 
         response = self.client.chat.completions.create(
             model=self.model,

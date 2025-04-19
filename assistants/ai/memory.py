@@ -9,6 +9,7 @@ Classes:
 
 import json
 import uuid
+from copy import deepcopy
 from datetime import datetime
 from typing import Optional
 import tiktoken
@@ -141,3 +142,12 @@ class ConversationHistoryMixin(AssistantInterface):
 
     def _get_token_count(self):
         return len(encoding.encode(json.dumps(self.memory)))
+
+    def clean_audio_messages(self):
+        temp_memory = deepcopy(self.memory)
+        for item in temp_memory:
+            if "audio" in item:
+                del item["audio"]
+            if item["content"].startswith("[AUDIO TRANSCRIPTION] "):
+                item["content"] = item["content"].replace("[AUDIO TRANSCRIPTION]: ", "")
+        return temp_memory
