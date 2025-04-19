@@ -7,6 +7,7 @@ Classes:
 """
 
 import hashlib
+from copy import deepcopy
 from typing import Optional, Literal, Any, cast, TypeGuard, Dict, Union
 
 import openai
@@ -316,9 +317,16 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
             content=prompt,
         )
         self.remember(new_prompt)
+        temp_memory = deepcopy(self.memory)
+        for item in temp_memory:
+            if "audio" in item:
+                del item["audio"]
+            if item["content"].startswith("[AUDIO TRANSCRIPTION] "):
+                item["content"] = item["content"].replace("[AUDIO TRANSCRIPTION]: ", "")
+
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=cast(list[dict[str, str]], self.memory),
+            messages=cast(list[dict[str, str]], temp_memory),
             reasoning_effort=self.reasoning,
         )
         message = response.choices[0].message
