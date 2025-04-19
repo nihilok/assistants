@@ -5,7 +5,6 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-from assistants.ai.openai import Completion
 from assistants.config import environment
 from assistants.telegram_ui.auth import (
     restricted_access,
@@ -18,6 +17,7 @@ from assistants.telegram_ui.lib import (
     audio_completion,
 )
 from assistants.user_data.interfaces.telegram_chat_data import ChatHistory
+from assistants.user_data.sqlite_backend import conversations_table
 
 
 @requires_superuser
@@ -75,6 +75,7 @@ async def deauthorise_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @restricted_access
 async def new_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await chat_data.clear_last_thread_id(update.effective_chat.id)
+    await conversations_table.delete_conversation(update.effective_chat.id)
     assistant.last_message = None
     await context.bot.send_message(
         update.effective_chat.id, "Conversation history cleared."
@@ -120,7 +121,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await chat_data.save_chat_history(
             ChatHistory(
                 chat_id=update.effective_chat.id,
-                thread_id=response_message.thread_id,
+                thread_id=str(assistant.conversation_id),
                 auto_reply=existing_chat.auto_reply,
             )
         )
@@ -174,21 +175,26 @@ async def respond_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         initial_system_message=f"You are a Telegram bot called {context.bot.first_name or context.bot.username}.\n{environment.ASSISTANT_INSTRUCTIONS}",
     )
 
-    audio_bytes = await audio_completion.complete_audio(update.message.text)
+    response = await audio_completion.complete_audio(update.message.text)
 
     if not existing_chat.thread_id:
         await chat_data.save_chat_history(
             ChatHistory(
                 chat_id=update.effective_chat.id,
-                thread_id=audio_completion.conversation_id,
+                thread_id=str(audio_completion.conversation_id),
                 auto_reply=existing_chat.auto_reply,
             )
         )
 
     await audio_completion.save_conversation_state()
-
-    await context.bot.send_voice(
-        chat_id=update.effective_chat.id,
-        voice=audio_bytes,
+    if isinstance(response, bytes):
+        await context.bot.send_voice(
+            chat_id=update.effective_chat.id,
+        voice=response,
         caption="Audio response",
     )
+    else:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=response,
+        )

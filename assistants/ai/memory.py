@@ -45,7 +45,7 @@ class ConversationHistoryMixin(AssistantInterface):
         while self.memory and self.max_history_tokens < self._get_token_count():
             self.memory.pop(0)
 
-    def remember(self, message: MessageDict):
+    def remember(self, message: MessageDict, audio: Optional[bool] = False):
         """
         Remember a new message.
 

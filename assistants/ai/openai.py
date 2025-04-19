@@ -7,7 +7,7 @@ Classes:
 """
 
 import hashlib
-from typing import Optional, Literal, Any, cast, TypeGuard, Dict
+from typing import Optional, Literal, Any, cast, TypeGuard, Dict, Union
 
 import openai
 
@@ -104,14 +104,14 @@ class Assistant(
     REASONING_MODELS = REASONING_MODELS
 
     def __init__(  # pylint: disable=too-many-arguments
-        self,
-        *,
-        name: str,
-        model: str,
-        instructions: str,
-        tools: list | NotGiven = NOT_GIVEN,
-        api_key: str = environment.OPENAI_API_KEY,
-        thinking: ThinkingLevel = 1,
+            self,
+            *,
+            name: str,
+            model: str,
+            instructions: str,
+            tools: list | NotGiven = NOT_GIVEN,
+            api_key: str = environment.OPENAI_API_KEY,
+            thinking: ThinkingLevel = 1,
     ):
         """
         Initialize the Assistant instance.
@@ -190,7 +190,7 @@ class Assistant(
 
         # Add system message if instructions are available
         if self.instructions and not any(
-            msg.get("role") == "system" for msg in self.memory
+                msg.get("role") == "system" for msg in self.memory
         ):
             input_messages.append({"role": "system", "content": self.instructions})
 
@@ -232,7 +232,7 @@ class Assistant(
         return response.data[0].url
 
     async def converse(
-        self, user_input: str, thread_id: Optional[str] = None
+            self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[MessageData]:
         """
         Converse with the assistant by sending a message and getting a response.
@@ -275,11 +275,11 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
     REASONING_MODELS = REASONING_MODELS
 
     def __init__(
-        self,
-        model: str,
-        max_tokens: int = 4096,
-        api_key: str = environment.OPENAI_API_KEY,
-        thinking: ThinkingLevel = 2,
+            self,
+            model: str,
+            max_tokens: int = 4096,
+            api_key: str = environment.OPENAI_API_KEY,
+            thinking: ThinkingLevel = 2,
     ):
         """
         Initialize the Completion instance.
@@ -326,7 +326,7 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
         return response.choices[0].message
 
     async def converse(
-        self, user_input: str, thread_id: Optional[str] = None
+            self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[MessageData]:
         """
         Converse with the assistant using the chat completion API.
@@ -343,7 +343,7 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
             text_content=message.content or "", thread_id=self.conversation_id
         )
 
-    async def complete_audio(self, user_input: str) -> bytes:
+    async def complete_audio(self, user_input: str) -> Union[bytes, str, None]:
         """
         Converse with the assistant using the chat completion API.
 
@@ -351,14 +351,14 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
         :return: bytes containing the assistant's response in wav format.
         """
         if not user_input:
-            return b""
+            return None
         import base64
 
         new_prompt = MessageDict(
             role="user",
             content=user_input,
         )
-        self.remember(new_prompt)
+        self.remember({"role": "user", "content": user_input})
         completion = self.client.chat.completions.create(
             model="gpt-4o-audio-preview",
             modalities=["text", "audio"],
@@ -368,4 +368,10 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
             ),
             messages=self.memory,
         )
-        return base64.b64decode(completion.choices[0].message.audio.data)
+        response = completion.choices[0].message
+
+        if response.audio:
+            self.remember({"role": "assistant", "audio": {"id": response.audio.id},
+                           "content": f"[AUDIO TRANSCRIPTION]: {response.content}"})
+            return base64.b64decode(completion.choices[0].message.audio.data)
+        return response.content
