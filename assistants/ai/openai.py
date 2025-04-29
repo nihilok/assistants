@@ -11,7 +11,7 @@ from copy import deepcopy
 from typing import Optional, Literal, Any, cast, TypeGuard, Dict, Union
 
 import openai
-
+from openai import BadRequestError
 from openai._types import NOT_GIVEN, NotGiven
 from openai.types.chat import ChatCompletionMessage, ChatCompletionAudioParam
 
@@ -200,7 +200,6 @@ class Assistant(
         if temp_memory:
             input_messages.extend(temp_memory)
 
-
         # Add the new user message
         input_messages.append({"role": "user", "content": prompt})
 
@@ -364,15 +363,35 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
             content=user_input,
         )
         self.remember({"role": "user", "content": user_input})
-        completion = self.client.chat.completions.create(
-            model="gpt-4o-audio-preview",
-            modalities=["text", "audio"],
-            audio=ChatCompletionAudioParam(
-                voice="ballad",
-                format="wav",
-            ),
-            messages=self.memory,
-        )
+        temp_memory = deepcopy(self.memory)
+        if (message := temp_memory[0])["role"] == "system":
+            if "You should always respond in audio format." not in message["content"]:
+                message["content"] = f"""\
+You should always respond in audio format.
+
+{message["content"]}
+"""
+        complete = False
+        while not complete:
+            try:
+                completion = self.client.chat.completions.create(
+                    model="gpt-4o-audio-preview",
+                    modalities=["text", "audio"],
+                    audio=ChatCompletionAudioParam(
+                        voice="ballad",
+                        format="wav",
+                    ),
+                    messages=temp_memory,
+                )
+
+            except BadRequestError as e:
+                if e.body.get("code") == "audio_not_found":
+                    idx = int(e.body["param"].split("[")[-1].split("]")[0])
+                    del temp_memory[idx]["audio"]
+                    continue
+                raise
+            complete = True
+
         response = completion.choices[0].message
 
         if response.audio:
@@ -380,3 +399,6 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
                            "content": f"[AUDIO TRANSCRIPTION]: {response.content}"})
             return base64.b64decode(completion.choices[0].message.audio.data)
         return response.content
+
+
+# e = {'error': {'message': "Invalid voice: 'nova'. A previous message you provided used a different voice 'ballad'. Only one voice may be used throughout a conversation.", 'type': 'invalid_request_error', 'param': 'audio.voice', 'code': 'invalid_voice'}}
