@@ -1,6 +1,11 @@
 Changelog
 ---
 
+### 24/05/2025 v0.6.9
+
+- add support for claude 4 (sonnet/opus) models
+- add streaming response support for Claude in the CLI
+
 ### 10/04/2025 v0.6.6
 
 - update default code model to `o4-mini`

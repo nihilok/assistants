@@ -12,6 +12,8 @@ import uuid
 from copy import deepcopy
 from datetime import datetime
 from typing import Optional
+from abc import ABCMeta, abstractmethod
+
 import tiktoken
 
 from assistants.ai.types import MessageData, MessageDict, AssistantInterface
@@ -22,7 +24,7 @@ from assistants.user_data.sqlite_backend.conversations import Conversation
 encoding = tiktoken.encoding_for_model("gpt-4o-mini")
 
 
-class ConversationHistoryMixin(AssistantInterface):
+class ConversationHistoryMixin(AssistantInterface, metaclass=ABCMeta):
     """
     Mixin class to handle memory-related functionality.
     """
@@ -125,11 +127,13 @@ class ConversationHistoryMixin(AssistantInterface):
             text_content=self.memory[-1]["content"], thread_id=self.conversation_id
         )
 
+    @abstractmethod
     async def converse(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[MessageData]:
         raise NotImplementedError
 
+    @abstractmethod
     async def start(self) -> None:
         raise NotImplementedError
 

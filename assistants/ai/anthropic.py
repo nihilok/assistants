@@ -7,12 +7,16 @@ Classes:
     - Claude: Encapsulates interactions with the Anthropic API.
 """
 
-from typing import Optional
+from typing import Optional, AsyncIterator
 
 from anthropic import AsyncAnthropic
 
 from assistants.ai.memory import ConversationHistoryMixin
-from assistants.ai.types import MessageData, AssistantInterface
+from assistants.ai.types import (
+    MessageData,
+    AssistantInterface,
+    StreamingAssistantInterface,
+)
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
 
@@ -20,7 +24,7 @@ from assistants.lib.exceptions import ConfigError
 INSTRUCTIONS_UNDERSTOOD = "Instructions understood."
 
 
-class Claude(ConversationHistoryMixin, AssistantInterface):
+class Claude(ConversationHistoryMixin, StreamingAssistantInterface, AssistantInterface):
     """
     Claude class encapsulates interactions with the Anthropic API.
 
@@ -45,7 +49,7 @@ class Claude(ConversationHistoryMixin, AssistantInterface):
         thinking: bool = False,
     ) -> None:
         """
-        Initialize the Claude instance.
+        Initialise the Claude instance.
 
         :param model: The model to be used by the assistant.
         :param max_response_tokens: Maximum number of tokens for the response.
@@ -63,12 +67,58 @@ class Claude(ConversationHistoryMixin, AssistantInterface):
         self.instructions = instructions
         self.thinking = thinking
 
+    async def stream_converse(
+        self, user_input: str, thread_id: Optional[str] = None
+    ) -> AsyncIterator[str]:
+        """
+        Stream the assistant's response as it's generated.
+
+        :param user_input: The user's input message
+        :param thread_id: Optional thread ID to continue a conversation
+        :return: An async iterator that yields response chunks as they become available
+        """
+        if not user_input:
+            return
+
+        # Store the user message in memory
+        self.remember({"role": "user", "content": user_input})
+
+        # Create a streaming request to the API
+        response = await self.client.messages.create(
+            max_tokens=self.max_response_tokens,
+            model=self.model,
+            messages=self.memory,
+            stream=True,  # Enable streaming
+        )
+
+        # Buffer to collect the complete response
+        full_response = ""
+
+        # Stream the response chunks
+        async for chunk in response:
+            if hasattr(chunk, "delta") and hasattr(chunk.delta, "text"):
+                # Extract the text chunk
+                text_chunk = chunk.delta.text
+
+                # Add to the full response
+                full_response += text_chunk
+
+                # Yield the chunk to the caller
+                yield text_chunk
+
+        # Store the complete response in memory
+        self.remember({"role": "assistant", "content": full_response})
+
     async def start(self) -> None:
         """
         Do nothing
         """
 
-    async def load_conversation(self, conversation_id: Optional[str] = None):
+    async def load_conversation(
+        self,
+        conversation_id: Optional[str] = None,
+        initial_system_message: Optional[str] = None,
+    ) -> None:
         """
         Load the conversation from the database.
         Also adds the instructions to the memory if provided and not
@@ -76,7 +126,7 @@ class Claude(ConversationHistoryMixin, AssistantInterface):
 
         :param conversation_id: Optional ID of the conversation to load.
         """
-        await super().load_conversation(conversation_id)
+        await super().load_conversation(conversation_id, initial_system_message)
 
         # replace any instances of `{"role": "system", ...}` with `{"role": "user", ...}, {"role": "assistant", "content": INSTRUCTIONS_UNDERSTOOD}`
         temp_memory = []

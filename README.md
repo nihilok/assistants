@@ -47,7 +47,7 @@ Key CLI commands (prefixed with `/`):
 - `/threads` - List and select threads
 - `/last` - Retrieve last message
 
-Use the `claude` command for Anthropic models:
+Use the `claude` command for Anthropic models (Now defaults to Claude 4):
 
 ```bash
 claude -e  # Open editor for Claude
@@ -88,7 +88,7 @@ Key Telegram commands:
 - `TG_BOT_TOKEN` - Telegram bot token
 - `OPEN_IMAGES_IN_BROWSER` - Open images automatically (default: `true`)
 - `DEFAULT_MAX_RESPONSE_TOKENS` - Default max response tokens (default: `4096`)
-- `DEFAULT_MAX_HISTORY_TOKENS` - Default max history tokens (default: `4096`)
+- `DEFAULT_MAX_HISTORY_TOKENS` - Default max history tokens (default: `10000`)
 
 ## Contributing
 

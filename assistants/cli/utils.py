@@ -8,22 +8,21 @@ from argparse import Namespace
 from typing import Optional
 
 import yaml
+from assistants import version
+from assistants.ai.anthropic import Claude
+from assistants.ai.constants import REASONING_MODELS
+from assistants.ai.dummy_assistant import DummyAssistant
+from assistants.ai.openai import Assistant, Completion
+from assistants.ai.types import AssistantInterface
+from assistants.cli import output
+from assistants.config import Config, environment
+from assistants.lib.exceptions import ConfigError
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
 from pygments.lexers.special import TextLexer
 from pygments.util import ClassNotFound
-from pygments_tsx.tsx import patch_pygments, TypeScriptXLexer
-
-from assistants import version
-from assistants.ai.anthropic import Claude
-from assistants.ai.constants import REASONING_MODELS
-from assistants.ai.dummy_assistant import DummyAssistant
-from assistants.ai.types import AssistantInterface
-from assistants.ai.openai import Assistant, Completion
-from assistants.cli import output
-from assistants.config import Config, environment
-from assistants.lib.exceptions import ConfigError
+from pygments_tsx.tsx import TypeScriptXLexer, patch_pygments
 
 fallback_lexers = {
     "tsx": TypeScriptXLexer,
@@ -96,6 +95,7 @@ MODEL_LOOKUP = {
         "gpt-4o": Assistant,
         "o1": Assistant,
         "o3": Assistant,
+        "o4": Assistant,
     },
 }
 

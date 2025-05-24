@@ -1,3 +1,4 @@
+import sys
 from assistants.cli.terminal import ANSIEscapeSequence
 
 
@@ -57,3 +58,9 @@ def user_input(text: str, prompt: str = ">>>"):
     green(f"{prompt} {text}")
     new_line()
     reset()
+
+
+def update_line(text: str):
+    """Updates the current line in the console."""
+    sys.stdout.write(f"\r{text}")
+    sys.stdout.flush()

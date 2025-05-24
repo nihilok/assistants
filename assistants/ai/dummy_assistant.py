@@ -30,7 +30,9 @@ class DummyAssistant(ConversationHistoryMixin):
 
     @staticmethod
     async def converse(
-        user_input: str, *args, **kwargs  # pylint: disable=unused-argument
+        user_input: str,
+        *args,
+        **kwargs,  # pylint: disable=unused-argument
     ) -> Optional[MessageData]:
         """
         Converse with the assistant using the chat completion API.

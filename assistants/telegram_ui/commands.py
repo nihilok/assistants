@@ -175,7 +175,9 @@ async def respond_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         initial_system_message=f"You are a Telegram bot called {context.bot.first_name or context.bot.username}.\n{environment.ASSISTANT_INSTRUCTIONS}",
     )
 
-    response = await audio_completion.complete_audio(update.message.text.replace("/voice ", ""))
+    response = await audio_completion.complete_audio(
+        update.message.text.replace("/voice ", "")
+    )
 
     if not existing_chat.thread_id:
         await chat_data.save_chat_history(
@@ -190,9 +192,9 @@ async def respond_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if isinstance(response, bytes):
         await context.bot.send_voice(
             chat_id=update.effective_chat.id,
-        voice=response,
-        caption="Response",
-    )
+            voice=response,
+            caption="Response",
+        )
     else:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,

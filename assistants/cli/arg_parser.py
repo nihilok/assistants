@@ -8,8 +8,8 @@ def get_args():
     parser = argparse.ArgumentParser(
         description=f"CLI for assistants-framework v{version.__VERSION__}",
         epilog=f"""
-OPENAI_API_KEY environment variable {'must be set to use the OpenAI API (not set)' if not environment.OPENAI_API_KEY else 'is set.'}
-{"ANTHROPIC_API_KEY environment variable must be set to use the Anthropic API (not set)" if environment.CODE_MODEL.startswith("claude-") and not environment.ANTHROPIC_API_KEY else "ANTHROPIC_API_KEY environment variable is set." if environment.ANTHROPIC_API_KEY and environment.CODE_MODEL.startswith('claude-') else ""}
+OPENAI_API_KEY environment variable {"must be set to use the OpenAI API (not set)" if not environment.OPENAI_API_KEY else "is set."}
+{"ANTHROPIC_API_KEY environment variable must be set to use the Anthropic API (not set)" if environment.CODE_MODEL.startswith("claude-") and not environment.ANTHROPIC_API_KEY else "ANTHROPIC_API_KEY environment variable is set." if environment.ANTHROPIC_API_KEY and environment.CODE_MODEL.startswith("claude-") else ""}
 """,
     )
     parser.add_argument(
@@ -88,5 +88,6 @@ OPENAI_API_KEY environment variable {'must be set to use the OpenAI API (not set
         action="version",
         version=f"%(prog)s {version.__VERSION__}",
     )
+    parser.add_argument("--debug", action="store_true", help="enable debug mode")
     args = parser.parse_args()
     return args

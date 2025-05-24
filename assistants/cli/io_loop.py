@@ -5,7 +5,7 @@ This module contains the main input/output loop for interacting with the assista
 import asyncio
 from typing import Optional
 
-from assistants.ai.types import AssistantInterface
+from assistants.ai.types import AssistantInterface, StreamingAssistantInterface
 from assistants.cli import output
 from assistants.cli.commands import COMMAND_MAP, EXIT_COMMANDS, IoEnviron
 from assistants.cli.prompt import get_user_input
@@ -64,9 +64,7 @@ async def io_loop_async(
         await converse(environ)
 
 
-async def converse(
-    environ: IoEnviron,
-):
+async def converse(environ: IoEnviron):
     """
     Handle the conversation with the assistant.
 
@@ -77,26 +75,95 @@ async def converse(
     last_message = environ.last_message
     thread_id = environ.thread_id  # Could be None; a new thread will be created if so.
 
-    message = await assistant.converse(
-        environ.user_input, last_message.thread_id if last_message else thread_id
-    )
+    # Check if assistant supports streaming
+    if isinstance(assistant, StreamingAssistantInterface):
+        # Handle streaming conversation
+        thread_id_to_use = last_message.thread_id if last_message else thread_id
 
-    if (
-        message is None
-        or not message.text_content
-        or last_message
-        and last_message.text_content == message.text_content
-    ):
-        output.warn("No response from the AI model.")
-        return
+        # Stream content while counting lines
+        full_text = ""
+        line_count = 0
 
-    text = highlight_code_blocks(message.text_content)
+        async for chunk in assistant.stream_converse(
+            environ.user_input, thread_id_to_use
+        ):
+            full_text += chunk
 
-    output.default(text)
+            # Count newlines in this chunk to track lines written
+            line_count += chunk.count("\n")
+
+            # For chunk with no newline that's appended to the end
+            if not chunk.endswith("\n") and chunk:
+                line_count += 1
+
+            # Output the chunk directly
+            output.default(chunk)
+
+        if full_text:
+            # Move cursor back up to start of output
+            if line_count > 0:
+                try:
+                    import shutil
+
+                    # Get terminal width
+                    terminal_width = shutil.get_terminal_size().columns
+
+                    # Estimate wrapped lines by considering terminal width
+                    wrapped_lines = 0
+                    for line in full_text.split("\n"):
+                        wrapped_lines += max(
+                            1, (len(line) + terminal_width - 1) // terminal_width
+                        )
+
+                    # Use the calculated wrapped line count instead of just newline count
+                    print(f"\033[{wrapped_lines}A", end="", flush=True)
+                    # Clear from cursor to end of screen
+                    print("\033[J", end="", flush=True)
+                except Exception:
+                    # Fallback with a safety margin if terminal size can't be determined
+                    margin = len(full_text) // 80  # Rough estimate for wrapping
+                    print(f"\033[{line_count + margin}A", end="", flush=True)
+                    print("\033[J", end="", flush=True)
+
+                # Output the fully highlighted text
+                highlighted_text = highlight_code_blocks(full_text)
+                output.default(highlighted_text)
+
+            # Create message object for history
+            message_data = await assistant.get_last_message(thread_id_to_use or "")
+            if message_data:
+                environ.last_message = message_data
+            else:
+                # If we couldn't get a proper message object, create one
+                from assistants.ai.types import MessageData
+
+                environ.last_message = MessageData(
+                    thread_id=thread_id_to_use or "", text_content=full_text
+                )
+        else:
+            output.warn("No response from the AI model.")
+            return
+    else:
+        # Non-streaming conversation (existing behavior)
+        message = await assistant.converse(
+            environ.user_input, last_message.thread_id if last_message else thread_id
+        )
+
+        if (
+            message is None
+            or not message.text_content
+            or last_message
+            and last_message.text_content == message.text_content
+        ):
+            output.warn("No response from the AI model.")
+            return
+
+        text = highlight_code_blocks(message.text_content)
+        output.default(text)
+        environ.last_message = message
+
     output.new_line(2)
-
-    # Set and save the new conversation state for future iterations:
-    environ.last_message = message
+    # Save the conversation state for future iterations
     environ.thread_id = await assistant.save_conversation_state()
 
 

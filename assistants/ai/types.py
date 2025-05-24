@@ -11,7 +11,7 @@ Classes:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, TypedDict
+from typing import Optional, TypedDict, AsyncIterator
 
 
 @dataclass
@@ -52,9 +52,13 @@ class AssistantInterface(ABC):
     @abstractmethod
     async def start(self) -> None:
         """
-        Start the assistant.
-        This method should be overridden by subclasses to implement the specific startup
-        logic.
+                Start the assistant.
+                This method should be overridden by subclasses to implement the specific startup
+                logic    message = await assistant.converse(
+                environ.user_input, last_message.thread_id if last_message else thread_id
+            )
+
+        .
         """
 
     @abstractmethod
@@ -97,4 +101,21 @@ class AssistantInterface(ABC):
         Get the whole thread of messages.
         This method should be overridden by subclasses to implement the specific logic for
         getting the whole thread.
+        """
+
+
+class StreamingAssistantInterface(AssistantInterface):
+    """
+    Interface for the Streaming Assistant class.
+    This interface extends the AssistantInterface to include streaming capabilities.
+    """
+
+    @abstractmethod
+    def stream_converse(
+        self, user_input: str, thread_id: Optional[str] = None
+    ) -> AsyncIterator[str]:
+        """
+        Stream converse with the assistant.
+        This method should be overridden by subclasses to implement the specific logic for
+        streaming conversations with the assistant.
         """
