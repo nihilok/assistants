@@ -8,7 +8,7 @@ Classes:
 
 import hashlib
 from copy import deepcopy
-from typing import Optional, Literal, Any, cast, TypeGuard, Dict, Union
+from typing import Optional, Literal, Any, cast, TypeGuard, Dict, Union, AsyncIterator
 
 import openai
 from openai import BadRequestError
@@ -17,7 +17,12 @@ from openai.types.chat import ChatCompletionMessage, ChatCompletionAudioParam
 
 from assistants.ai.constants import REASONING_MODELS
 from assistants.ai.memory import ConversationHistoryMixin
-from assistants.ai.types import MessageData, MessageDict, AssistantInterface
+from assistants.ai.types import (
+    MessageData,
+    MessageDict,
+    AssistantInterface,
+    StreamingAssistantInterface,
+)
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError, NoResponseError
 
@@ -82,7 +87,10 @@ class ReasoningModelMixin:
 
 
 class Assistant(
-    ReasoningModelMixin, ConversationHistoryMixin, AssistantInterface
+    ReasoningModelMixin,
+    ConversationHistoryMixin,
+    StreamingAssistantInterface,
+    AssistantInterface,
 ):  # pylint: disable=too-many-instance-attributes
     """
     Encapsulates interactions with the OpenAI Responses API.
@@ -101,6 +109,29 @@ class Assistant(
         conversation_id (Optional[str]): Unique identifier for the conversation.
         reasoning (Optional[Dict]): Reasoning configuration for the model.
     """
+
+    async def stream_converse(
+        self, user_input: str, thread_id: Optional[str] = None
+    ) -> AsyncIterator[str]:
+        stream = self.client.responses.create(
+            model=self.model,
+            input=user_input,
+            reasoning=self.reasoning,
+            stream=True,
+        )
+        full_response = ""
+        for event in stream:
+            if event.type == "response.output_text.delta":
+                if event.delta:
+                    full_response += event.delta
+                    yield event.delta
+
+        if full_response:
+            message_dict = MessageDict(
+                **{"role": "assistant", "content": full_response}
+            )
+            self.remember(message_dict)
+            self.last_message = message_dict
 
     REASONING_MODELS = REASONING_MODELS
 

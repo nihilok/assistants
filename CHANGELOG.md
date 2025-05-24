@@ -1,6 +1,15 @@
 Changelog
 ---
 
+### 24/04/2025 v0.6.11
+
+- add streaming response support for OpenAI models in the CLI
+- improve streaming code highlighting in the CLI (now line-by-line)
+
+### 24/04/2025 v0.6.10
+
+- fix issue with version not available in installed package
+
 ### 24/05/2025 v0.6.9
 
 - add support for claude 4 (sonnet/opus) models

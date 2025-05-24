@@ -11,6 +11,7 @@ from assistants.cli.commands import COMMAND_MAP, EXIT_COMMANDS, IoEnviron
 from assistants.cli.prompt import get_user_input
 from assistants.cli.utils import highlight_code_blocks
 from assistants.log import logger
+from assistants.cli.utils import StreamHighlighter
 
 
 async def io_loop_async(
@@ -79,56 +80,27 @@ async def converse(environ: IoEnviron):
     if isinstance(assistant, StreamingAssistantInterface):
         # Handle streaming conversation
         thread_id_to_use = last_message.thread_id if last_message else thread_id
-
-        # Stream content while counting lines
         full_text = ""
-        line_count = 0
+
+        # Create stream highlighter for real-time syntax highlighting
+        highlighter = StreamHighlighter()
 
         async for chunk in assistant.stream_converse(
             environ.user_input, thread_id_to_use
         ):
             full_text += chunk
 
-            # Count newlines in this chunk to track lines written
-            line_count += chunk.count("\n")
+            # Process and highlight the chunk in real-time
+            highlighted_chunk = highlighter.process_chunk(chunk)
+            if highlighted_chunk:
+                output.default(highlighted_chunk)
 
-            # For chunk with no newline that's appended to the end
-            if not chunk.endswith("\n") and chunk:
-                line_count += 1
-
-            # Output the chunk directly
-            output.default(chunk)
+        # Process any remaining text in buffer
+        final_chunk = highlighter.finalize()
+        if final_chunk:
+            output.default(final_chunk)
 
         if full_text:
-            # Move cursor back up to start of output
-            if line_count > 0:
-                try:
-                    import shutil
-
-                    # Get terminal width
-                    terminal_width = shutil.get_terminal_size().columns
-
-                    # Estimate wrapped lines by considering terminal width
-                    wrapped_lines = 0
-                    for line in full_text.split("\n"):
-                        wrapped_lines += max(
-                            1, (len(line) + terminal_width - 1) // terminal_width
-                        )
-
-                    # Use the calculated wrapped line count instead of just newline count
-                    print(f"\033[{wrapped_lines}A", end="", flush=True)
-                    # Clear from cursor to end of screen
-                    print("\033[J", end="", flush=True)
-                except Exception:
-                    # Fallback with a safety margin if terminal size can't be determined
-                    margin = len(full_text) // 80  # Rough estimate for wrapping
-                    print(f"\033[{line_count + margin}A", end="", flush=True)
-                    print("\033[J", end="", flush=True)
-
-                # Output the fully highlighted text
-                highlighted_text = highlight_code_blocks(full_text)
-                output.default(highlighted_text)
-
             # Create message object for history
             message_data = await assistant.get_last_message(thread_id_to_use or "")
             if message_data:
