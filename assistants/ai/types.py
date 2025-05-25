@@ -11,7 +11,41 @@ Classes:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, TypedDict, AsyncIterator
+from typing import TypedDict, AsyncIterator, Literal, Optional
+
+
+ThinkingLevel = Literal[0, 1, 2]
+
+
+@dataclass
+class ThinkingConfig:
+    level: ThinkingLevel
+    type: Literal["enabled", "disabled"] = "enabled"
+    budget_tokens: Optional[int] = None
+
+    @classmethod
+    def get_thinking_config(
+        cls, level: ThinkingLevel = 0, max_tokens: Optional[int] = None
+    ) -> "ThinkingConfig":
+        """
+        Get a ThinkingConfig instance with the specified level and budget tokens.
+
+        :param level: The thinking level (0, 1, or 2).
+        :param max_tokens: Optional max response tokens (will be used to calculate thinking budget).
+        :return: An instance of ThinkingConfig.
+        """
+        return cls(
+            level=level,
+            budget_tokens=(max_tokens // 4) * 3 if level > 0 and max_tokens else None,
+        )
+
+    def __bool__(self):
+        """
+        Check if the thinking configuration is enabled.
+
+        :return: True if the level is greater than 0, False otherwise.
+        """
+        return self.level > 0 and self.type == "enabled"
 
 
 @dataclass

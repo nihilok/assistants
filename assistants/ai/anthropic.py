@@ -16,6 +16,7 @@ from assistants.ai.types import (
     MessageData,
     AssistantInterface,
     StreamingAssistantInterface,
+    ThinkingConfig,
 )
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
@@ -46,7 +47,7 @@ class Claude(ConversationHistoryMixin, StreamingAssistantInterface, AssistantInt
         max_history_tokens: int = environment.DEFAULT_MAX_HISTORY_TOKENS,
         max_response_tokens: int = environment.DEFAULT_MAX_RESPONSE_TOKENS,
         api_key: Optional[str] = environment.ANTHROPIC_API_KEY,
-        thinking: bool = False,
+        thinking: ThinkingConfig = ThinkingConfig.get_thinking_config(0),
     ) -> None:
         """
         Initialise the Claude instance.
@@ -149,7 +150,7 @@ class Claude(ConversationHistoryMixin, StreamingAssistantInterface, AssistantInt
 
         max_tokens = self.max_history_tokens + self.max_response_tokens
 
-        kwargs = {
+        kwargs: dict[str, object] = {
             "max_tokens": max_tokens,
             "model": self.model,
             "messages": self.memory,
@@ -157,8 +158,8 @@ class Claude(ConversationHistoryMixin, StreamingAssistantInterface, AssistantInt
 
         if self.thinking:
             kwargs["thinking"] = {
-                "type": "enabled",
-                "budget_tokens": (max_tokens // 4) * 3,
+                "type": self.thinking.type,
+                "budget_tokens": self.thinking.budget_tokens,
             }
 
         response = await self.client.messages.create(**kwargs)

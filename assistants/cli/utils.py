@@ -13,7 +13,7 @@ from assistants.ai.anthropic import Claude
 from assistants.ai.constants import REASONING_MODELS
 from assistants.ai.dummy_assistant import DummyAssistant
 from assistants.ai.openai import Assistant, Completion
-from assistants.ai.types import AssistantInterface
+from assistants.ai.types import AssistantInterface, ThinkingConfig
 from assistants.cli import output
 from assistants.config import Config, environment
 from assistants.lib.exceptions import ConfigError
@@ -152,28 +152,31 @@ async def create_assistant_and_thread(
         model_class = get_model_class("code", env.CODE_MODEL)
         assistant = model_class(model=env.CODE_MODEL)
         if isinstance(assistant, Claude):
-            assistant.thinking = True
+            assistant.thinking = ThinkingConfig.get_thinking_config(
+                1, env.DEFAULT_MAX_RESPONSE_TOKENS
+            )
     else:
         model_class = get_model_class("default", args.model)
 
+        assistant_kwargs: dict[str, object] = {
+            "model": args.model,
+            "instructions": instructions,
+            "thinking": ThinkingConfig.get_thinking_config(
+                args.thinking, env.DEFAULT_MAX_RESPONSE_TOKENS
+            ),
+        }
+
         if model_class == Assistant:
-            assistant = model_class(
-                name=env.ASSISTANT_NAME,
-                model=args.model,
-                instructions=instructions,
-                tools=[{"type": "code_interpreter"}],
-                thinking=args.thinking,
-            )
+            assistant_kwargs["tools"] = [{"type": "code_interpreter"}]
+
         elif model_class == Claude:
-            assistant = model_class(
-                model=args.model,
-                instructions=(
-                    instructions if instructions != env.ASSISTANT_INSTRUCTIONS else None
-                ),
-                thinking=bool(args.thinking),
-            )
+            if instructions == env.ASSISTANT_INSTRUCTIONS:
+                del assistant_kwargs["instructions"]
+
         else:
-            assistant = model_class(model=args.model)
+            del assistant_kwargs["instructions"]
+
+    assistant = model_class(**assistant_kwargs)
 
     await assistant.start()
 

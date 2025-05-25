@@ -22,6 +22,7 @@ from assistants.ai.types import (
     MessageDict,
     AssistantInterface,
     StreamingAssistantInterface,
+    ThinkingConfig,
 )
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError, NoResponseError
@@ -54,16 +55,19 @@ class ReasoningModelMixin:
         reasoning (Optional[Dict]): Reasoning configuration for the model.
     """
 
-    def reasoning_model_init(self, thinking: ThinkingLevel) -> None:
+    def reasoning_model_init(self, thinking: ThinkingConfig) -> None:
         """
         Initialize the reasoning model.
         """
+        if not thinking:
+            return
+
         if self.model not in REASONING_MODELS:
             return
 
-        self._set_reasoning_effort(thinking)
+        self._set_reasoning_effort(thinking.level)
 
-        if getattr(self, "tools", None):
+        if hasattr(self, "tools"):
             self.tools = NOT_GIVEN
 
     def _set_reasoning_effort(self, thinking: ThinkingLevel) -> None:
@@ -120,7 +124,7 @@ class Assistant(
         instructions: str,
         tools: list | NotGiven = NOT_GIVEN,
         api_key: str = environment.OPENAI_API_KEY,
-        thinking: ThinkingLevel = 1,
+        thinking: ThinkingConfig = ThinkingConfig.get_thinking_config(level=1),
     ):
         """
         Initialize the Assistant instance.
