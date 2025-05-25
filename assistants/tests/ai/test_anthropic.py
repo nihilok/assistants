@@ -71,7 +71,7 @@ class TestClaude:
         # Restore instructions
         claude.instructions = original_instructions
 
-        mock_super_load.assert_called_once_with("test-id")
+        mock_super_load.assert_called_once_with("test-id", None)
 
         # Check that system message was converted to user+assistant pair
         # Just check that the memory has been modified and contains the expected content
@@ -93,7 +93,7 @@ class TestClaude:
 
         await claude.load_conversation("test-id")
 
-        mock_super_load.assert_called_once_with("test-id")
+        mock_super_load.assert_called_once_with("test-id", None)
 
         # Check that instructions were added to memory
         assert claude.memory[-2] == {
@@ -119,7 +119,7 @@ class TestClaude:
 
         await claude.load_conversation("test-id")
 
-        mock_super_load.assert_called_once_with("test-id")
+        mock_super_load.assert_called_once_with("test-id", None)
 
         # Check that instructions were not added again
         assert len(claude.memory) == 2

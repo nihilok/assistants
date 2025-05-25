@@ -1,10 +1,12 @@
-import asyncio
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 
 
-from assistants.ai.types import AssistantInterface, MessageData, StreamingAssistantInterface
-from assistants.cli.commands import IoEnviron
+from assistants.ai.types import (
+    AssistantInterface,
+    MessageData,
+    StreamingAssistantInterface,
+)
 from assistants.cli.io_loop import io_loop, io_loop_async, AssistantIoHandler
 
 
@@ -40,7 +42,10 @@ async def test_io_loop_async_with_initial_input(
 ):
     # Setup to exit after processing initial input
     mock_get_input.return_value = "exit"
-    mock_process_input.side_effect = [False, True]  # First call returns False, second call returns True (exit)
+    mock_process_input.side_effect = [
+        False,
+        True,
+    ]  # First call returns False, second call returns True (exit)
 
     # Call the function with initial input
     await io_loop_async(setup_assistant, "initial input", "thread-id")
@@ -50,7 +55,9 @@ async def test_io_loop_async_with_initial_input(
 
     # Verify process_input was called with initial input
     mock_process_input.assert_any_call("initial input")
-    assert mock_process_input.call_count == 2  # Called once for initial input, once for "exit"
+    assert (
+        mock_process_input.call_count == 2
+    )  # Called once for initial input, once for "exit"
 
 
 @patch("assistants.cli.io_loop.get_user_input")
@@ -62,14 +69,19 @@ async def test_io_loop_async_with_user_input(
 ):
     # Setup to provide one input then exit
     mock_get_input.side_effect = ["user input", "exit"]
-    mock_process_input.side_effect = [False, True]  # First call returns False, second call returns True (exit)
+    mock_process_input.side_effect = [
+        False,
+        True,
+    ]  # First call returns False, second call returns True (exit)
 
     # Call the function without initial input
     await io_loop_async(setup_assistant, "", "thread-id")
 
     # Verify process_input was called with user input
     mock_process_input.assert_any_call("user input")
-    assert mock_process_input.call_count == 2  # Called once for user input, once for "exit"
+    assert (
+        mock_process_input.call_count == 2
+    )  # Called once for user input, once for "exit"
 
 
 @patch("assistants.cli.io_loop.get_user_input")
@@ -81,14 +93,19 @@ async def test_io_loop_async_with_empty_input(
 ):
     # Setup to provide empty input then exit
     mock_get_input.side_effect = ["", "exit"]
-    mock_process_input.side_effect = [False, True]  # First call returns False, second call returns True (exit)
+    mock_process_input.side_effect = [
+        False,
+        True,
+    ]  # First call returns False, second call returns True (exit)
 
     # Call the function without initial input
     await io_loop_async(setup_assistant, "", "thread-id")
 
     # Verify process_input was called with empty input
     mock_process_input.assert_any_call("")
-    assert mock_process_input.call_count == 2  # Called once for empty input, once for "exit"
+    assert (
+        mock_process_input.call_count == 2
+    )  # Called once for empty input, once for "exit"
 
 
 @patch("assistants.cli.io_loop.get_user_input")
@@ -97,18 +114,27 @@ async def test_io_loop_async_with_empty_input(
 @patch("assistants.cli.io_loop.AssistantIoHandler.process_input")
 @pytest.mark.asyncio
 async def test_io_loop_async_with_command(
-    mock_process_input, mock_handle_command, mock_output, mock_get_input, setup_assistant
+    mock_process_input,
+    mock_handle_command,
+    mock_output,
+    mock_get_input,
+    setup_assistant,
 ):
     # Setup to provide command then exit
     mock_get_input.side_effect = ["/command arg1 arg2", "exit"]
-    mock_process_input.side_effect = [False, True]  # First call returns False, second call returns True (exit)
+    mock_process_input.side_effect = [
+        False,
+        True,
+    ]  # First call returns False, second call returns True (exit)
 
     # Call the function
     await io_loop_async(setup_assistant, "", "thread-id")
 
     # Verify process_input was called with command
     mock_process_input.assert_any_call("/command arg1 arg2")
-    assert mock_process_input.call_count == 2  # Called once for command, once for "exit"
+    assert (
+        mock_process_input.call_count == 2
+    )  # Called once for command, once for "exit"
 
 
 @patch("assistants.cli.io_loop.get_user_input")
@@ -120,19 +146,26 @@ async def test_io_loop_async_with_invalid_command(
 ):
     # Setup to provide invalid command then exit
     mock_get_input.side_effect = ["/invalid", "exit"]
-    mock_process_input.side_effect = [False, True]  # First call returns False, second call returns True (exit)
+    mock_process_input.side_effect = [
+        False,
+        True,
+    ]  # First call returns False, second call returns True (exit)
 
     # Call the function
     await io_loop_async(setup_assistant, "", "thread-id")
 
     # Verify process_input was called with invalid command
     mock_process_input.assert_any_call("/invalid")
-    assert mock_process_input.call_count == 2  # Called once for invalid command, once for "exit"
+    assert (
+        mock_process_input.call_count == 2
+    )  # Called once for invalid command, once for "exit"
 
 
 @patch("assistants.cli.io_loop.output")
 @pytest.mark.asyncio
-async def test_assistant_io_handler_conversation(mock_output, setup_assistant, mock_message):
+async def test_assistant_io_handler_conversation(
+    mock_output, setup_assistant, mock_message
+):
     # Create handler
     handler = AssistantIoHandler(setup_assistant, "thread-id")
     handler.user_input = "Hello AI"
@@ -211,7 +244,9 @@ async def test_assistant_io_handler_empty_response(mock_output, setup_assistant)
 
 @patch("assistants.cli.io_loop.output")
 @pytest.mark.asyncio
-async def test_assistant_io_handler_duplicate_response(mock_output, setup_assistant, mock_message):
+async def test_assistant_io_handler_duplicate_response(
+    mock_output, setup_assistant, mock_message
+):
     # Setup last message with same content as new message
     last_message = MagicMock(spec=MessageData)
     last_message.text_content = "AI response"
