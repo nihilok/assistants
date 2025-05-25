@@ -443,14 +443,3 @@ You should always respond in audio format.
 
         return response.content
 
-
-class RealtimeVoiceChat(ConversationHistoryMixin, AssistantInterface):
-    async def start(self) -> None:
-        pass
-
-    async def converse(
-        self, user_input: str, thread_id: Optional[str] = None
-    ) -> Optional[MessageData]:
-        filename = user_input
-        with open(filename, "rb") as f:
-            audio = f.read()
