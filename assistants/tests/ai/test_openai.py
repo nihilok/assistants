@@ -87,7 +87,6 @@ class TestAssistant:
         """Create an Assistant instance for testing."""
         with patch("openai.OpenAI", return_value=mock_openai_client):
             return Assistant(
-                name="Test Assistant",
                 model="gpt-4",
                 instructions="You are a helpful assistant.",
                 api_key="test-key",
@@ -106,7 +105,6 @@ class TestAssistant:
         with pytest.raises(ConfigError):
             with patch("assistants.ai.openai.environment.OPENAI_API_KEY", ""):
                 Assistant(
-                    name="Test Assistant",
                     model="gpt-4",
                     instructions="You are a helpful assistant.",
                     api_key="",

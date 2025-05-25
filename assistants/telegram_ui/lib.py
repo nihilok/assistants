@@ -22,7 +22,6 @@ def requires_reply_to_message(f):
 
 
 assistant = Assistant(
-    name=environment.ASSISTANT_NAME,
     model=environment.DEFAULT_MODEL,
     instructions=environment.ASSISTANT_INSTRUCTIONS,
     tools=[{"type": "code_interpreter"}],

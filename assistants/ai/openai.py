@@ -102,7 +102,6 @@ class Assistant(
     Implements AssistantInterface: Interface for assistant classes.
 
     Attributes:
-        name (str): The name of the assistant.
         model (str): The model to be used by the assistant.
         instructions (str): Instructions for the assistant.
         tools (list | NotGiven): Optional tools for the assistant.
@@ -116,10 +115,9 @@ class Assistant(
 
     REASONING_MODELS = REASONING_MODELS
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
         self,
         *,
-        name: str,
         model: str,
         instructions: str,
         tools: list | NotGiven = NOT_GIVEN,
@@ -143,7 +141,6 @@ class Assistant(
         self.instructions = instructions
         self.model = model
         self.tools = tools
-        self.name = name
         self._config_hash: Optional[str] = None
         self.last_message: Optional[dict] = None
         self.last_prompt: Optional[str] = None
@@ -186,7 +183,7 @@ class Assistant(
         :return: The generated hash.
         """
         return hashlib.sha256(
-            f"{self.name}{self.instructions}{self.model}{self.tools}".encode()
+            f"{self.instructions}{self.model}{self.tools}".encode()
         ).hexdigest()
 
     async def prompt(self, prompt: str) -> Any:
