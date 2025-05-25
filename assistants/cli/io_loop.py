@@ -14,83 +14,96 @@ from assistants.log import logger
 from assistants.cli.utils import StreamHighlighter
 
 
-async def io_loop_async(
-    assistant: AssistantInterface,
-    initial_input: str = "",
-    thread_id: Optional[str] = None,
-):
+class AssistantIoHandler:
     """
-    Main input/output loop for interacting with the assistant.
+    Handles IO operations and state management for assistant interactions.
+    Encapsulates command processing, conversation management, and state transitions.
+    """
 
-    :param assistant: The assistant instance implementing AssistantProtocol.
-    :param initial_input: Initial user input to start the conversation.
-    :param thread_id: The ID of the conversation thread.
-    """
-    environ = IoEnviron(
-        assistant=assistant,
-        thread_id=thread_id,
-    )
-    while (
-        initial_input or (user_input := get_user_input()).lower() not in EXIT_COMMANDS
-    ):
+    def __init__(self, assistant: AssistantInterface, thread_id: Optional[str] = None):
+        self.assistant = assistant
+        self.thread_id = thread_id
+        self.last_message = None
+        self.user_input = None
+        self.is_streaming = isinstance(assistant, StreamingAssistantInterface)
+
+    async def process_input(self, input_text: str) -> bool:
+        """
+        Process user input and return True if the program should exit.
+
+        :param input_text: The text input from the user
+        :return: True if program should exit, False otherwise
+        """
         output.reset()
-        environ.user_input = None
-        if initial_input:
-            output.user_input(initial_input)
-            user_input = initial_input
-            initial_input = ""  # Otherwise, the initial input will be repeated in the next iteration
+        self.user_input = input_text.strip()
 
-        user_input = user_input.strip()
+        if not self.user_input:
+            return False
 
-        if not user_input:
-            continue
+        if self.user_input.lower() in EXIT_COMMANDS:
+            return True
 
-        # Handle commands
-        c, *args = user_input.split(" ")
+        if self.user_input.startswith("/"):
+            await self._handle_command()
+        else:
+            await self._handle_conversation()
+
+        return False
+
+    async def _handle_command(self):
+        """Process and execute a command."""
+        c, *args = self.user_input.split(" ")
         command = COMMAND_MAP.get(c.lower())
         if command:
             logger.debug(
-                f"Command input: {user_input}; Command: {command.__class__.__name__}"
+                f"Command input: {self.user_input}; Command: {command.__class__.__name__}"
             )
+
+            # Create a temporary IoEnviron for backward compatibility with existing commands
+            environ = IoEnviron(
+                assistant=self.assistant,
+                thread_id=self.thread_id,
+                last_message=self.last_message,
+                user_input=None,
+            )
+
             await command(environ, *args)
+
+            # Update our state from the environ
+            self.thread_id = environ.thread_id
+            self.last_message = environ.last_message
+
+            # If command set user_input, it wants to continue with that as input
             if environ.user_input:
-                initial_input = environ.user_input
-            continue
-
-        if user_input.startswith("/"):
+                self.user_input = environ.user_input
+                await self._handle_conversation()
+        else:
             output.warn("Invalid command!")
-            continue
 
-        environ.user_input = user_input
-        await converse(environ)
+    async def _handle_conversation(self):
+        """Handle conversation with the assistant (streaming or non-streaming)."""
+        thread_id_to_use = (
+            self.last_message.thread_id if self.last_message else self.thread_id
+        )
 
+        if self.is_streaming:
+            await self._handle_streaming_conversation(thread_id_to_use)
+        else:
+            await self._handle_standard_conversation(thread_id_to_use)
 
-async def converse(environ: IoEnviron):
-    """
-    Handle the conversation with the assistant.
+        # Save conversation state for future interactions
+        self.thread_id = await self.assistant.save_conversation_state()
+        output.new_line(2)
 
-    :param environ: The environment variables manipulated on each
-    iteration of the input/output loop.
-    """
-    assistant = environ.assistant
-    last_message = environ.last_message
-    thread_id = environ.thread_id  # Could be None; a new thread will be created if so.
-
-    # Check if assistant supports streaming
-    if isinstance(assistant, StreamingAssistantInterface):
-        # Handle streaming conversation
-        thread_id_to_use = last_message.thread_id if last_message else thread_id
+    async def _handle_streaming_conversation(self, thread_id_to_use):
+        """Handle streaming conversation with real-time highlighting."""
         full_text = ""
-
-        # Create stream highlighter for real-time syntax highlighting
         highlighter = StreamHighlighter()
 
-        async for chunk in assistant.stream_converse(
-            environ.user_input, thread_id_to_use
+        async for chunk in self.assistant.stream_converse(
+            self.user_input, thread_id_to_use
         ):
             full_text += chunk
-
-            # Process and highlight the chunk in real-time
             highlighted_chunk = highlighter.process_chunk(chunk)
             if highlighted_chunk:
                 output.default(highlighted_chunk)
@@ -102,41 +115,51 @@ async def converse(environ: IoEnviron):
 
         if full_text:
             # Create message object for history
-            message_data = await assistant.get_last_message(thread_id_to_use or "")
+            message_data = await self.assistant.get_last_message(thread_id_to_use or "")
             if message_data:
-                environ.last_message = message_data
+                self.last_message = message_data
             else:
                 # If we couldn't get a proper message object, create one
                 from assistants.ai.types import MessageData
 
-                environ.last_message = MessageData(
+                self.last_message = MessageData(
                     thread_id=thread_id_to_use or "", text_content=full_text
                 )
         else:
             output.warn("No response from the AI model.")
-            return
-    else:
-        # Non-streaming conversation (existing behavior)
-        message = await assistant.converse(
-            environ.user_input, last_message.thread_id if last_message else thread_id
-        )
+
+    async def _handle_standard_conversation(self, thread_id_to_use):
+        """Handle standard non-streaming conversation."""
+        message = await self.assistant.converse(self.user_input, thread_id_to_use)
 
         if (
             message is None
             or not message.text_content
-            or last_message
-            and last_message.text_content == message.text_content
+            or (
+                self.last_message
+                and self.last_message.text_content == message.text_content
+            )
         ):
             output.warn("No response from the AI model.")
             return
 
         text = highlight_code_blocks(message.text_content)
         output.default(text)
-        environ.last_message = message
+        self.last_message = message
 
-    output.new_line(2)
-    # Save the conversation state for future iterations
-    environ.thread_id = await assistant.save_conversation_state()
+
+async def io_loop_async(assistant, initial_input, thread_id):
+    handler = AssistantIoHandler(assistant, thread_id)
+
+    if initial_input:
+        output.user_input(initial_input)
+        await handler.process_input(initial_input)
+
+    while True:
+        user_input = get_user_input()
+        should_exit = await handler.process_input(user_input)
+        if should_exit:
+            break
 
 
 def io_loop(

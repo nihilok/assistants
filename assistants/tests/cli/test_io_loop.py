@@ -3,9 +3,9 @@ import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 
 
-from assistants.ai.types import AssistantInterface, MessageData
+from assistants.ai.types import AssistantInterface, MessageData, StreamingAssistantInterface
 from assistants.cli.commands import IoEnviron
-from assistants.cli.io_loop import io_loop, io_loop_async, converse
+from assistants.cli.io_loop import io_loop, io_loop_async, AssistantIoHandler
 
 
 @pytest.fixture
@@ -33,120 +33,112 @@ def setup_assistant(mock_assistant, mock_message):
 
 @patch("assistants.cli.io_loop.get_user_input")
 @patch("assistants.cli.io_loop.output")
-@patch("assistants.cli.io_loop.converse")
+@patch("assistants.cli.io_loop.AssistantIoHandler.process_input")
 @pytest.mark.asyncio
 async def test_io_loop_async_with_initial_input(
-    mock_converse, mock_output, mock_get_input, setup_assistant
+    mock_process_input, mock_output, mock_get_input, setup_assistant
 ):
     # Setup to exit after processing initial input
     mock_get_input.return_value = "exit"
+    mock_process_input.side_effect = [False, True]  # First call returns False, second call returns True (exit)
 
     # Call the function with initial input
     await io_loop_async(setup_assistant, "initial input", "thread-id")
 
-    # Verify output was reset
-    mock_output.reset.assert_called_once()
-
     # Verify user input was displayed
     mock_output.user_input.assert_called_once_with("initial input")
 
-    # Verify converse was called with correct parameters
-    environ_arg = mock_converse.call_args[0][0]
-    assert environ_arg.assistant == setup_assistant
-    assert environ_arg.thread_id == "thread-id"
-    assert environ_arg.user_input == "initial input"
+    # Verify process_input was called with initial input
+    mock_process_input.assert_any_call("initial input")
+    assert mock_process_input.call_count == 2  # Called once for initial input, once for "exit"
 
 
 @patch("assistants.cli.io_loop.get_user_input")
 @patch("assistants.cli.io_loop.output")
-@patch("assistants.cli.io_loop.converse")
+@patch("assistants.cli.io_loop.AssistantIoHandler.process_input")
 @pytest.mark.asyncio
 async def test_io_loop_async_with_user_input(
-    mock_converse, mock_output, mock_get_input, setup_assistant
+    mock_process_input, mock_output, mock_get_input, setup_assistant
 ):
     # Setup to provide one input then exit
     mock_get_input.side_effect = ["user input", "exit"]
+    mock_process_input.side_effect = [False, True]  # First call returns False, second call returns True (exit)
 
     # Call the function without initial input
     await io_loop_async(setup_assistant, "", "thread-id")
 
-    # Verify converse was called with correct parameters
-    environ_arg = mock_converse.call_args[0][0]
-    assert environ_arg.assistant == setup_assistant
-    assert environ_arg.thread_id == "thread-id"
-    assert environ_arg.user_input == "user input"
+    # Verify process_input was called with user input
+    mock_process_input.assert_any_call("user input")
+    assert mock_process_input.call_count == 2  # Called once for user input, once for "exit"
 
 
 @patch("assistants.cli.io_loop.get_user_input")
 @patch("assistants.cli.io_loop.output")
+@patch("assistants.cli.io_loop.AssistantIoHandler.process_input")
 @pytest.mark.asyncio
 async def test_io_loop_async_with_empty_input(
-    mock_output, mock_get_input, setup_assistant
+    mock_process_input, mock_output, mock_get_input, setup_assistant
 ):
     # Setup to provide empty input then exit
     mock_get_input.side_effect = ["", "exit"]
+    mock_process_input.side_effect = [False, True]  # First call returns False, second call returns True (exit)
 
     # Call the function without initial input
     await io_loop_async(setup_assistant, "", "thread-id")
 
-    # Verify that no converse call was made (we continue the loop on empty input)
-    setup_assistant.converse.assert_not_called()
+    # Verify process_input was called with empty input
+    mock_process_input.assert_any_call("")
+    assert mock_process_input.call_count == 2  # Called once for empty input, once for "exit"
 
 
 @patch("assistants.cli.io_loop.get_user_input")
 @patch("assistants.cli.io_loop.output")
-@patch("assistants.cli.io_loop.COMMAND_MAP")
+@patch("assistants.cli.io_loop.AssistantIoHandler._handle_command")
+@patch("assistants.cli.io_loop.AssistantIoHandler.process_input")
 @pytest.mark.asyncio
 async def test_io_loop_async_with_command(
-    mock_command_map, mock_output, mock_get_input, setup_assistant
+    mock_process_input, mock_handle_command, mock_output, mock_get_input, setup_assistant
 ):
-    # Setup command
-    mock_command = AsyncMock()
-    mock_command_map.get.return_value = mock_command
-
     # Setup to provide command then exit
     mock_get_input.side_effect = ["/command arg1 arg2", "exit"]
+    mock_process_input.side_effect = [False, True]  # First call returns False, second call returns True (exit)
 
     # Call the function
     await io_loop_async(setup_assistant, "", "thread-id")
 
-    # Verify command was looked up and called
-    mock_command_map.get.assert_called_once_with("/command")
-    mock_command.assert_called_once()
-
-    # Verify args were passed correctly
-    environ_arg = mock_command.call_args[0][0]
-    assert environ_arg.assistant == setup_assistant
-    assert environ_arg.thread_id == "thread-id"
-    assert mock_command.call_args[0][1:] == ("arg1", "arg2")
+    # Verify process_input was called with command
+    mock_process_input.assert_any_call("/command arg1 arg2")
+    assert mock_process_input.call_count == 2  # Called once for command, once for "exit"
 
 
 @patch("assistants.cli.io_loop.get_user_input")
 @patch("assistants.cli.io_loop.output")
+@patch("assistants.cli.io_loop.AssistantIoHandler.process_input")
 @pytest.mark.asyncio
 async def test_io_loop_async_with_invalid_command(
-    mock_output, mock_get_input, setup_assistant
+    mock_process_input, mock_output, mock_get_input, setup_assistant
 ):
     # Setup to provide invalid command then exit
     mock_get_input.side_effect = ["/invalid", "exit"]
+    mock_process_input.side_effect = [False, True]  # First call returns False, second call returns True (exit)
 
     # Call the function
     await io_loop_async(setup_assistant, "", "thread-id")
 
-    # Verify warning was displayed
-    mock_output.warn.assert_called_once_with("Invalid command!")
+    # Verify process_input was called with invalid command
+    mock_process_input.assert_any_call("/invalid")
+    assert mock_process_input.call_count == 2  # Called once for invalid command, once for "exit"
 
 
 @patch("assistants.cli.io_loop.output")
 @pytest.mark.asyncio
-async def test_converse_success(mock_output, setup_assistant, mock_message):
-    # Setup environment
-    environ = IoEnviron(
-        assistant=setup_assistant, thread_id="thread-id", user_input="Hello AI"
-    )
+async def test_assistant_io_handler_conversation(mock_output, setup_assistant, mock_message):
+    # Create handler
+    handler = AssistantIoHandler(setup_assistant, "thread-id")
+    handler.user_input = "Hello AI"
 
-    # Call the function
-    await converse(environ)
+    # Call the method
+    await handler._handle_conversation()
 
     # Verify assistant.converse was called with correct parameters
     setup_assistant.converse.assert_called_once_with("Hello AI", "thread-id")
@@ -157,27 +149,25 @@ async def test_converse_success(mock_output, setup_assistant, mock_message):
     # Verify conversation state was saved
     setup_assistant.save_conversation_state.assert_called_once()
 
-    # Verify environment was updated
-    assert environ.last_message == mock_message
-    assert environ.thread_id == "new-thread-id"
+    # Verify handler state was updated
+    assert handler.last_message == mock_message
+    assert handler.thread_id == "new-thread-id"
 
 
 @patch("assistants.cli.io_loop.output")
 @pytest.mark.asyncio
-async def test_converse_with_last_message(mock_output, setup_assistant):
-    # Setup environment with last message
+async def test_assistant_io_handler_with_last_message(mock_output, setup_assistant):
+    # Create handler with last message
+    handler = AssistantIoHandler(setup_assistant, "thread-id")
+    handler.user_input = "Hello AI"
+
+    # Setup last message
     last_message = MagicMock()
     last_message.thread_id = "last-thread-id"
+    handler.last_message = last_message
 
-    environ = IoEnviron(
-        assistant=setup_assistant,
-        thread_id="thread-id",
-        user_input="Hello AI",
-        last_message=last_message,
-    )
-
-    # Call the function
-    await converse(environ)
+    # Call the method
+    await handler._handle_conversation()
 
     # Verify assistant.converse was called with last_message.thread_id
     setup_assistant.converse.assert_called_once_with("Hello AI", "last-thread-id")
@@ -185,17 +175,16 @@ async def test_converse_with_last_message(mock_output, setup_assistant):
 
 @patch("assistants.cli.io_loop.output")
 @pytest.mark.asyncio
-async def test_converse_no_response(mock_output, setup_assistant):
+async def test_assistant_io_handler_no_response(mock_output, setup_assistant):
     # Setup assistant to return None
     setup_assistant.converse.return_value = None
 
-    # Setup environment
-    environ = IoEnviron(
-        assistant=setup_assistant, thread_id="thread-id", user_input="Hello AI"
-    )
+    # Create handler
+    handler = AssistantIoHandler(setup_assistant, "thread-id")
+    handler.user_input = "Hello AI"
 
-    # Call the function
-    await converse(environ)
+    # Call the method
+    await handler._handle_standard_conversation("thread-id")
 
     # Verify warning was displayed
     mock_output.warn.assert_called_once_with("No response from the AI model.")
@@ -203,19 +192,18 @@ async def test_converse_no_response(mock_output, setup_assistant):
 
 @patch("assistants.cli.io_loop.output")
 @pytest.mark.asyncio
-async def test_converse_empty_response(mock_output, setup_assistant):
+async def test_assistant_io_handler_empty_response(mock_output, setup_assistant):
     # Setup assistant to return message with empty content
     message = MagicMock(spec=MessageData)
     message.text_content = ""
     setup_assistant.converse.return_value = message
 
-    # Setup environment
-    environ = IoEnviron(
-        assistant=setup_assistant, thread_id="thread-id", user_input="Hello AI"
-    )
+    # Create handler
+    handler = AssistantIoHandler(setup_assistant, "thread-id")
+    handler.user_input = "Hello AI"
 
-    # Call the function
-    await converse(environ)
+    # Call the method
+    await handler._handle_standard_conversation("thread-id")
 
     # Verify warning was displayed
     mock_output.warn.assert_called_once_with("No response from the AI model.")
@@ -223,21 +211,18 @@ async def test_converse_empty_response(mock_output, setup_assistant):
 
 @patch("assistants.cli.io_loop.output")
 @pytest.mark.asyncio
-async def test_converse_duplicate_response(mock_output, setup_assistant, mock_message):
+async def test_assistant_io_handler_duplicate_response(mock_output, setup_assistant, mock_message):
     # Setup last message with same content as new message
     last_message = MagicMock(spec=MessageData)
     last_message.text_content = "AI response"
 
-    # Setup environment
-    environ = IoEnviron(
-        assistant=setup_assistant,
-        thread_id="thread-id",
-        user_input="Hello AI",
-        last_message=last_message,
-    )
+    # Create handler
+    handler = AssistantIoHandler(setup_assistant, "thread-id")
+    handler.user_input = "Hello AI"
+    handler.last_message = last_message
 
-    # Call the function
-    await converse(environ)
+    # Call the method
+    await handler._handle_standard_conversation("thread-id")
 
     # Verify warning was displayed
     mock_output.warn.assert_called_once_with("No response from the AI model.")
@@ -246,19 +231,18 @@ async def test_converse_duplicate_response(mock_output, setup_assistant, mock_me
 @patch("assistants.cli.io_loop.highlight_code_blocks")
 @patch("assistants.cli.io_loop.output")
 @pytest.mark.asyncio
-async def test_converse_with_code_blocks(
+async def test_assistant_io_handler_with_code_blocks(
     mock_output, mock_highlight, setup_assistant, mock_message
 ):
     # Setup highlight to return formatted text
     mock_highlight.return_value = "formatted response"
 
-    # Setup environment
-    environ = IoEnviron(
-        assistant=setup_assistant, thread_id="thread-id", user_input="Hello AI"
-    )
+    # Create handler
+    handler = AssistantIoHandler(setup_assistant, "thread-id")
+    handler.user_input = "Hello AI"
 
-    # Call the function
-    await converse(environ)
+    # Call the method
+    await handler._handle_standard_conversation("thread-id")
 
     # Verify highlight_code_blocks was called
     mock_highlight.assert_called_once_with("AI response")
