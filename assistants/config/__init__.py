@@ -42,8 +42,8 @@ class Config:
     ASSISTANT_INSTRUCTIONS: str  # pylint: disable=invalid-name
     ASSISTANT_NAME: str  # pylint: disable=invalid-name
     TELEGRAM_BOT_TOKEN: str  # pylint: disable=invalid-name
-    DEFAULT_MAX_HISTORY_TOKENS: str  # pylint: disable=invalid-name
-    DEFAULT_MAX_RESPONSE_TOKENS: str  # pylint: disable=invalid-name
+    DEFAULT_MAX_HISTORY_TOKENS: int  # pylint: disable=invalid-name
+    DEFAULT_MAX_RESPONSE_TOKENS: int  # pylint: disable=invalid-name
     OPEN_IMAGES_IN_BROWSER: bool  # pylint: disable=invalid-name
 
     def update_from_config_yaml(self, config):
@@ -81,11 +81,11 @@ def get_config() -> Config:
         ),
         ASSISTANT_NAME=os.environ.get("ASSISTANT_NAME", "DefaultAssistant"),
         TELEGRAM_BOT_TOKEN=os.environ.get("TG_BOT_TOKEN", None),
-        DEFAULT_MAX_HISTORY_TOKENS=os.environ.get(
-            "DEFAULT_MAX_TOKENS", DEFAULT_MAX_HISTORY_TOKENS
+        DEFAULT_MAX_HISTORY_TOKENS=int(
+            os.environ.get("DEFAULT_MAX_TOKENS", DEFAULT_MAX_HISTORY_TOKENS)
         ),
-        DEFAULT_MAX_RESPONSE_TOKENS=os.environ.get(
-            "DEFAULT_MAX_RESPONSE_TOKENS", DEFAULT_MAX_RESPONSE_TOKENS
+        DEFAULT_MAX_RESPONSE_TOKENS=int(
+            os.environ.get("DEFAULT_MAX_RESPONSE_TOKENS", DEFAULT_MAX_RESPONSE_TOKENS)
         ),
         OPEN_IMAGES_IN_BROWSER=bool(
             json.loads(os.environ.get("OPEN_IMAGES_IN_BROWSER", "true"))

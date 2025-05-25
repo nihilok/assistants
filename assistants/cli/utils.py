@@ -176,7 +176,7 @@ async def create_assistant_and_thread(
         else:
             del assistant_kwargs["instructions"]
 
-    assistant = model_class(**assistant_kwargs)
+        assistant = model_class(**assistant_kwargs)
 
     await assistant.start()
 
@@ -249,7 +249,7 @@ def display_welcome_message(args):
     elif args.thinking and args.model in REASONING_MODELS:
         mode_info = f" (thinking level {args.thinking})"
     elif args.model.startswith("claude") and args.thinking:
-        mode_info = " (thinking)"
+        mode_info = " (thinking enabled)"
 
     output.output(
         f"Assistant CLI v{version.__VERSION__}; using {model_info} model{mode_info}.\n"

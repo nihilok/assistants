@@ -314,7 +314,7 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
         model: str,
         max_tokens: int = 4096,
         api_key: str = environment.OPENAI_API_KEY,
-        thinking: ThinkingLevel = 2,
+        thinking: ThinkingConfig = ThinkingConfig.get_thinking_config(level=1),
     ):
         """
         Initialize the Completion instance.
