@@ -41,67 +41,40 @@ class MessageDict(TypedDict):
     content: str | None
 
 
+class ConversationManagementInterface(ABC):
+    """Interface for conversation state management functionality."""
+
+    @abstractmethod
+    async def save_conversation_state(self) -> str:
+        """Save the current conversation state."""
+
+    @abstractmethod
+    async def get_last_message(self, thread_id: str) -> Optional[MessageData]:
+        """Get the last message from the conversation."""
+
+    @abstractmethod
+    async def async_get_conversation_id(self) -> str:
+        """Get the conversation ID."""
+
+    @abstractmethod
+    async def get_whole_thread(self) -> list[MessageDict]:
+        """Get the whole thread of messages."""
+
+
 class AssistantInterface(ABC):
-    """
-    Interface for the Assistant class.
-    This interface defines the methods that must be implemented by any Assistant class.
-    """
+    """Core assistant functionality interface."""
 
     conversation_id = None
 
     @abstractmethod
     async def start(self) -> None:
-        """
-                Start the assistant.
-                This method should be overridden by subclasses to implement the specific startup
-                logic    message = await assistant.converse(
-                environ.user_input, last_message.thread_id if last_message else thread_id
-            )
-
-        .
-        """
-
-    @abstractmethod
-    async def save_conversation_state(self) -> str:
-        """
-        Save the current conversation state.
-        This method should be overridden by subclasses to implement the specific logic for
-        saving the conversation state.
-        """
-
-    @abstractmethod
-    async def get_last_message(self, thread_id: str) -> Optional[MessageData]:
-        """
-        Get the last message from the conversation.
-        This method should be overridden by subclasses to implement the specific logic for
-        getting the last message.
-        """
-
-    @abstractmethod
-    async def async_get_conversation_id(self) -> str:
-        """
-        Get the conversation ID.
-        This method should be overridden by subclasses to implement the specific logic for
-        getting the conversation ID.
-        """
+        """Start the assistant."""
 
     @abstractmethod
     async def converse(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[MessageData]:
-        """
-        Converse with the assistant.
-        This method should be overridden by subclasses to implement the specific logic for
-        conversing with the assistant.
-        """
-
-    @abstractmethod
-    async def get_whole_thread(self) -> list[MessageDict]:
-        """
-        Get the whole thread of messages.
-        This method should be overridden by subclasses to implement the specific logic for
-        getting the whole thread.
-        """
+        """Converse with the assistant."""
 
 
 class StreamingAssistantInterface(AssistantInterface):

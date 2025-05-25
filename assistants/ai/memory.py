@@ -16,7 +16,11 @@ from abc import ABCMeta, abstractmethod
 
 import tiktoken
 
-from assistants.ai.types import MessageData, MessageDict, AssistantInterface
+from assistants.ai.types import (
+    MessageData,
+    MessageDict,
+    ConversationManagementInterface,
+)
 from assistants.config import environment
 from assistants.user_data.sqlite_backend import conversations_table
 from assistants.user_data.sqlite_backend.conversations import Conversation
@@ -24,10 +28,8 @@ from assistants.user_data.sqlite_backend.conversations import Conversation
 encoding = tiktoken.encoding_for_model("gpt-4o-mini")
 
 
-class ConversationHistoryMixin(AssistantInterface, metaclass=ABCMeta):
-    """
-    Mixin class to handle memory-related functionality.
-    """
+class ConversationHistoryMixin(ConversationManagementInterface):
+    """Implements conversation management functionality."""
 
     def __init__(
         self, max_tokens: int = environment.DEFAULT_MAX_HISTORY_TOKENS

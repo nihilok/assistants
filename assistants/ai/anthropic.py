@@ -67,48 +67,6 @@ class Claude(ConversationHistoryMixin, StreamingAssistantInterface, AssistantInt
         self.instructions = instructions
         self.thinking = thinking
 
-    async def stream_converse(
-        self, user_input: str, thread_id: Optional[str] = None
-    ) -> AsyncIterator[str]:
-        """
-        Stream the assistant's response as it's generated.
-
-        :param user_input: The user's input message
-        :param thread_id: Optional thread ID to continue a conversation
-        :return: An async iterator that yields response chunks as they become available
-        """
-        if not user_input:
-            return
-
-        # Store the user message in memory
-        self.remember({"role": "user", "content": user_input})
-
-        # Create a streaming request to the API
-        response = await self.client.messages.create(
-            max_tokens=self.max_response_tokens,
-            model=self.model,
-            messages=self.memory,
-            stream=True,  # Enable streaming
-        )
-
-        # Buffer to collect the complete response
-        full_response = ""
-
-        # Stream the response chunks
-        async for chunk in response:
-            if hasattr(chunk, "delta") and hasattr(chunk.delta, "text"):
-                # Extract the text chunk
-                text_chunk = chunk.delta.text
-
-                # Add to the full response
-                full_response += text_chunk
-
-                # Yield the chunk to the caller
-                yield text_chunk
-
-        # Store the complete response in memory
-        self.remember({"role": "assistant", "content": full_response})
-
     async def start(self) -> None:
         """
         Do nothing
@@ -213,3 +171,45 @@ class Claude(ConversationHistoryMixin, StreamingAssistantInterface, AssistantInt
 
         self.remember({"role": "assistant", "content": text_content.text})
         return MessageData(text_content=text_content.text)
+
+    async def stream_converse(
+        self, user_input: str, thread_id: Optional[str] = None
+    ) -> AsyncIterator[str]:
+        """
+        Stream the assistant's response as it's generated.
+
+        :param user_input: The user's input message
+        :param thread_id: Optional thread ID to continue a conversation
+        :return: An async iterator that yields response chunks as they become available
+        """
+        if not user_input:
+            return
+
+        # Store the user message in memory
+        self.remember({"role": "user", "content": user_input})
+
+        # Create a streaming request to the API
+        response = await self.client.messages.create(
+            max_tokens=self.max_response_tokens,
+            model=self.model,
+            messages=self.memory,
+            stream=True,  # Enable streaming
+        )
+
+        # Buffer to collect the complete response
+        full_response = ""
+
+        # Stream the response chunks
+        async for chunk in response:
+            if hasattr(chunk, "delta") and hasattr(chunk.delta, "text"):
+                # Extract the text chunk
+                text_chunk = chunk.delta.text
+
+                # Add to the full response
+                full_response += text_chunk
+
+                # Yield the chunk to the caller
+                yield text_chunk
+
+        # Store the complete response in memory
+        self.remember({"role": "assistant", "content": full_response})

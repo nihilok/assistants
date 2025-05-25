@@ -110,29 +110,6 @@ class Assistant(
         reasoning (Optional[Dict]): Reasoning configuration for the model.
     """
 
-    async def stream_converse(
-        self, user_input: str, thread_id: Optional[str] = None
-    ) -> AsyncIterator[str]:
-        stream = self.client.responses.create(
-            model=self.model,
-            input=user_input,
-            reasoning=self.reasoning,
-            stream=True,
-        )
-        full_response = ""
-        for event in stream:
-            if event.type == "response.output_text.delta":
-                if event.delta:
-                    full_response += event.delta
-                    yield event.delta
-
-        if full_response:
-            message_dict = MessageDict(
-                **{"role": "assistant", "content": full_response}
-            )
-            self.remember(message_dict)
-            self.last_message = message_dict
-
     REASONING_MODELS = REASONING_MODELS
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -290,6 +267,30 @@ class Assistant(
             thread_id=self.conversation_id or "",
         )
 
+    async def stream_converse(
+        self, user_input: str, thread_id: Optional[str] = None
+    ) -> AsyncIterator[str]:
+        self.remember({"role": "user", "content": user_input})
+        stream = self.client.responses.create(
+            model=self.model,
+            input=self.memory,
+            reasoning=self.reasoning,
+            stream=True,
+        )
+        full_response = ""
+        for event in stream:
+            if event.type == "response.output_text.delta":
+                if event.delta:
+                    full_response += event.delta
+                    yield event.delta
+
+        if full_response:
+            message_dict = MessageDict(
+                **{"role": "assistant", "content": full_response}
+            )
+            self.remember(message_dict)
+            self.last_message = message_dict
+
 
 class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterface):
     """
@@ -442,4 +443,3 @@ You should always respond in audio format.
             self.remember({"role": "assistant", "content": response.content})
 
         return response.content
-
