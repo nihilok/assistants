@@ -45,6 +45,7 @@ Key CLI commands (prefixed with `/`):
 - `/copy` - Copy response to clipboard
 - `/new` - Start new thread
 - `/threads` - List and select threads
+- `/thinking <level>` - Toggle thinking mode (for reasoning models)
 - `/last` - Retrieve last message
 
 Use the `claude` command for Anthropic models (Now defaults to Claude 4):
