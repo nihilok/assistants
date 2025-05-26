@@ -18,7 +18,7 @@ class DummyAssistant(ConversationHistoryMixin):
 
     def __init__(self, *args, **kwargs) -> None:
         """
-        Initialize the DummyAssistant instance.
+        Initialise the DummyAssistant instance.
         """
         ConversationHistoryMixin.__init__(self, 1)
 

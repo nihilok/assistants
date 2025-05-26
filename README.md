@@ -64,7 +64,7 @@ ai-cli rebuild
 
 The framework includes a Telegram bot interface with the following features:
 
-- **User Management**: Authorize/deauthorize users and chats, promote/demote users
+- **User Management**: Authorise/deauthore users and chats, promote/demote users
 - **Thread Management**: Start new conversation threads
 - **Auto-Reply Toggle**: Enable/disable automatic responses
 - **Media Generation**: Generate images from text prompts

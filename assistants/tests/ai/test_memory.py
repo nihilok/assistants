@@ -1,6 +1,6 @@
 import json
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import patch
 from datetime import datetime
 
 from assistants.ai.memory import ConversationHistoryMixin
@@ -27,7 +27,7 @@ class TestConversationHistoryMixin:
         return ConcreteMemoryMixin(max_tokens=100)
 
     def test_init(self, memory_mixin):
-        """Test initialization of ConversationHistoryMixin."""
+        """Test initialisation of ConversationHistoryMixin."""
         assert memory_mixin.memory == []
         assert memory_mixin.max_history_tokens == 100
         assert memory_mixin.conversation_id is None

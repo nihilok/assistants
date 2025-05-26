@@ -45,7 +45,7 @@ class CLI:
     """
 
     def __init__(self):
-        """Initialize the CLI class with default state."""
+        """Initialise the CLI class with default state."""
         self.args = None
         self.assistant = None
         self.thread_id = None

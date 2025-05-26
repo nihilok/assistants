@@ -41,7 +41,7 @@ class ConversationsTable:
 
     def __init__(self, db_path: str):
         """
-        Initialize the ConversationsTable instance.
+        Initialise the ConversationsTable instance.
 
         :param db_path: The path to the SQLite database file.
         """

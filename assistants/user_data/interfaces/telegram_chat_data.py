@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from assistants.config.file_management import DB_PATH
 
 
-class NotAuthorized(ValueError):
+class NotAuthorised(ValueError):
     pass
 
 

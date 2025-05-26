@@ -1,10 +1,8 @@
-import json
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
-from datetime import datetime
 
 from assistants.ai.anthropic import Claude, INSTRUCTIONS_UNDERSTOOD
-from assistants.ai.types import MessageData
+from assistants.ai.types import ThinkingConfig
 from assistants.lib.exceptions import ConfigError
 
 
@@ -37,14 +35,14 @@ class TestClaude:
             return instance
 
     def test_init(self, claude, mock_anthropic_client):
-        """Test initialization of Claude."""
+        """Test initial of Claude."""
         assert claude.model == "claude-3-opus-20240229"
         assert claude.instructions == "You are a helpful assistant."
         # Don't check the client directly as it might be different in tests
-        assert claude.thinking is False
+        assert claude.thinking == ThinkingConfig(0, "enabled")
 
     def test_init_missing_api_key(self):
-        """Test initialization with missing API key."""
+        """Test initial with missing API key."""
         with pytest.raises(ConfigError):
             with patch("assistants.ai.anthropic.environment.ANTHROPIC_API_KEY", ""):
                 Claude(model="claude-3-opus-20240229", api_key="")
@@ -168,7 +166,7 @@ class TestClaude:
     @pytest.mark.asyncio
     async def test_converse_with_thinking(self, claude, mock_anthropic_client):
         """Test conversing with thinking enabled."""
-        claude.thinking = True
+        claude.thinking = ThinkingConfig(1, "enabled", 10000)
 
         # Ensure the mock is properly set up
         text_block = MagicMock()

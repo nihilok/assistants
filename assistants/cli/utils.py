@@ -315,7 +315,7 @@ class StreamHighlighter:
 
         return line
 
-    def finalize(self):
+    def finalise(self):
         """Process any remaining text in the buffer."""
         if not self.line_buffer:
             return ""

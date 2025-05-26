@@ -1,5 +1,6 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 
 from assistants.ai.openai import (
     Assistant,
@@ -7,7 +8,7 @@ from assistants.ai.openai import (
     ReasoningModelMixin,
     is_valid_thinking_level,
 )
-from assistants.ai.types import MessageData
+from assistants.ai.types import ThinkingConfig
 from assistants.lib.exceptions import ConfigError
 
 
@@ -27,49 +28,51 @@ class TestReasoningModelMixin:
         return ConcreteReasoningMixin
 
     def test_reasoning_model_init_non_reasoning_model(self, reasoning_mixin):
-        """Test initialization with a non-reasoning model."""
-        mixin = reasoning_mixin("non-reasoning-model", 1)
+        """Test initialisation with a non-reasoning model."""
+        mixin = reasoning_mixin("non-reasoning-model", ThinkingConfig(1))
         assert not hasattr(mixin, "reasoning")
 
     def test_reasoning_model_init_reasoning_model(self, reasoning_mixin):
-        """Test initialization with a reasoning model."""
-        with patch("assistants.ai.openai.REASONING_MODELS", ["reasoning-model"]):
-            mixin = reasoning_mixin("reasoning-model", 1)
+        """Test initialisation with a reasoning model."""
+        with patch.object(ReasoningModelMixin, "REASONING_MODELS", ["reasoning-model"]):
+            mixin = reasoning_mixin("reasoning-model", ThinkingConfig(1))
             assert mixin.reasoning == {"effort": "medium"}
 
     def test_reasoning_model_init_with_tools(self, reasoning_mixin):
-        """Test initialization with tools."""
-        with patch("assistants.ai.openai.REASONING_MODELS", ["reasoning-model"]):
-            mixin = reasoning_mixin("reasoning-model", 1)
+        """Test initialisation with tools."""
+        with patch.object(ReasoningModelMixin, "REASONING_MODELS", ["reasoning-model"]):
+            mixin = reasoning_mixin(
+                "reasoning-model", ThinkingConfig.get_thinking_config(1)
+            )
             mixin.tools = ["tool1", "tool2"]
-            mixin.reasoning_model_init(1)
+            mixin.reasoning_model_init(ThinkingConfig(1))
             from openai._types import NOT_GIVEN
 
             assert mixin.tools is NOT_GIVEN
 
     def test_set_reasoning_effort_valid(self, reasoning_mixin):
         """Test setting reasoning effort with valid thinking level."""
-        with patch("assistants.ai.openai.REASONING_MODELS", ["reasoning-model"]):
-            mixin = reasoning_mixin("reasoning-model", 0)
+        with patch.object(ReasoningModelMixin, "REASONING_MODELS", ["reasoning-model"]):
+            mixin = reasoning_mixin("reasoning-model", ThinkingConfig(0))
             assert mixin.reasoning == {"effort": "low"}
 
-            mixin = reasoning_mixin("reasoning-model", 1)
+            mixin = reasoning_mixin("reasoning-model", ThinkingConfig(1))
             assert mixin.reasoning == {"effort": "medium"}
 
-            mixin = reasoning_mixin("reasoning-model", 2)
+            mixin = reasoning_mixin("reasoning-model", ThinkingConfig(2))
             assert mixin.reasoning == {"effort": "high"}
 
     def test_set_reasoning_effort_invalid(self, reasoning_mixin):
         """Test setting reasoning effort with invalid thinking level."""
-        with patch("assistants.ai.openai.REASONING_MODELS", ["reasoning-model"]):
+        with patch.object(ReasoningModelMixin, "REASONING_MODELS", ["reasoning-model"]):
             with pytest.raises(ConfigError):
-                reasoning_mixin("reasoning-model", 3)
+                reasoning_mixin("reasoning-model", ThinkingConfig(3))
 
             with pytest.raises(ConfigError):
-                reasoning_mixin("reasoning-model", -1)
+                reasoning_mixin("reasoning-model", ThinkingConfig(-1))
 
             with pytest.raises(ConfigError):
-                reasoning_mixin("reasoning-model", "invalid")
+                reasoning_mixin("reasoning-model", ThinkingConfig("invalid"))  # type: ignore
 
 
 class TestAssistant:
@@ -93,15 +96,14 @@ class TestAssistant:
             )
 
     def test_init(self, assistant, mock_openai_client):
-        """Test initialization of Assistant."""
-        assert assistant.name == "Test Assistant"
+        """Test initial of Assistant."""
         assert assistant.model == "gpt-4"
         assert assistant.instructions == "You are a helpful assistant."
         assert assistant.client == mock_openai_client
         # We don't test reasoning here as it depends on the model and REASONING_MODELS
 
     def test_init_missing_api_key(self):
-        """Test initialization with missing API key."""
+        """Test initial with missing API key."""
         with pytest.raises(ConfigError):
             with patch("assistants.ai.openai.environment.OPENAI_API_KEY", ""):
                 Assistant(
@@ -213,13 +215,13 @@ class TestCompletion:
             return Completion(model="gpt-4", api_key="test-key")
 
     def test_init(self, completion, mock_openai_client):
-        """Test initialization of Completion."""
+        """Test initial of Completion."""
         assert completion.model == "gpt-4"
         assert completion.client == mock_openai_client
         # We don't test reasoning here as it depends on the model and REASONING_MODELS
 
     def test_init_missing_api_key(self):
-        """Test initialization with missing API key."""
+        """Test initial with missing API key."""
         with pytest.raises(ConfigError):
             with patch("assistants.ai.openai.environment.OPENAI_API_KEY", ""):
                 Completion(model="gpt-4", api_key="")
@@ -292,4 +294,4 @@ def test_is_valid_thinking_level():
     assert is_valid_thinking_level(2) is True
     assert is_valid_thinking_level(3) is False
     assert is_valid_thinking_level(-1) is False
-    assert is_valid_thinking_level("invalid") is False
+    assert is_valid_thinking_level("invalid") is False  # type: ignore

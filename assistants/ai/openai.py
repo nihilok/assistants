@@ -49,20 +49,19 @@ def is_valid_thinking_level(level: int) -> TypeGuard[ThinkingLevel]:
 
 class ReasoningModelMixin:
     """
-    Mixin class to handle reasoning model initialization.
+    Mixin class to handle reasoning model initialisation.
 
     Attributes:
         reasoning (Optional[Dict]): Reasoning configuration for the model.
     """
 
+    REASONING_MODELS = REASONING_MODELS
+
     def reasoning_model_init(self, thinking: ThinkingConfig) -> None:
         """
-        Initialize the reasoning model.
+        Initialise the reasoning model.
         """
-        if not thinking:
-            return
-
-        if self.model not in REASONING_MODELS:
+        if not self.is_reasoning_model:
             return
 
         self._set_reasoning_effort(thinking.level)
@@ -71,20 +70,16 @@ class ReasoningModelMixin:
             self.tools = NOT_GIVEN
 
     def _set_reasoning_effort(self, thinking: ThinkingLevel) -> None:
-        valid = False
         try:
             thinking = int(thinking)
         except (ValueError, TypeError):
-            valid = False
+            raise ConfigError(
+                f"Invalid thinking level: {thinking}. Must be 0, 1, or 2."
+            )
 
         if is_valid_thinking_level(thinking):
-            if isinstance(self, Completion):
-                self.reasoning = THINKING_MAP[thinking]
-            else:
-                self.reasoning = {"effort": THINKING_MAP[thinking]}
-            valid = True
-
-        if not valid:
+            self.reasoning = {"effort": THINKING_MAP[thinking]}
+        else:
             raise ConfigError(
                 f"Invalid thinking level: {thinking}. Must be 0, 1, or 2."
             )
@@ -122,8 +117,6 @@ class Assistant(
         reasoning (Optional[Dict]): Reasoning configuration for the model.
     """
 
-    REASONING_MODELS = REASONING_MODELS
-
     def __init__(
         self,
         *,
@@ -134,7 +127,7 @@ class Assistant(
         thinking: ThinkingConfig = ThinkingConfig.get_thinking_config(level=1),
     ):
         """
-        Initialize the Assistant instance.
+        Initialise the Assistant instance.
 
         :param name: The name of the assistant.
         :param model: The model to be used by the assistant.
@@ -340,12 +333,12 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
         ConversationHistoryMixin.__init__(self, max_tokens)
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
-        self.reasoning: Optional[OpenAIThinkingLevel] = None
+        self.thinking = thinking
         self.reasoning_model_init(thinking)
 
     async def start(self) -> None:
         """
-        Initialize the assistant (no-op for Completion).
+        Initialise the assistant (no-op for Completion).
         """
         pass
 
@@ -366,7 +359,7 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
         response = self.client.chat.completions.create(
             model=self.model,
             messages=cast(list[dict[str, str]], temp_memory),
-            reasoning_effort=self.reasoning,
+            reasoning_effort=self.reasoning["effort"] if self.reasoning else NotGiven,
         )
         message = response.choices[0].message
         self.remember({"role": "assistant", "content": message.content or ""})

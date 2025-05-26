@@ -109,7 +109,7 @@ class AssistantIoHandler:
                 output.default(highlighted_chunk)
 
         # Process any remaining text in buffer
-        final_chunk = highlighter.finalize()
+        final_chunk = highlighter.finalise()
         if final_chunk:
             output.default(final_chunk)
 

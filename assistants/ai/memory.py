@@ -35,7 +35,7 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         self, max_tokens: int = environment.DEFAULT_MAX_HISTORY_TOKENS
     ) -> None:
         """
-        Initialize the MemoryMixin instance.
+        Initialise the MemoryMixin instance.
 
         :param max_tokens: Maximum number of messages to retain in memory.
         """

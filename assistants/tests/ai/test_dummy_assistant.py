@@ -14,7 +14,7 @@ class TestDummyAssistant:
         return DummyAssistant()
 
     def test_init(self, dummy_assistant):
-        """Test initialization of DummyAssistant."""
+        """Test initialisation of DummyAssistant."""
         assert dummy_assistant.max_history_tokens == 1
         assert dummy_assistant.memory == []
         assert dummy_assistant.conversation_id is None

@@ -4,7 +4,7 @@ import aiosqlite
 
 from assistants.user_data.interfaces.telegram_chat_data import (
     ChatHistory,
-    NotAuthorized,
+    NotAuthorised,
     UserData,
 )
 
@@ -91,7 +91,7 @@ class TelegramSqliteUserData(UserData):
                 result = await cursor.fetchone()
                 if result and result[0]:
                     return True
-        raise NotAuthorized(str(user_id))
+        raise NotAuthorised(str(user_id))
 
     async def check_superuser(self, user_id: int):
         async with aiosqlite.connect(self.DB) as db:
@@ -101,7 +101,7 @@ class TelegramSqliteUserData(UserData):
                 result = await cursor.fetchone()
                 if result and result[0]:
                     return True
-        raise NotAuthorized(str(user_id))
+        raise NotAuthorised(str(user_id))
 
     async def check_chat_authorised(self, chat_id: int):
         async with aiosqlite.connect(self.DB) as db:
@@ -111,7 +111,7 @@ class TelegramSqliteUserData(UserData):
                 result = await cursor.fetchone()
                 if result and result[0]:
                     return True
-        raise NotAuthorized(str(chat_id))
+        raise NotAuthorised(str(chat_id))
 
     async def authorise_user(self, user_id: int):
         async with aiosqlite.connect(self.DB) as db:
