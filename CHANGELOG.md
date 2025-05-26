@@ -1,6 +1,10 @@
 Changelog
 ---
 
+### 26/04/2025 v0.6.13
+
+- fix mismatch between Completion reasoning_effort and Assistants API reasoning_effort
+
 ### 26/04/2025 v0.6.12
 
 - refactor Assistant interfaces for better separation of concerns
@@ -107,7 +111,8 @@ Changelog
 
 ### 30/01/2025 v0.5.2
 
-- add `claude` command to automatically set relevant environment variables to use CLI with `claude-3-5-sonnet-latest` model.
+- add `claude` command to automatically set relevant environment variables to use CLI with `claude-3-5-sonnet-latest`
+  model.
 
 ---
 
