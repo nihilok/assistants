@@ -11,8 +11,7 @@ Classes:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TypedDict, AsyncIterator, Literal, Optional
-
+from typing import AsyncIterator, Literal, Optional, TypedDict
 
 ThinkingLevel = Literal[0, 1, 2]
 
@@ -111,6 +110,10 @@ class AssistantInterface(ABC):
     ) -> Optional[MessageData]:
         """Converse with the assistant."""
 
+    @abstractmethod
+    def remember(self, message: MessageDict) -> None:
+        """Store a message in the assistant's memory."""
+
     @property
     @abstractmethod
     def is_reasoning_model(self) -> bool:
@@ -128,11 +131,26 @@ class StreamingAssistantInterface(AssistantInterface):
     """
 
     @abstractmethod
-    def stream_converse(
+    def _provider_stream_response(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> AsyncIterator[str]:
         """
-        Stream converse with the assistant.
-        This method should be overridden by subclasses to implement the specific logic for
-        streaming conversations with the assistant.
+        Abstract method for provider-specific streaming logic.
+        Should yield response chunks as they become available.
         """
+
+    async def stream_converse(
+        self, user_input: str, thread_id: Optional[str] = None
+    ) -> AsyncIterator[str]:
+        """
+        Shared streaming logic for all assistants. Handles memory and delegates to provider.
+        """
+        if not user_input:
+            return
+        self.remember({"role": "user", "content": user_input})
+        full_response = ""
+        async for chunk in self._provider_stream_response(user_input, thread_id):
+            full_response += chunk
+            yield chunk
+        if full_response:
+            self.remember({"role": "assistant", "content": full_response})

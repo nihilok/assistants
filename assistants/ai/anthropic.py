@@ -7,20 +7,19 @@ Classes:
     - Claude: Encapsulates interactions with the Anthropic API.
 """
 
-from typing import Optional, AsyncIterator
+from typing import AsyncIterator, Optional
 
 from anthropic import AsyncAnthropic
 
 from assistants.ai.memory import ConversationHistoryMixin
 from assistants.ai.types import (
-    MessageData,
     AssistantInterface,
+    MessageData,
     StreamingAssistantInterface,
     ThinkingConfig,
 )
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
-
 
 INSTRUCTIONS_UNDERSTOOD = "Instructions understood."
 
@@ -173,47 +172,18 @@ class Claude(ConversationHistoryMixin, StreamingAssistantInterface, AssistantInt
         self.remember({"role": "assistant", "content": text_content.text})
         return MessageData(text_content=text_content.text)
 
-    async def stream_converse(
+    async def _provider_stream_response(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> AsyncIterator[str]:
-        """
-        Stream the assistant's response as it's generated.
-
-        :param user_input: The user's input message
-        :param thread_id: Optional thread ID to continue a conversation
-        :return: An async iterator that yields response chunks as they become available
-        """
-        if not user_input:
-            return
-
-        # Store the user message in memory
-        self.remember({"role": "user", "content": user_input})
-
-        # Create a streaming request to the API
         response = await self.client.messages.create(
             max_tokens=self.max_response_tokens,
             model=self.model,
             messages=self.memory,
-            stream=True,  # Enable streaming
+            stream=True,
         )
-
-        # Buffer to collect the complete response
-        full_response = ""
-
-        # Stream the response chunks
         async for chunk in response:
             if hasattr(chunk, "delta") and hasattr(chunk.delta, "text"):
-                # Extract the text chunk
-                text_chunk = chunk.delta.text
-
-                # Add to the full response
-                full_response += text_chunk
-
-                # Yield the chunk to the caller
-                yield text_chunk
-
-        # Store the complete response in memory
-        self.remember({"role": "assistant", "content": full_response})
+                yield chunk.delta.text
 
     @property
     def is_reasoning_model(self):

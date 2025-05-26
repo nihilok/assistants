@@ -8,24 +8,25 @@ Classes:
 
 import hashlib
 from copy import deepcopy
-from typing import Optional, Literal, Any, cast, TypeGuard, Dict, Union, AsyncIterator
+from typing import Any, AsyncIterator, Dict, Literal, Optional, TypeGuard, Union, cast
 
 import openai
 from openai import BadRequestError
 from openai._types import NOT_GIVEN, NotGiven
-from openai.types.chat import ChatCompletionMessage, ChatCompletionAudioParam
+from openai.types.chat import ChatCompletionAudioParam, ChatCompletionMessage
+from openai.types.responses import EasyInputMessageParam
 
 from assistants.ai.constants import REASONING_MODELS
 from assistants.ai.memory import ConversationHistoryMixin
 from assistants.ai.types import (
+    AssistantInterface,
     MessageData,
     MessageDict,
-    AssistantInterface,
     StreamingAssistantInterface,
     ThinkingConfig,
 )
 from assistants.config import environment
-from assistants.lib.exceptions import ConfigError, NoResponseError
+from assistants.lib.exceptions import ConfigError
 
 ThinkingLevel = Literal[0, 1, 2]
 OpenAIThinkingLevel = Literal["low", "medium", "high"]
@@ -271,29 +272,19 @@ class Assistant(
             thread_id=self.conversation_id or "",
         )
 
-    async def stream_converse(
+    async def _provider_stream_response(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> AsyncIterator[str]:
-        self.remember({"role": "user", "content": user_input})
         stream = self.client.responses.create(
             model=self.model,
-            input=self.memory,
-            reasoning=self.reasoning,
+            input=cast(list[EasyInputMessageParam], self.memory),
+            reasoning=self.reasoning if self.is_reasoning_model else NOT_GIVEN,
             stream=True,
         )
-        full_response = ""
         for event in stream:
             if event.type == "response.output_text.delta":
                 if event.delta:
-                    full_response += event.delta
                     yield event.delta
-
-        if full_response:
-            message_dict = MessageDict(
-                **{"role": "assistant", "content": full_response}
-            )
-            self.remember(message_dict)
-            self.last_message = message_dict
 
 
 class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterface):
@@ -402,9 +393,7 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
         temp_memory = deepcopy(self.memory)
         if (message := temp_memory[0])["role"] == "system":
             if "You should always respond in audio format." not in message["content"]:
-                message[
-                    "content"
-                ] = f"""\
+                message["content"] = f"""\
 You should always respond in audio format.
 
 {message["content"]}
