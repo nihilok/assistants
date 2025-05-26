@@ -1,6 +1,13 @@
 Changelog
 ---
 
+### 26/04/2025 v0.6.12
+
+- refactor Assistant interfaces for better separation of concerns
+- refactor io_loop.py functions into stateful methods on AssistantIoHandler class
+- improve thinking/reasoning mode handling across providers for better consistency
+- add `/thinking` command to toggle thinking mode in the CLI
+
 ### 24/04/2025 v0.6.11
 
 - add streaming response support for OpenAI models in the CLI
