@@ -99,6 +99,7 @@ class AssistantInterface(ABC):
     """Core assistant functionality interface."""
 
     conversation_id = None
+    thinking: ThinkingConfig
 
     @abstractmethod
     async def start(self) -> None:
@@ -109,6 +110,15 @@ class AssistantInterface(ABC):
         self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[MessageData]:
         """Converse with the assistant."""
+
+    @property
+    @abstractmethod
+    def is_reasoning_model(self) -> bool:
+        """
+        Check if the assistant is a reasoning model.
+
+        :return: True if the assistant is a reasoning model, False otherwise.
+        """
 
 
 class StreamingAssistantInterface(AssistantInterface):

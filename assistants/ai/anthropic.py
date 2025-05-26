@@ -214,3 +214,7 @@ class Claude(ConversationHistoryMixin, StreamingAssistantInterface, AssistantInt
 
         # Store the complete response in memory
         self.remember({"role": "assistant", "content": full_response})
+
+    @property
+    def is_reasoning_model(self):
+        return True

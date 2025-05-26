@@ -53,7 +53,7 @@ class AssistantIoHandler:
     async def _handle_command(self):
         """Process and execute a command."""
         c, *args = self.user_input.split(" ")
-        command = COMMAND_MAP.get(c.lower())
+        command = COMMAND_MAP.get(c)
         if command:
             logger.debug(
                 f"Command input: {self.user_input}; Command: {command.__class__.__name__}"

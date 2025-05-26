@@ -10,9 +10,10 @@ import aiofiles
 import aiohttp
 import pyperclip
 
+from assistants.ai.anthropic import Claude
 from assistants.ai.memory import ConversationHistoryMixin
 from assistants.ai.openai import Assistant
-from assistants.ai.types import MessageData, AssistantInterface
+from assistants.ai.types import MessageData, AssistantInterface, ThinkingConfig
 from assistants.cli import output
 from assistants.lib.constants import IO_INSTRUCTIONS
 from assistants.cli.selector import TerminalSelector, TerminalSelectorOption
@@ -20,6 +21,7 @@ from assistants.cli.terminal import clear_screen
 from assistants.cli.utils import get_text_from_default_editor, highlight_code_blocks
 from assistants.config import environment
 from assistants.config.file_management import DATA_DIR
+from assistants.lib.exceptions import ConfigError
 from assistants.user_data.sqlite_backend import conversations_table
 from assistants.user_data.sqlite_backend.conversations import Conversation
 
@@ -444,6 +446,62 @@ class CopyEntireThread(Command):
 copy_thread = CopyEntireThread()
 
 
+class UpdateThinkingMode(Command):
+    """
+    Command to update the thinking mode of the assistant.
+    """
+
+    help = "Update the thinking mode of the assistant"
+
+    async def __call__(self, environ: IoEnviron, *args) -> None:
+        """
+        Call the command to update the thinking mode of the assistant.
+
+        :param environ: The environment variables for the input/output loop.
+        """
+        assistant = environ.assistant
+        if not assistant.is_reasoning_model:
+            output.warn("This assistant does not support thinking/reasoning.")
+            return
+
+        if isinstance(assistant, Claude):
+            default_on_param = "enabled"
+            default_off_param = "disabled"
+            max_response_tokens = assistant.max_response_tokens
+        else:
+            default_on_param = 2
+            default_off_param = 0
+            max_response_tokens = None
+
+        if not args:
+            if not assistant.thinking:
+                assistant.thinking = ThinkingConfig.get_thinking_config(
+                    2, max_response_tokens
+                )
+                output.inform(f"Thinking mode set to {default_on_param}.")
+            else:
+                assistant.thinking = ThinkingConfig.get_thinking_config(
+                    0, max_response_tokens
+                )
+                output.inform(f"Thinking mode set to {default_off_param}.")
+        else:
+            try:
+                thinking_level = int(args[0])
+                assistant.thinking = ThinkingConfig.get_thinking_config(
+                    thinking_level, max_response_tokens
+                )
+                output.inform(
+                    f"Thinking mode set to {thinking_level}{' (' + assistant.thinking.type + ')' if assistant.thinking.level else ''}."
+                )
+            except (ConfigError, ValueError):
+                output.fail(
+                    "Invalid thinking level. Please provide a number between 0 and 2."
+                )
+
+
+update_thinking_mode = UpdateThinkingMode()
+
+
 COMMAND_MAP = {
     "/e": editor,
     "/edit": editor,
@@ -461,6 +519,8 @@ COMMAND_MAP = {
     "/new-thread": new_thread,
     "/t": select_thread,
     "/threads": select_thread,
+    "/T": update_thinking_mode,
+    "/thinking": update_thinking_mode,
     "/i": generate_image,
     "/image": generate_image,
     "/last": show_last_message,

@@ -7,11 +7,13 @@ Commands:
                 Generate an image from the prompt supplied as args
                 e.g. `/i a dog riding a pony, in the style of Botero`
 /c,  /copy      Copy the previous response to the clipboard
-/cc, /copy-code [i]
+/cc, /copy-code [index]
                 Copy the code blocks from the previous response to the clipboard
                 (an optional index can be supplied to copy a single code block)
 /n,  /new       Start a new thread and clear the terminal screen
-/t,  /threads:  List all the threads, and select one to continue
+/t,  /threads   List all the threads, and select one to continue
+/T, /thinking [level]  
+                Update the thinking mode of the assistant
 /l,  /last      Show the last message from the assistant
 /clear, C-l     Clear the terminal screen without starting a new thread
 

@@ -89,6 +89,15 @@ class ReasoningModelMixin:
                 f"Invalid thinking level: {thinking}. Must be 0, 1, or 2."
             )
 
+    @property
+    def is_reasoning_model(self) -> bool:
+        return self.model in self.REASONING_MODELS
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == "thinking":
+            self._set_reasoning_effort(value.level)
+        return super().__setattr__(name, value)
+
 
 class Assistant(
     ReasoningModelMixin,
@@ -145,6 +154,7 @@ class Assistant(
         self.last_message: Optional[dict] = None
         self.last_prompt: Optional[str] = None
         self.reasoning: Optional[Dict[str, OpenAIThinkingLevel]] = None
+        self.thinking = thinking
         ConversationHistoryMixin.__init__(self)
         self.reasoning_model_init(thinking)
 
