@@ -7,6 +7,7 @@ Changelog
 - refactor io_loop.py functions into stateful methods on AssistantIoHandler class
 - improve thinking/reasoning mode handling across providers for better consistency
 - add `/thinking` command to toggle thinking mode in the CLI
+- add `--opus` option to the CLI to use the Opus model for Claude 4 (alias of `--code`)
 
 ### 24/04/2025 v0.6.11
 

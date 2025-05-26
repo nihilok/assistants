@@ -60,6 +60,7 @@ OPENAI_API_KEY environment variable {"must be set to use the OpenAI API (not set
     parser.add_argument(
         "-C",
         "--code",
+        "--opus",
         action="store_true",
         help="use specialised reasoning/code model. WARNING: This model may be slower "
         "and more expensive to use (use the CODE_MODEL environment variable to change "
@@ -75,6 +76,8 @@ OPENAI_API_KEY environment variable {"must be set to use the OpenAI API (not set
     parser.add_argument(
         "-T",
         "--thinking",
+        "--reasoning-effort",
+        "--reasoning",
         nargs="?",
         const=1,
         default=0,
