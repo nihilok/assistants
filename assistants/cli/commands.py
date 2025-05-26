@@ -461,7 +461,7 @@ class UpdateThinkingMode(Command):
         """
         assistant = environ.assistant
         if not assistant.is_reasoning_model:
-            output.warn("This assistant does not support thinking/reasoning.")
+            output.warn("This model does not support thinking/reasoning.")
             return
 
         if isinstance(assistant, Claude):
