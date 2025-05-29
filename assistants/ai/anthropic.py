@@ -198,3 +198,5 @@ class ClaudeAssistant(
     @property
     def is_reasoning_model(self):
         return True
+
+
