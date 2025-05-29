@@ -15,6 +15,7 @@ from assistants.ai.memory import ConversationHistoryMixin
 from assistants.ai.types import (
     AssistantInterface,
     MessageData,
+    MessageDict,
     StreamingAssistantInterface,
     ThinkingConfig,
 )
@@ -24,7 +25,9 @@ from assistants.lib.exceptions import ConfigError
 INSTRUCTIONS_UNDERSTOOD = "Instructions understood."
 
 
-class Claude(ConversationHistoryMixin, StreamingAssistantInterface, AssistantInterface):
+class ClaudeAssistant(
+    ConversationHistoryMixin, StreamingAssistantInterface, AssistantInterface
+):
     """
     Claude class encapsulates interactions with the Anthropic API.
 
@@ -42,30 +45,51 @@ class Claude(ConversationHistoryMixin, StreamingAssistantInterface, AssistantInt
     def __init__(
         self,
         model: str,
+        api_key: Optional[str] = environment.ANTHROPIC_API_KEY,
         instructions: Optional[str] = None,
         max_history_tokens: int = environment.DEFAULT_MAX_HISTORY_TOKENS,
         max_response_tokens: int = environment.DEFAULT_MAX_RESPONSE_TOKENS,
-        api_key: Optional[str] = environment.ANTHROPIC_API_KEY,
-        thinking: ThinkingConfig = ThinkingConfig.get_thinking_config(0),
+        thinking: Optional[ThinkingConfig] = None,
+        **kwargs,
     ) -> None:
         """
         Initialise the Claude instance.
 
         :param model: The model to be used by the assistant.
-        :param max_response_tokens: Maximum number of tokens for the response.
-        :param max_history_tokens: Maximum number of messages to retain in memory.
         :param api_key: API key for Anthropic. Defaults to ANTHROPIC_API_KEY.
+        :param instructions: Optional instructions for the assistant.
+        :param max_history_tokens: Maximum number of messages to retain in memory.
+        :param max_response_tokens: Maximum number of tokens for the response.
+        :param thinking: Configuration for thinking capabilities.
+        :param kwargs: Additional parameters.
         :raises ConfigError: If the API key is missing.
         """
         if not api_key:
             raise ConfigError("Missing 'ANTHROPIC_API_KEY' environment variable")
 
+        # Initialize the mixin
         ConversationHistoryMixin.__init__(self, max_history_tokens)
+
+        # Store instance variables
         self.client = AsyncAnthropic(api_key=api_key)
         self.model = model
         self.max_response_tokens = max_response_tokens
         self.instructions = instructions
-        self.thinking = thinking
+        self.thinking = self.set_thinking_budget(thinking)
+
+    def set_thinking_budget(self, thinking: ThinkingConfig) -> ThinkingConfig:
+        """
+        Set the thinking budget for the assistant.
+
+        :param thinking: Configuration for thinking capabilities.
+        """
+        if thinking.budget_tokens is None:
+            thinking = ThinkingConfig(
+                level=thinking.level,
+                budget_tokens=self.max_response_tokens,
+                type=thinking.type,
+            )
+        return thinking
 
     async def start(self) -> None:
         """
@@ -76,6 +100,7 @@ class Claude(ConversationHistoryMixin, StreamingAssistantInterface, AssistantInt
         self,
         conversation_id: Optional[str] = None,
         initial_system_message: Optional[str] = None,
+        **kwargs,
     ) -> None:
         """
         Load the conversation from the database.
@@ -83,52 +108,37 @@ class Claude(ConversationHistoryMixin, StreamingAssistantInterface, AssistantInt
         already present, or not the most recent instructions.
 
         :param conversation_id: Optional ID of the conversation to load.
+        :param initial_system_message: Optional initial system message to add.
         """
-        await super().load_conversation(conversation_id, initial_system_message)
+        await super().load_conversation(
+            conversation_id=conversation_id,
+            initial_system_message=initial_system_message,
+            convert_system_to_instructions=True,
+            instructions_understood_message=INSTRUCTIONS_UNDERSTOOD,
+        )
 
-        # replace any instances of `{"role": "system", ...}` with `{"role": "user", ...}, {"role": "assistant", "content": INSTRUCTIONS_UNDERSTOOD}`
-        temp_memory = []
-        for message in self.memory:
-            if message["role"] == "system":
-                temp_memory.extend(
-                    [
-                        {
-                            "role": "user",
-                            "content": message["content"],
-                        },
-                        {
-                            "role": "assistant",
-                            "content": INSTRUCTIONS_UNDERSTOOD,
-                        },
-                    ]
-                )
-            else:
-                temp_memory.append(message)
-
-        self.memory = temp_memory
-
+        # Add instructions if provided
         if self.instructions:
-            # Check if the instructions are already the most recent in the memory
+            # Check if instructions already exist as the most recent ones
+            instructions_already_set = False
             for idx, message in enumerate(self.memory):
                 if (
                     message.get("role") == "user"
                     and message.get("content") == self.instructions
+                    and idx + 1 < len(self.memory)
+                    and self.memory[idx + 1].get("role") == "assistant"
+                    and self.memory[idx + 1].get("content") == INSTRUCTIONS_UNDERSTOOD
                 ):
-                    understood_count = sum(
-                        1
-                        for msg in self.memory[idx + 1 :]
-                        if msg.get("role") == "assistant"
-                        and msg.get("content") == INSTRUCTIONS_UNDERSTOOD
-                    )
-                    if understood_count < 2:
-                        # Most recent instructions are equivalent to the current ones
-                        return
+                    instructions_already_set = True
+                    break
 
-            self.memory = [
-                *self.memory,
-                {"role": "user", "content": self.instructions},
-                {"role": "assistant", "content": INSTRUCTIONS_UNDERSTOOD},
-            ]
+            if not instructions_already_set:
+                self.memory.extend(
+                    [
+                        MessageDict(role="user", content=self.instructions),
+                        MessageDict(role="assistant", content=INSTRUCTIONS_UNDERSTOOD),
+                    ]
+                )
 
     async def converse(
         self,

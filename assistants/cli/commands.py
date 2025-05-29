@@ -10,17 +10,17 @@ import aiofiles
 import aiohttp
 import pyperclip
 
-from assistants.ai.anthropic import Claude
+from assistants.ai.anthropic import ClaudeAssistant
 from assistants.ai.memory import ConversationHistoryMixin
-from assistants.ai.openai import Assistant
-from assistants.ai.types import MessageData, AssistantInterface, ThinkingConfig
+from assistants.ai.openai import OpenAIAssistant
+from assistants.ai.types import AssistantInterface, MessageData, ThinkingConfig
 from assistants.cli import output
-from assistants.lib.constants import IO_INSTRUCTIONS
 from assistants.cli.selector import TerminalSelector, TerminalSelectorOption
 from assistants.cli.terminal import clear_screen
 from assistants.cli.utils import get_text_from_default_editor, highlight_code_blocks
 from assistants.config import environment
 from assistants.config.file_management import DATA_DIR
+from assistants.lib.constants import IO_INSTRUCTIONS
 from assistants.lib.exceptions import ConfigError
 from assistants.user_data.sqlite_backend import conversations_table
 from assistants.user_data.sqlite_backend.conversations import Conversation
@@ -364,7 +364,7 @@ class GenerateImage(Command):
 
     async def __call__(self, environ: IoEnviron, *args) -> None:
         assistant = environ.assistant
-        if not isinstance(assistant, Assistant):
+        if not isinstance(assistant, OpenAIAssistant):
             raise NotImplementedError
 
         prompt = " ".join(args)
@@ -464,7 +464,7 @@ class UpdateThinkingMode(Command):
             output.warn("This model does not support thinking/reasoning.")
             return
 
-        if isinstance(assistant, Claude):
+        if isinstance(assistant, ClaudeAssistant):
             default_on_param = "enabled"
             default_off_param = "disabled"
             max_response_tokens = assistant.max_response_tokens

@@ -95,7 +95,7 @@ class ReasoningModelMixin:
         return super().__setattr__(name, value)
 
 
-class Assistant(
+class OpenAIAssistant(
     ReasoningModelMixin,
     ConversationHistoryMixin,
     StreamingAssistantInterface,
@@ -122,10 +122,12 @@ class Assistant(
         self,
         *,
         model: str,
+        api_key: str = environment.OPENAI_API_KEY,
         instructions: str,
         tools: list | NotGiven = NOT_GIVEN,
-        api_key: str = environment.OPENAI_API_KEY,
-        thinking: ThinkingConfig = ThinkingConfig.get_thinking_config(level=1),
+        max_history_tokens: int = 0,
+        max_response_tokens: int = 0,
+        thinking: Optional[ThinkingConfig] = None,
     ):
         """
         Initialise the Assistant instance.
@@ -148,8 +150,9 @@ class Assistant(
         self.last_message: Optional[dict] = None
         self.last_prompt: Optional[str] = None
         self.reasoning: Optional[Dict[str, OpenAIThinkingLevel]] = None
-        self.thinking = thinking
-        ConversationHistoryMixin.__init__(self)
+        self.thinking = thinking or ThinkingConfig.get_thinking_config(level=1)
+        self.max_response_tokens = max_response_tokens
+        ConversationHistoryMixin.__init__(self, max_tokens=max_history_tokens)
         self.reasoning_model_init(thinking)
 
     async def start(self) -> None:
@@ -158,7 +161,7 @@ class Assistant(
         """
         if self.instructions and not self.memory:
             self.remember({"role": "system", "content": self.instructions})
-        self.last_message = None
+        self.reasoning = None
 
     @property
     def assistant_id(self) -> str:
@@ -287,7 +290,9 @@ class Assistant(
                     yield event.delta
 
 
-class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterface):
+class OpenAICompletion(
+    ReasoningModelMixin, ConversationHistoryMixin, AssistantInterface
+):
     """
     Encapsulates interactions with the OpenAI Chat Completion API.
 
@@ -389,7 +394,7 @@ class Completion(ReasoningModelMixin, ConversationHistoryMixin, AssistantInterfa
             role="user",
             content=user_input,
         )
-        self.remember({"role": "user", "content": user_input})
+        self.remember(new_prompt)
         temp_memory = deepcopy(self.memory)
         if (message := temp_memory[0])["role"] == "system":
             if "You should always respond in audio format." not in message["content"]:

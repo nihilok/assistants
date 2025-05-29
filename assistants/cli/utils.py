@@ -8,21 +8,23 @@ from argparse import Namespace
 from typing import Optional
 
 import yaml
-from assistants import version
-from assistants.ai.anthropic import Claude
-from assistants.ai.constants import REASONING_MODELS
-from assistants.ai.dummy_assistant import DummyAssistant
-from assistants.ai.openai import Assistant, Completion
-from assistants.ai.types import AssistantInterface, ThinkingConfig
-from assistants.cli import output
-from assistants.config import Config, environment
-from assistants.lib.exceptions import ConfigError
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
 from pygments.lexers.special import TextLexer
 from pygments.util import ClassNotFound
 from pygments_tsx.tsx import TypeScriptXLexer, patch_pygments
+
+from assistants import version
+from assistants.ai.anthropic import ClaudeAssistant
+from assistants.ai.constants import REASONING_MODELS
+from assistants.ai.dummy_assistant import DummyAssistant
+from assistants.ai.mistral import MistralAssistant
+from assistants.ai.openai import OpenAIAssistant, OpenAICompletion
+from assistants.ai.types import AssistantInterface, ThinkingConfig
+from assistants.cli import output
+from assistants.config import Config, environment
+from assistants.lib.exceptions import ConfigError
 
 fallback_lexers = {
     "tsx": TypeScriptXLexer,
@@ -116,18 +118,21 @@ def get_text_from_default_editor(initial_text=None):
 
 MODEL_LOOKUP = {
     "code": {
-        "o1": Completion,
-        "o3": Completion,
-        "claude-": Claude,
-        "o4-mini": Completion,
+        "o1": OpenAICompletion,
+        "o3": OpenAICompletion,
+        "claude-": ClaudeAssistant,
+        "o4": OpenAICompletion,
     },
     "default": {
-        "claude-": Claude,
+        "claude-": ClaudeAssistant,
         "dummy-model": DummyAssistant,
-        "gpt-4o": Assistant,
-        "o1": Assistant,
-        "o3": Assistant,
-        "o4": Assistant,
+        "gpt-4o": OpenAIAssistant,
+        "o1": OpenAIAssistant,
+        "o3": OpenAIAssistant,
+        "o4": OpenAIAssistant,
+        "mistral": MistralAssistant,
+        "codestral": MistralAssistant,
+        "devstral": MistralAssistant,
     },
 }
 
@@ -135,53 +140,68 @@ MODEL_LOOKUP = {
 async def create_assistant_and_thread(
     args: Namespace, env: Config
 ) -> tuple[AssistantInterface, Optional[str]]:
-    thread_id = None
-    instructions = env.ASSISTANT_INSTRUCTIONS
+    """
+    Create an assistant instance and optionally get a thread ID.
 
+    :param args: Command line arguments.
+    :param env: Environment configuration.
+    :return: A tuple of (assistant, thread_id).
+    """
+    # Get instructions if specified
+    instructions = None
     if args.instructions:
         with open(args.instructions, "r", encoding="utf-8") as file:
             instructions = file.read()
+    elif not args.code:  # Only use default instructions in non-code mode
+        instructions = env.ASSISTANT_INSTRUCTIONS
 
-    def get_model_class(model_type: str, model_name: str):
-        for key, assistant_type in MODEL_LOOKUP[model_type].items():
-            if model_name.startswith(key):
-                return assistant_type
+    # Determine model and type
+    model_name = env.CODE_MODEL if args.code else args.model
+    model_type = "code" if args.code else "default"
+
+    # Find the right assistant class for this model
+    model_class = None
+    for key, assistant_type in MODEL_LOOKUP[model_type].items():
+        if model_name.startswith(key):
+            model_class = assistant_type
+            break
+
+    if not model_class:
         raise ConfigError(f"Invalid {model_type} model: {model_name}")
 
-    if args.code:
-        model_class = get_model_class("code", env.CODE_MODEL)
-        assistant = model_class(model=env.CODE_MODEL)
-        if isinstance(assistant, Claude):
-            assistant.thinking = ThinkingConfig.get_thinking_config(
-                1, env.DEFAULT_MAX_RESPONSE_TOKENS
-            )
-    else:
-        model_class = get_model_class("default", args.model)
+    # All assistant classes now have the same standardized signature
+    # Set up common parameters for all assistant types
+    assistant_kwargs = {
+        "model": model_name,
+        "max_history_tokens": env.DEFAULT_MAX_HISTORY_TOKENS,
+        "max_response_tokens": env.DEFAULT_MAX_RESPONSE_TOKENS,
+    }
 
-        assistant_kwargs: dict[str, object] = {
-            "model": args.model,
-            "instructions": instructions,
-            "thinking": ThinkingConfig.get_thinking_config(
-                args.thinking, env.DEFAULT_MAX_RESPONSE_TOKENS
-            ),
-        }
+    # Add specific parameters as needed
+    # Set thinking level - default to 1 for Claude code mode
+    thinking_level = (
+        1 if args.code and model_class == ClaudeAssistant else args.thinking
+    )
+    assistant_kwargs["thinking"] = ThinkingConfig.get_thinking_config(
+        thinking_level, env.DEFAULT_MAX_RESPONSE_TOKENS
+    )
 
-        if model_class == Assistant:
-            assistant_kwargs["tools"] = [{"type": "code_interpreter"}]
+    # Add instructions if in non-code mode
+    if not args.code and instructions:
+        assistant_kwargs["instructions"] = instructions
 
-        elif model_class == Claude:
-            if instructions == env.ASSISTANT_INSTRUCTIONS:
-                del assistant_kwargs["instructions"]
+    # Add tools for OpenAI assistant in non-code mode
+    if model_class == OpenAIAssistant and not args.code:
+        assistant_kwargs["tools"] = [{"type": "code_interpreter"}]
 
-        else:
-            del assistant_kwargs["instructions"]
-
-        assistant = model_class(**assistant_kwargs)
-
+    # Create and start the assistant
+    assistant = model_class(**assistant_kwargs)
     await assistant.start()
 
-    if args.continue_thread:
-        thread_id = await assistant.async_get_conversation_id()
+    # Get thread ID if continuing a conversation
+    thread_id = (
+        await assistant.async_get_conversation_id() if args.continue_thread else None
+    )
 
     return assistant, thread_id
 

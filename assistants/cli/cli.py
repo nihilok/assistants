@@ -19,14 +19,10 @@ from assistants.cli.arg_parser import get_args
 from assistants.cli.io_loop import io_loop
 from assistants.cli.utils import (
     create_assistant_and_thread,
-    read_config_file,
-    get_initial_input,
-    validate_args,
     display_welcome_message,
     get_text_from_default_editor,
 )
 from assistants.config import (
-    Config,
     environment,
     update_args_from_config_file,
 )

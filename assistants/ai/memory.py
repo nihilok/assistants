@@ -9,17 +9,17 @@ Classes:
 
 import json
 import uuid
+from abc import abstractmethod
 from copy import deepcopy
 from datetime import datetime
 from typing import Optional
-from abc import ABCMeta, abstractmethod
 
 import tiktoken
 
 from assistants.ai.types import (
+    ConversationManagementInterface,
     MessageData,
     MessageDict,
-    ConversationManagementInterface,
 )
 from assistants.config import environment
 from assistants.user_data.sqlite_backend import conversations_table
@@ -63,12 +63,17 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         self,
         conversation_id: Optional[str] = None,
         initial_system_message: Optional[str] = None,
+        convert_system_to_instructions: bool = False,
+        instructions_understood_message: str = "Instructions understood.",
     ):
         """
         Load the last conversation from the database.
 
         :param conversation_id: Optional ID of the conversation to load.
         :param initial_system_message: Optional initial system message to add to the conversation.
+        :param convert_system_to_instructions: If True, convert system messages to user/assistant pairs
+                                              with "Instructions understood" responses.
+        :param instructions_understood_message: Message that the assistant uses to acknowledge instructions.
         """
         if conversation_id:
             conversation = await conversations_table.get_conversation(conversation_id)
@@ -89,6 +94,27 @@ class ConversationHistoryMixin(ConversationManagementInterface):
 
         self.memory = json.loads(conversation.conversation) if conversation else []
         self.conversation_id = conversation.id if conversation else uuid.uuid4().hex
+
+        # If requested, convert system messages to user/assistant pairs with "Instructions understood" responses
+        if convert_system_to_instructions:
+            temp_memory = []
+            for message in self.memory:
+                if message["role"] == "system":
+                    temp_memory.extend(
+                        [
+                            {
+                                "role": "user",
+                                "content": message["content"],
+                            },
+                            {
+                                "role": "assistant",
+                                "content": instructions_understood_message,
+                            },
+                        ]
+                    )
+                else:
+                    temp_memory.append(message)
+            self.memory = temp_memory
 
     async def async_get_conversation_id(self):
         if not self.conversation_id:

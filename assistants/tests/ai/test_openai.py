@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from assistants.ai.openai import (
-    Assistant,
-    Completion,
+    OpenAIAssistant,
+    OpenAICompletion,
     ReasoningModelMixin,
     is_valid_thinking_level,
 )
@@ -89,7 +89,7 @@ class TestAssistant:
     def assistant(self, mock_openai_client):
         """Create an Assistant instance for testing."""
         with patch("openai.OpenAI", return_value=mock_openai_client):
-            return Assistant(
+            return OpenAIAssistant(
                 model="gpt-4",
                 instructions="You are a helpful assistant.",
                 api_key="test-key",
@@ -106,7 +106,7 @@ class TestAssistant:
         """Test initial with missing API key."""
         with pytest.raises(ConfigError):
             with patch("assistants.ai.openai.environment.OPENAI_API_KEY", ""):
-                Assistant(
+                OpenAIAssistant(
                     model="gpt-4",
                     instructions="You are a helpful assistant.",
                     api_key="",
@@ -212,7 +212,7 @@ class TestCompletion:
     def completion(self, mock_openai_client):
         """Create a Completion instance for testing."""
         with patch("openai.OpenAI", return_value=mock_openai_client):
-            return Completion(model="gpt-4", api_key="test-key")
+            return OpenAICompletion(model="gpt-4", api_key="test-key")
 
     def test_init(self, completion, mock_openai_client):
         """Test initial of Completion."""
@@ -224,7 +224,7 @@ class TestCompletion:
         """Test initial with missing API key."""
         with pytest.raises(ConfigError):
             with patch("assistants.ai.openai.environment.OPENAI_API_KEY", ""):
-                Completion(model="gpt-4", api_key="")
+                OpenAICompletion(model="gpt-4", api_key="")
 
     @pytest.mark.asyncio
     async def test_start(self, completion):

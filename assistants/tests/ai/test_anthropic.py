@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from assistants.ai.anthropic import Claude, INSTRUCTIONS_UNDERSTOOD
+import pytest
+
+from assistants.ai.anthropic import INSTRUCTIONS_UNDERSTOOD, ClaudeAssistant
 from assistants.ai.types import ThinkingConfig
 from assistants.lib.exceptions import ConfigError
 
@@ -25,7 +26,7 @@ class TestClaude:
             "anthropic.AsyncAnthropic", return_value=mock_anthropic_client
         ) as mock_anthropic:
             # Ensure the mock is used for all instances
-            instance = Claude(
+            instance = ClaudeAssistant(
                 model="claude-3-opus-20240229",
                 instructions="You are a helpful assistant.",
                 api_key="test-key",
@@ -45,7 +46,7 @@ class TestClaude:
         """Test initial with missing API key."""
         with pytest.raises(ConfigError):
             with patch("assistants.ai.anthropic.environment.ANTHROPIC_API_KEY", ""):
-                Claude(model="claude-3-opus-20240229", api_key="")
+                ClaudeAssistant(model="claude-3-opus-20240229", api_key="")
 
     @pytest.mark.asyncio
     async def test_start(self, claude):

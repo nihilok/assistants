@@ -11,7 +11,7 @@ Classes:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncIterator, Literal, Optional, TypedDict
+from typing import AsyncIterator, Literal, NotRequired, Optional, TypedDict
 
 ThinkingLevel = Literal[0, 1, 2]
 
@@ -61,6 +61,10 @@ class MessageData:
     thread_id: Optional[str] = None
 
 
+class AudioMessageData(TypedDict):
+    id: str
+
+
 class MessageDict(TypedDict):
     """
     Typed dictionary for message data.
@@ -68,10 +72,12 @@ class MessageDict(TypedDict):
     Attributes:
         role (str): The role of the message sender (e.g., 'user', 'assistant').
         content (Optional[str]): The content of the message.
+        audio (Optional[str]): Optional audio data associated with the message.
     """
 
     role: str
     content: str | None
+    audio: NotRequired[AudioMessageData]
 
 
 class ConversationManagementInterface(ABC):
@@ -100,6 +106,29 @@ class AssistantInterface(ABC):
     conversation_id = None
     thinking: ThinkingConfig
 
+    def __init__(
+        self,
+        model: str,
+        api_key: Optional[str] = None,
+        instructions: Optional[str] = None,
+        max_history_tokens: int = 0,
+        max_response_tokens: int = 0,
+        thinking: Optional[ThinkingConfig] = None,
+        **kwargs,
+    ) -> None:
+        """
+        Standard initialization for all assistant interfaces.
+
+        :param model: The model identifier to be used by the assistant
+        :param api_key: API key for the service provider
+        :param instructions: Optional instructions for the assistant
+        :param max_history_tokens: Maximum number of tokens to retain in memory
+        :param max_response_tokens: Maximum number of tokens for the response
+        :param thinking: Configuration for thinking/reasoning capabilities
+        :param kwargs: Additional provider-specific parameters
+        """
+        pass
+
     @abstractmethod
     async def start(self) -> None:
         """Start the assistant."""
@@ -115,13 +144,13 @@ class AssistantInterface(ABC):
         """Store a message in the assistant's memory."""
 
     @property
-    @abstractmethod
     def is_reasoning_model(self) -> bool:
         """
         Check if the assistant is a reasoning model.
 
         :return: True if the assistant is a reasoning model, False otherwise.
         """
+        return False
 
 
 class StreamingAssistantInterface(AssistantInterface):
@@ -147,10 +176,10 @@ class StreamingAssistantInterface(AssistantInterface):
         """
         if not user_input:
             return
-        self.remember({"role": "user", "content": user_input})
+        self.remember(MessageDict(role="user", content=user_input))
         full_response = ""
         async for chunk in self._provider_stream_response(user_input, thread_id):
             full_response += chunk
             yield chunk
         if full_response:
-            self.remember({"role": "assistant", "content": full_response})
+            self.remember(MessageDict(role="assistant", content=full_response))
