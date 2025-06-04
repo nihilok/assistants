@@ -112,15 +112,17 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             not update.message.reply_to_message
             or update.message.reply_to_message.from_user.id != bot_id
         ):
-            assistant.remember(MessageDict(
-                role="user",
-                content=message_text,
-            ))
+            assistant.remember(
+                MessageDict(
+                    role="user",
+                    content=message_text,
+                )
+            )
             return
 
     await assistant.load_conversation(
         chat_thread_id,
-        initial_system_message=f"{environment.ASSISTANT_INSTRUCTIONS}\nThe users interact with you via a Telegram bot called {bot_name} (i.e. this is your name). What follows is a rolling window of the conversation in a given chat according to what your context limits allow. New threads will start with a single message and grow until they approach the limit. User's messages are prefixed with their name, so that you can see who says what; you should not prefix your own responses in the same way.\n",
+        initial_system_message=f"{environment.ASSISTANT_INSTRUCTIONS}\nThe users interact with you via a Telegram bot called {bot_name} (i.e. this is your name). What follows is a rolling window of the conversation in a given chat according to what your context limits allow. New threads will start with a single message and grow until they approach the limit. User's messages are prefixed with their name, so that you can see who says what; however, you should NOT prefix your own responses with your own name in the same way.",
     )
 
     response_message = await assistant.converse(message_text, existing_chat.thread_id)
