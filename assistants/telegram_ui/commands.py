@@ -112,12 +112,10 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             not update.message.reply_to_message
             or update.message.reply_to_message.from_user.id != bot_id
         ):
-            assistant.remember(
-                MessageDict(
-                    role="user",
-                    content=message_text,
-                )
-            )
+            assistant.remember(MessageDict(
+                role="user",
+                content=message_text,
+            ))
             return
 
     await assistant.load_conversation(
