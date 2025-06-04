@@ -5,7 +5,7 @@ import subprocess
 import sys
 import tempfile
 from argparse import Namespace
-from typing import Optional
+from typing import Optional, Tuple, Type
 
 import yaml
 from pygments import highlight
@@ -23,6 +23,7 @@ from assistants.ai.mistral import MistralAssistant
 from assistants.ai.openai import OpenAIAssistant, OpenAICompletion
 from assistants.ai.types import AssistantInterface, ThinkingConfig
 from assistants.cli import output
+from assistants.cli.assistant_config import AssistantParams
 from assistants.config import Config, environment
 from assistants.lib.exceptions import ConfigError
 
@@ -137,6 +138,80 @@ MODEL_LOOKUP = {
 }
 
 
+def build_assistant_params(
+    args: Namespace, env: Config, model_name: str, model_class: Type[AssistantInterface]
+) -> Tuple[AssistantParams, Type[AssistantInterface]]:
+    """
+    Build assistant parameters using a dataclass.
+
+    :param args: Command line arguments.
+    :param env: Environment configuration.
+    :param model_name: The name of the model to use.
+    :param model_class: The assistant class to use.
+    :return: A tuple of (assistant_params, model_class).
+    """
+    # Get instructions if specified
+    instructions = None
+    if args.instructions:
+        with open(args.instructions, "r", encoding="utf-8") as file:
+            instructions = file.read()
+    elif not args.code:  # Only use default instructions in non-code mode
+        instructions = env.ASSISTANT_INSTRUCTIONS
+
+    # Set thinking level - default to 1 for Claude code mode
+    thinking_level = (
+        1 if args.code and model_class == ClaudeAssistant else args.thinking
+    )
+    thinking_config = ThinkingConfig.get_thinking_config(
+        thinking_level, env.DEFAULT_MAX_RESPONSE_TOKENS
+    )
+
+    # Create the assistant parameters
+    params = AssistantParams(
+        model=model_name,
+        max_history_tokens=env.DEFAULT_MAX_HISTORY_TOKENS,
+        max_response_tokens=env.DEFAULT_MAX_RESPONSE_TOKENS,
+        thinking=thinking_config,
+        instructions=instructions if not args.code and instructions else None,
+    )
+
+    # Add tools for OpenAI assistant in non-code mode
+    if model_class == OpenAIAssistant and not args.code:
+        params.tools = [{"type": "code_interpreter"}]
+
+    return params, model_class
+
+
+def create_assistant_from_params(
+    params: AssistantParams, model_class: Type[AssistantInterface]
+) -> AssistantInterface:
+    """
+    Create an assistant instance from parameters.
+
+    :param params: The assistant parameters.
+    :param model_class: The assistant class to instantiate.
+    :return: An instance of the assistant.
+    """
+    return model_class(**params.to_dict())
+
+
+def get_model_class(
+    model_name: str, model_type: str
+) -> Optional[Type[AssistantInterface]]:
+    """
+    Get the assistant class for a given model name and type.
+
+    :param model_name: The name of the model.
+    :param model_type: The type of the model (e.g., "code" or "default").
+    :return: The assistant class corresponding to the model.
+    :raises ConfigError: If no matching model class is found.
+    """
+    for key, assistant_type in MODEL_LOOKUP[model_type].items():
+        if model_name.startswith(key):
+            return assistant_type
+    return None
+
+
 async def create_assistant_and_thread(
     args: Namespace, env: Config
 ) -> tuple[AssistantInterface, Optional[str]]:
@@ -147,55 +222,21 @@ async def create_assistant_and_thread(
     :param env: Environment configuration.
     :return: A tuple of (assistant, thread_id).
     """
-    # Get instructions if specified
-    instructions = None
-    if args.instructions:
-        with open(args.instructions, "r", encoding="utf-8") as file:
-            instructions = file.read()
-    elif not args.code:  # Only use default instructions in non-code mode
-        instructions = env.ASSISTANT_INSTRUCTIONS
-
-    # Determine model and type
+    # Determine model name and type
     model_name = env.CODE_MODEL if args.code else args.model
     model_type = "code" if args.code else "default"
 
     # Find the right assistant class for this model
-    model_class = None
-    for key, assistant_type in MODEL_LOOKUP[model_type].items():
-        if model_name.startswith(key):
-            model_class = assistant_type
-            break
+    model_class = get_model_class(model_name, model_type)
 
     if not model_class:
         raise ConfigError(f"Invalid {model_type} model: {model_name}")
 
-    # All assistant classes now have the same standardized signature
-    # Set up common parameters for all assistant types
-    assistant_kwargs = {
-        "model": model_name,
-        "max_history_tokens": env.DEFAULT_MAX_HISTORY_TOKENS,
-        "max_response_tokens": env.DEFAULT_MAX_RESPONSE_TOKENS,
-    }
-
-    # Add specific parameters as needed
-    # Set thinking level - default to 1 for Claude code mode
-    thinking_level = (
-        1 if args.code and model_class == ClaudeAssistant else args.thinking
-    )
-    assistant_kwargs["thinking"] = ThinkingConfig.get_thinking_config(
-        thinking_level, env.DEFAULT_MAX_RESPONSE_TOKENS
-    )
-
-    # Add instructions if in non-code mode
-    if not args.code and instructions:
-        assistant_kwargs["instructions"] = instructions
-
-    # Add tools for OpenAI assistant in non-code mode
-    if model_class == OpenAIAssistant and not args.code:
-        assistant_kwargs["tools"] = [{"type": "code_interpreter"}]
+    # Build assistant parameters using dataclass
+    params, model_class = build_assistant_params(args, env, model_name, model_class)
 
     # Create and start the assistant
-    assistant = model_class(**assistant_kwargs)
+    assistant = create_assistant_from_params(params, model_class)
     await assistant.start()
 
     # Get thread ID if continuing a conversation
