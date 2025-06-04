@@ -1,5 +1,3 @@
-import os
-
 import aiohttp
 from telegram import Update
 from telegram.constants import ParseMode
@@ -7,14 +5,14 @@ from telegram.ext import ContextTypes
 
 from assistants.config import environment
 from assistants.telegram_ui.auth import (
-    restricted_access,
-    requires_superuser,
     chat_data,
+    requires_superuser,
+    restricted_access,
 )
 from assistants.telegram_ui.lib import (
-    requires_reply_to_message,
     assistant,
     audio_completion,
+    requires_reply_to_message,
 )
 from assistants.user_data.interfaces.telegram_chat_data import ChatHistory
 from assistants.user_data.sqlite_backend import conversations_table
@@ -98,21 +96,23 @@ async def toggle_auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     existing_chat = await chat_data.get_chat_history(update.effective_chat.id)
     message_text = update.message.text
+    bot_username = f"@{context.bot.username}"
+    bot_name = context.bot.first_name or context.bot.username
+    bot_tagged = bot_username in message_text
+    if bot_tagged:
+        message_text = message_text.replace(bot_username, bot_name)
+
     if not existing_chat.auto_reply:
         bot_id = context.bot.id
-        bot_username = f"@{context.bot.username}"
-        if bot_username not in message_text and (
+        if not bot_tagged and (
             not update.message.reply_to_message
             or update.message.reply_to_message.from_user.id != bot_id
         ):
             return
-        message_text = message_text.replace(
-            bot_username, os.getenv("ASSISTANT_NAME", "[ASSISTANT NAME]")
-        )
 
     await assistant.load_conversation(
         existing_chat.thread_id or update.effective_chat.id,
-        initial_system_message=f"You are a Telegram bot called {context.bot.first_name or context.bot.username}.\n{environment.ASSISTANT_INSTRUCTIONS}",
+        initial_system_message=f"{environment.ASSISTANT_INSTRUCTIONS}\nThe users interact with you via a Telegram bot called {bot_name} (i.e. this is your name).\n",
     )
 
     response_message = await assistant.converse(message_text, existing_chat.thread_id)
