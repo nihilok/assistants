@@ -47,7 +47,11 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         """
         Use the tiktoken library to truncate memory if it exceeds the maximum token limit.
         """
-        while self.memory and self.max_history_tokens < self._get_token_count():
+        while (
+            self.memory
+            and self.max_history_tokens
+            and self.max_history_tokens < self._get_token_count()
+        ):
             self.memory.pop(0)
 
     def remember(self, message: MessageDict, audio: Optional[bool] = False):

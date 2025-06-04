@@ -132,11 +132,12 @@ class OpenAIAssistant(
         """
         Initialise the Assistant instance.
 
-        :param name: The name of the assistant.
         :param model: The model to be used by the assistant.
+        :param api_key: API key for OpenAI.
         :param instructions: Instructions for the assistant.
         :param tools: Optional tools for the assistant.
-        :param api_key: API key for OpenAI.
+        :param max_history_tokens: Maximum tokens to retain in conversation memory.
+        :param max_response_tokens: Maximum number of tokens for the response.
         :param thinking: Level of reasoning effort (0=low, 1=medium, 2=high).
         """
         if not api_key:
