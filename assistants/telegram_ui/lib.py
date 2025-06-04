@@ -21,6 +21,7 @@ def requires_reply_to_message(f):
                 chat_id=update.effective_chat.id,
                 text="You must reply to a message from the target user to use this command",
             )
+            return None
 
     return wrapper
 

@@ -33,6 +33,7 @@ dependencies = [
     "setproctitle==1.3.5",
     "tiktoken==0.9.0",
     "pydantic~=2.9.2",
+    "mistralai~=0.4.2",
 ]
 
 [project.optional-dependencies]
