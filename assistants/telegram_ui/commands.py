@@ -3,6 +3,7 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
+from assistants.ai.types import MessageDict
 from assistants.config import environment
 from assistants.telegram_ui.auth import (
     chat_data,
@@ -95,6 +96,7 @@ async def toggle_auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @restricted_access
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     existing_chat = await chat_data.get_chat_history(update.effective_chat.id)
+    chat_thread_id = existing_chat.thread_id or update.effective_chat.id
     message_text = update.message.text
     bot_username = f"@{context.bot.username}"
     bot_name = context.bot.first_name or context.bot.username
@@ -102,17 +104,25 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if bot_tagged:
         message_text = message_text.replace(bot_username, bot_name)
 
+    message_text = f"{update.message.from_user.first_name}: {message_text}"
+
     if not existing_chat.auto_reply:
         bot_id = context.bot.id
         if not bot_tagged and (
             not update.message.reply_to_message
             or update.message.reply_to_message.from_user.id != bot_id
         ):
+            assistant.remember(
+                MessageDict(
+                    role="user",
+                    content=message_text,
+                )
+            )
             return
 
     await assistant.load_conversation(
-        existing_chat.thread_id or update.effective_chat.id,
-        initial_system_message=f"{environment.ASSISTANT_INSTRUCTIONS}\nThe users interact with you via a Telegram bot called {bot_name} (i.e. this is your name).\n",
+        chat_thread_id,
+        initial_system_message=f"{environment.ASSISTANT_INSTRUCTIONS}\nThe users interact with you via a Telegram bot called {bot_name} (i.e. this is your name). What follows is a rolling window of the conversation in a given chat according to what your context limits allow. New threads will start with a single message and grow until they approach the limit. User's messages are prefixed with their name, so that you can see who says what; you should not prefix your own responses in the same way.\n",
     )
 
     response_message = await assistant.converse(message_text, existing_chat.thread_id)
