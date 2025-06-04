@@ -153,7 +153,8 @@ class OpenAIAssistant(
         self.thinking = thinking or ThinkingConfig.get_thinking_config(level=1)
         self.max_response_tokens = max_response_tokens
         ConversationHistoryMixin.__init__(self, max_tokens=max_history_tokens)
-        self.reasoning_model_init(thinking)
+        if thinking is not None:
+            self.reasoning_model_init(thinking)
 
     async def start(self) -> None:
         """
@@ -222,7 +223,7 @@ class OpenAIAssistant(
         response = self.client.responses.create(
             model=self.model,
             input=input_messages if len(input_messages) > 1 else prompt,
-            reasoning=self.reasoning,
+            reasoning=self.reasoning if self.is_reasoning_model else NOT_GIVEN,
             store=True,
         )
 
