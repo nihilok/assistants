@@ -3,6 +3,7 @@ import os
 import sys
 
 from assistants.log import logger
+from assistants.user_data.sqlite_backend import migrate
 
 
 def main():
@@ -24,6 +25,9 @@ def main():
 
         asyncio.run(rebuild_db())
         logger.info("Database has been rebuilt.")
+    elif len(sys.argv) > 1 and sys.argv[1] == "migrate":
+        asyncio.run(migrate())
+        logger.info("Database ready.")
     else:
         asyncio.run(init_db())
         logger.info("Database ready.")

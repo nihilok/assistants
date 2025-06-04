@@ -2,23 +2,22 @@
 This module defines the `Conversation` data class and the `ConversationsTable` class for managing conversation records in an SQLite database.
 
 Classes:
-    - Conversation: Data class representing a conversation record.
+    - Conversation: Pydantic model representing a conversation record.
     - ConversationsTable: Class for interacting with the conversations table in the SQLite database.
 """
 
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 import aiosqlite
+from pydantic import BaseModel
 
-from assistants.config.file_management import DB_PATH
+from assistants.user_data.sqlite_backend.table import Table
 
 
-@dataclass
-class Conversation:
+class Conversation(BaseModel):
     """
-    Data class representing a conversation record.
+    Pydantic model representing a conversation record.
 
     Attributes:
         id (str): The unique identifier of the conversation.
@@ -31,50 +30,122 @@ class Conversation:
     last_updated: datetime
 
 
-class ConversationsTable:
+class ConversationsTable(Table[Conversation]):
     """
     Class for interacting with the conversations table in the SQLite database.
-
-    Attributes:
-        db_path (str): The path to the SQLite database file.
     """
 
-    def __init__(self, db_path: str):
+    def get_table_name(self) -> str:
         """
-        Initialise the ConversationsTable instance.
+        Get the name of the table.
 
-        :param db_path: The path to the SQLite database file.
+        Returns:
+            The name of the table
         """
-        self.db_path = db_path
+        return "conversations"
 
-    async def create_table(self):
+    def get_model_class(self):
         """
-        Create the conversations table if it does not exist.
+        Get the Pydantic model class for the table records.
+
+        Returns:
+            The Pydantic model class
+        """
+        return Conversation
+
+    def get_create_table_sql(self) -> str:
+        """
+        Get the SQL statement for creating the table.
+
+        Returns:
+            The SQL CREATE TABLE statement
+        """
+        return """
+            CREATE TABLE IF NOT EXISTS conversations (
+                id TEXT PRIMARY KEY,
+                conversation TEXT,
+                last_updated TEXT
+            )
+        """
+
+    async def migrate_if_needed(self) -> None:
+        """
+        Perform schema migrations if needed.
+
+        This method checks the current schema and performs migrations
+        if the schema has changed.
+        """
+        # Currently no migrations needed for this table
+        pass
+
+    async def insert(self, record: Conversation) -> None:
+        """
+        Insert a conversation record into the table.
+
+        Args:
+            record: The conversation record to insert
+        """
+        await self.update(record)  # Same implementation as update
+
+    async def update(self, record: Conversation) -> None:
+        """
+        Update a conversation record in the table.
+
+        Args:
+            record: The conversation record to update
         """
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """
-                CREATE TABLE IF NOT EXISTS conversations (
-                    id TEXT PRIMARY KEY,
-                    conversation TEXT,
-                    last_updated TEXT
-                )
-            """
+                REPLACE INTO conversations (id, conversation, last_updated) VALUES (?, ?, ?)
+                """,
+                (
+                    record.id,
+                    record.conversation,
+                    record.last_updated.isoformat(),
+                ),
             )
             await db.commit()
 
-    async def get_conversation(self, conversation_id: str) -> Optional[Conversation]:
+    async def delete(self, **kwargs) -> None:
         """
-        Retrieve a conversation by its ID.
+        Delete a conversation record from the table.
 
-        :param conversation_id: The unique identifier of the conversation.
-        :return: The Conversation object if found, otherwise None.
+        Args:
+            **kwargs: Key-value pairs for identifying the record to delete
         """
+        if "id" not in kwargs:
+            raise ValueError("Conversation ID is required for deletion")
+
+        conversation_id = kwargs["id"]
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                """
+                DELETE FROM conversations WHERE id = ?
+                """,
+                (conversation_id,),
+            )
+            await db.commit()
+
+    async def get(self, **kwargs) -> Optional[Conversation]:
+        """
+        Get a conversation record from the table.
+
+        Args:
+            **kwargs: Key-value pairs for identifying the record to get
+
+        Returns:
+            The conversation record if found, None otherwise
+        """
+        if "id" not in kwargs:
+            raise ValueError("Conversation ID is required")
+
+        conversation_id = kwargs["id"]
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
                 SELECT id, conversation, last_updated FROM conversations WHERE id = ?
-            """,
+                """,
                 (conversation_id,),
             )
             row = await cursor.fetchone()
@@ -84,52 +155,20 @@ class ConversationsTable:
                     conversation=row[1],
                     last_updated=datetime.fromisoformat(row[2]),
                 )
+        return None
 
-    async def save_conversation(self, conversation: Conversation):
+    async def get_all(self) -> List[Conversation]:
         """
-        Save a conversation to the database.
+        Get all conversation records from the table.
 
-        :param conversation: The Conversation object to save.
-        """
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute(
-                """
-                REPLACE INTO conversations (id, conversation, last_updated) VALUES (?, ?, ?)
-            """,
-                (
-                    conversation.id,
-                    conversation.conversation,
-                    conversation.last_updated.isoformat(),
-                ),
-            )
-            await db.commit()
-
-    async def delete_conversation(self, conversation_id: str):
-        """
-        Delete a conversation from the database by its ID.
-
-        :param conversation_id: The unique identifier of the conversation to delete.
-        """
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute(
-                """
-                DELETE FROM conversations WHERE id = ?
-            """,
-                (conversation_id,),
-            )
-            await db.commit()
-
-    async def get_all_conversations(self) -> list[Conversation]:
-        """
-        Retrieve all conversations from the database.
-
-        :return: A list of Conversation objects.
+        Returns:
+            A list of all conversation records
         """
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
                 SELECT id, conversation, last_updated FROM conversations ORDER BY last_updated DESC
-            """
+                """
             )
             rows = await cursor.fetchall()
             result = []
@@ -147,13 +186,14 @@ class ConversationsTable:
         """
         Retrieve the most recently updated conversation from the database.
 
-        :return: The most recently updated Conversation object if found, otherwise None.
+        Returns:
+            The most recently updated Conversation object if found, otherwise None.
         """
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
                 SELECT id, conversation, last_updated FROM conversations ORDER BY last_updated DESC LIMIT 1
-            """
+                """
             )
             row = await cursor.fetchone()
             if row:
@@ -162,6 +202,8 @@ class ConversationsTable:
                     conversation=row[1],
                     last_updated=datetime.fromisoformat(row[2]),
                 )
+        return None
 
 
-conversations_table = ConversationsTable(DB_PATH)
+# Create a singleton instance
+conversations_table = ConversationsTable()
