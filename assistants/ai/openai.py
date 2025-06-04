@@ -90,7 +90,7 @@ class ReasoningModelMixin:
         return self.model in self.REASONING_MODELS
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name == "thinking":
+        if name == "thinking" and isinstance(value, ThinkingConfig):
             self._set_reasoning_effort(value.level)
         return super().__setattr__(name, value)
 
@@ -313,7 +313,7 @@ class OpenAICompletion(
         model: str,
         max_tokens: int = 4096,
         api_key: str = environment.OPENAI_API_KEY,
-        thinking: ThinkingConfig = ThinkingConfig.get_thinking_config(level=1),
+        thinking: Optional[ThinkingConfig] = None,
     ):
         """
         Initialize the Completion instance.
@@ -330,7 +330,8 @@ class OpenAICompletion(
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
         self.thinking = thinking
-        self.reasoning_model_init(thinking)
+        if self.thinking is not None:
+            self.reasoning_model_init(thinking)
 
     async def start(self) -> None:
         """
