@@ -22,7 +22,7 @@ from assistants.config import environment
 from assistants.config.file_management import DATA_DIR
 from assistants.lib.constants import IO_INSTRUCTIONS
 from assistants.lib.exceptions import ConfigError
-from assistants.user_data.sqlite_backend import conversations_table
+from assistants.user_data.sqlite_backend import conversations_table, messages_table
 from assistants.user_data.sqlite_backend.conversations import Conversation
 
 
@@ -263,13 +263,17 @@ class SelectThread(Command):
     help = "Select a previous thread to load/continue"
 
     @staticmethod
-    def get_first_prompt(thread: Conversation) -> str:
+    async def get_first_prompt(thread: Conversation) -> str:
         """
         Get the first prompt from the thread.
 
         :param thread: The thread to get the first prompt from.
         :return: The first prompt from the thread.
         """
+        if not thread.conversation:
+            messages = await messages_table.get_by_conversation_id(thread.id)
+            return messages[0].content if messages else ""
+
         conversation = json.loads(thread.conversation)
         if not conversation:
             return ""
@@ -285,7 +289,7 @@ class SelectThread(Command):
             threads = await conversations_table.get_all()
             thread_options = [
                 TerminalSelectorOption(
-                    label=f"{thread.last_updated} | {self.get_first_prompt(thread)}",
+                    label=f"{thread.last_updated} | {await self.get_first_prompt(thread)}",
                     value=thread.id,
                 )
                 for thread in threads

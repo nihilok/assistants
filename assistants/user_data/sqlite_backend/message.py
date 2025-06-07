@@ -58,7 +58,9 @@ class MessageTable(Table[Message]):
     async def get_all(self) -> List[T]:
         pass
 
-    async def get_by_conversation_id(self, conversation_id: str) -> List[T]:
+    async def get_by_conversation_id(
+        self, conversation_id: str, limit: Optional[int] = None
+    ) -> List[T]:
         """
         Get all messages for a specific conversation ID.
 
@@ -68,11 +70,15 @@ class MessageTable(Table[Message]):
         Returns:
             A list of Message objects associated with the given conversation ID.
         """
+        statement = "SELECT role, content, conversation_id FROM messages WHERE conversation_id = ? ORDER BY timestamp ASC"
+        if limit is not None:
+            statement += " LIMIT ?"
+            params = (conversation_id, limit)
+        else:
+            params = (conversation_id,)
+
         async with aiosqlite.connect(self.db_path) as db:
-            async with db.execute(
-                "SELECT role, content, conversation_id FROM messages WHERE conversation_id = ? ORDER BY timestamp ASC",
-                (conversation_id,),
-            ) as cursor:
+            async with db.execute(statement, params) as cursor:
                 rows = await cursor.fetchall()
                 return [
                     Message(role=row[0], content=row[1], conversation_id=row[2])

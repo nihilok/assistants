@@ -161,7 +161,8 @@ class OpenAIAssistant(
         """
         Initialize the message history with system instructions.
         """
-        pass
+        if not self.memory:
+            self.memory = [{"role": "system", "content": self.instructions}]
 
     @property
     def assistant_id(self) -> str:
@@ -339,9 +340,9 @@ class OpenAICompletion(
         ConversationHistoryMixin.__init__(self, max_tokens)
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
-        self.thinking = thinking
-        if self.thinking is not None:
-            self.reasoning_model_init(thinking)
+        self.reasoning = None
+        self.thinking = thinking or ThinkingConfig.get_thinking_config(level=1)
+        self.reasoning_model_init(self.thinking)
 
     async def start(self) -> None:
         """
@@ -405,19 +406,27 @@ class OpenAICompletion(
             role="user",
             content=user_input,
         )
-        self.remember(new_prompt)
+        await self.remember(new_prompt)
         temp_memory = deepcopy(self.memory)
-        if (message := temp_memory[0])["role"] == "system":
+
+        # Create a default message if needed
+        default_message = {"role": "user", "content": user_input}
+
+        # Process system message if it exists
+        if temp_memory and temp_memory[0]["role"] == "system":
+            message = temp_memory[0]
             if "You should always respond in audio format." not in message["content"]:
                 message["content"] = f"""\
 You should always respond in audio format.
 
 {message["content"]}
 """
+
         complete = False
         while not complete:
-            if all(message.get("audio") is None for message in temp_memory):
-                temp_memory = [message]
+            if not temp_memory or all(msg.get("audio") is None for msg in temp_memory):
+                # Use the user input as the only message if memory is empty
+                temp_memory = [default_message]
             try:
                 completion = self.client.chat.completions.create(
                     model="gpt-4o-audio-preview",
@@ -439,16 +448,16 @@ You should always respond in audio format.
 
         response = completion.choices[0].message
 
-        if response.audio:
-            self.remember(
+        if response.audio and hasattr(response.audio, 'data'):
+            await self.remember(
                 {
                     "role": "assistant",
                     "audio": {"id": response.audio.id},
                     "content": f"[AUDIO TRANSCRIPTION]: {response.content}",
                 }
             )
-            return base64.b64decode(completion.choices[0].message.audio.data)
+            return base64.b64decode(response.audio.data)
         else:
-            self.remember({"role": "assistant", "content": response.content})
+            await self.remember({"role": "assistant", "content": response.content or ""})
 
         return response.content

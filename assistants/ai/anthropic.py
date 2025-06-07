@@ -75,7 +75,7 @@ class ClaudeAssistant(
         self.model = model
         self.max_response_tokens = max_response_tokens
         self.instructions = instructions
-        self.thinking = self.set_thinking_budget(thinking)
+        self.thinking = self.set_thinking_budget(thinking) if thinking else ThinkingConfig(level=0, type="enabled")
 
     def set_thinking_budget(self, thinking: ThinkingConfig) -> ThinkingConfig:
         """
@@ -189,7 +189,6 @@ class ClaudeAssistant(
         return MessageData(text_content=text_content.text)
 
     def _prepend_instructions(self) -> list[MessageDict]:
-        print(self.instructions)
         return [
             {"role": "user", "content": self.instructions},
             {
