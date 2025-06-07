@@ -65,12 +65,29 @@ class TestClaude:
         original_instructions = claude.instructions
         claude.instructions = None
 
+        # Setup the mock to simulate the conversion of system messages
+        async def mock_load_with_conversion(*args, **kwargs):
+            # Simulate the conversion that would happen in the real method
+            if claude.memory and claude.memory[0]["role"] == "system":
+                content = claude.memory[0]["content"]
+                claude.memory = [
+                    {"role": "user", "content": content},
+                    {"role": "assistant", "content": INSTRUCTIONS_UNDERSTOOD}
+                ]
+
+        mock_super_load.side_effect = mock_load_with_conversion
+
         await claude.load_conversation("test-id")
 
         # Restore instructions
         claude.instructions = original_instructions
 
-        mock_super_load.assert_called_once_with("test-id", None)
+        mock_super_load.assert_called_once_with(
+            conversation_id="test-id", 
+            initial_system_message=None, 
+            convert_system_to_instructions=True, 
+            instructions_understood_message=INSTRUCTIONS_UNDERSTOOD
+        )
 
         # Check that system message was converted to user+assistant pair
         # Just check that the memory has been modified and contains the expected content
@@ -92,7 +109,12 @@ class TestClaude:
 
         await claude.load_conversation("test-id")
 
-        mock_super_load.assert_called_once_with("test-id", None)
+        mock_super_load.assert_called_once_with(
+            conversation_id="test-id", 
+            initial_system_message=None, 
+            convert_system_to_instructions=True, 
+            instructions_understood_message=INSTRUCTIONS_UNDERSTOOD
+        )
 
         # Check that instructions were added to memory
         assert claude.memory[-2] == {
@@ -118,7 +140,12 @@ class TestClaude:
 
         await claude.load_conversation("test-id")
 
-        mock_super_load.assert_called_once_with("test-id", None)
+        mock_super_load.assert_called_once_with(
+            conversation_id="test-id", 
+            initial_system_message=None, 
+            convert_system_to_instructions=True, 
+            instructions_understood_message=INSTRUCTIONS_UNDERSTOOD
+        )
 
         # Check that instructions were not added again
         assert len(claude.memory) == 2

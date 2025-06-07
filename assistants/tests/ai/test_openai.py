@@ -188,7 +188,7 @@ class TestAssistant:
         assert result is None
 
     @pytest.mark.asyncio
-    @patch("assistants.ai.openai.Assistant.load_conversation")
+    @patch("assistants.ai.openai.OpenAIAssistant.load_conversation")
     async def test_converse_with_thread_id(self, mock_load_conversation, assistant):
         """Test conversing with a thread ID."""
         await assistant.converse("Hello", "thread-id")
@@ -266,12 +266,19 @@ class TestCompletion:
     @pytest.mark.asyncio
     async def test_complete_audio(self, completion, mock_openai_client):
         """Test completing an audio prompt."""
-        with patch("base64.b64decode") as mock_b64decode:
+        with patch("base64.b64decode") as mock_b64decode, \
+             patch.object(completion, "remember", return_value=None) as mock_remember:
             mock_b64decode.return_value = b"audio data"
+
+            # Create a proper structure for the mock response
+            message_mock = MagicMock()
+            message_mock.content = "Transcribed audio"
+            message_mock.audio = MagicMock()
+            message_mock.audio.data = "base64data"
+            message_mock.audio.id = "audio-id"
+
             mock_openai_client.chat.completions.create.return_value = MagicMock(
-                choices=[
-                    MagicMock(message=MagicMock(audio=MagicMock(data="base64data")))
-                ]
+                choices=[MagicMock(message=message_mock)]
             )
 
             result = await completion.complete_audio("Hello")
