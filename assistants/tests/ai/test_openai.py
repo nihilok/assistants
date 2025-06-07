@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -234,7 +235,7 @@ class TestCompletion:
 
     def test_complete(self, completion, mock_openai_client):
         """Test completing a prompt."""
-        message = completion.complete("Hello")
+        message = asyncio.run(completion.complete("Hello"))
 
         mock_openai_client.chat.completions.create.assert_called_once()
         assert message.content == "AI response"

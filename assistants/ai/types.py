@@ -104,6 +104,7 @@ class AssistantInterface(ABC):
     """Core assistant functionality interface."""
 
     conversation_id = None
+    memory: list[MessageDict]
     thinking: ThinkingConfig
 
     def __init__(
@@ -134,13 +135,24 @@ class AssistantInterface(ABC):
         """Start the assistant."""
 
     @abstractmethod
+    async def load_conversation(
+        self,
+        conversation_id: Optional[str] = None,
+        initial_system_message: Optional[str] = None,
+    ) -> None:
+        """
+        Load a conversation by ID or initialize a new one with an optional system message.
+        If no conversation ID is provided, a new conversation will be created.
+        """
+
+    @abstractmethod
     async def converse(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[MessageData]:
         """Converse with the assistant."""
 
     @abstractmethod
-    def remember(self, message: MessageDict) -> None:
+    async def remember(self, message: MessageDict) -> None:
         """Store a message in the assistant's memory."""
 
     @property
@@ -176,10 +188,16 @@ class StreamingAssistantInterface(AssistantInterface):
         """
         if not user_input:
             return
-        self.remember(MessageDict(role="user", content=user_input))
+
+        if thread_id:
+            await self.load_conversation(conversation_id=thread_id)
+
+        await self.remember(MessageDict(role="user", content=user_input))
+
         full_response = ""
         async for chunk in self._provider_stream_response(user_input, thread_id):
             full_response += chunk
             yield chunk
+
         if full_response:
-            self.remember(MessageDict(role="assistant", content=full_response))
+            await self.remember(MessageDict(role="assistant", content=full_response))

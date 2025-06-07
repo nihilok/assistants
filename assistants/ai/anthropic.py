@@ -155,14 +155,20 @@ class ClaudeAssistant(
         if not user_input:
             return None
 
-        self.remember({"role": "user", "content": user_input})
+        if thread_id and not self.conversation_id:
+            self.conversation_id = thread_id
+
+        if thread_id and not self.memory:
+            await self.load_conversation(conversation_id=thread_id)
+
+        await self.remember({"role": "user", "content": user_input})
 
         max_tokens = self.max_history_tokens + self.max_response_tokens
 
         kwargs: dict[str, object] = {
             "max_tokens": max_tokens,
             "model": self.model,
-            "messages": self.memory,
+            "messages": self._prepend_instructions(),
         }
 
         if self.thinking:
@@ -179,18 +185,32 @@ class ClaudeAssistant(
         if not text_content:
             return None
 
-        self.remember({"role": "assistant", "content": text_content.text})
+        await self.remember({"role": "assistant", "content": text_content.text})
         return MessageData(text_content=text_content.text)
+
+    def _prepend_instructions(self) -> list[MessageDict]:
+        print(self.instructions)
+        return [
+            {"role": "user", "content": self.instructions},
+            {
+                "role": "assistant",
+                "content": INSTRUCTIONS_UNDERSTOOD,
+            },
+            *self.memory,
+        ]
 
     async def _provider_stream_response(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> AsyncIterator[str]:
+        conversation_payload = self._prepend_instructions()
+
         response = await self.client.messages.create(
             max_tokens=self.max_response_tokens,
             model=self.model,
-            messages=self.memory,
+            messages=conversation_payload,
             stream=True,
         )
+
         async for chunk in response:
             if hasattr(chunk, "delta") and hasattr(chunk.delta, "text"):
                 yield chunk.delta.text
@@ -198,5 +218,3 @@ class ClaudeAssistant(
     @property
     def is_reasoning_model(self):
         return True
-
-

@@ -175,8 +175,8 @@ def build_assistant_params(
         instructions=instructions if not args.code and instructions else None,
     )
 
-    # Add tools for OpenAI assistant in non-code mode
-    if model_class == OpenAIAssistant and not args.code:
+    # Add tools for OpenAI assistant
+    if model_class == OpenAIAssistant:
         params.tools = [{"type": "code_interpreter"}]
 
     return params, model_class

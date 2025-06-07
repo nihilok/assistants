@@ -10,6 +10,8 @@ Commands:
 /cc, /copy-code [index]
                 Copy the code blocks from the previous response to the clipboard
                 (an optional index can be supplied to copy a single code block)
+/ct, /copy-thread
+                Copy the entire thread to the clipboard
 /n,  /new       Start a new thread and clear the terminal screen
 /t,  /threads   List all the threads, and select one to continue
 /T, /thinking [level]  

@@ -34,7 +34,7 @@ def build_assistant_params(
         raise ValueError(f"Model '{model_name}' is not supported for Telegram UI.")
 
     thinking_config = ThinkingConfig.get_thinking_config(
-        1, environment.DEFAULT_MAX_RESPONSE_TOKENS
+        0, environment.DEFAULT_MAX_RESPONSE_TOKENS
     )
 
     # Create the assistant parameters

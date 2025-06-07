@@ -282,7 +282,7 @@ class SelectThread(Command):
         :param environ: The environment variables for the input/output loop.
         """
         if isinstance(environ.assistant, ConversationHistoryMixin):
-            threads = await conversations_table.get_all_conversations()
+            threads = await conversations_table.get_all()
             thread_options = [
                 TerminalSelectorOption(
                     label=f"{thread.last_updated} | {self.get_first_prompt(thread)}",
@@ -428,9 +428,14 @@ class CopyEntireThread(Command):
         """
         Call the command to copy the entire thread to the clipboard.
         """
-        if not environ.thread_id or not environ.last_message:
+        if not isinstance(environ.assistant, ConversationHistoryMixin):
+            output.fail("This assistant does not support copying the entire thread. ")
+            return
+
+        if not environ.thread_id:
             output.warn("No thread selected.")
             return
+
         history = await environ.assistant.get_whole_thread()
         history_text = ""
         for message in history:

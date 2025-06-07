@@ -24,6 +24,7 @@ from assistants.ai.types import (
 from assistants.config import environment
 from assistants.user_data.sqlite_backend import conversations_table
 from assistants.user_data.sqlite_backend.conversations import Conversation
+from assistants.user_data.sqlite_backend.message import Message, messages_table
 
 encoding = tiktoken.encoding_for_model("gpt-4o-mini")
 
@@ -41,7 +42,7 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         """
         self.memory: list[MessageDict] = []
         self.max_history_tokens = max_tokens
-        self.conversation_id = None
+        self.conversation_id: str | None = None
 
     def truncate_memory(self):
         """
@@ -54,71 +55,125 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         ):
             self.memory.pop(0)
 
-    def remember(self, message: MessageDict, audio: Optional[bool] = False):
+    async def remember(self, message: MessageDict, audio: Optional[bool] = False):
         """
         Remember a new message.
 
         :param message: The message to remember.
         """
-        self.truncate_memory()
+        if self.conversation_id is None:
+            conversation = Conversation(
+                id=uuid.uuid4().hex,
+                conversation="",  # deprecated, but kept for compatibility
+                last_updated=datetime.now(),
+            )
+            await conversation.save()
+            self.conversation_id = conversation.id
+
         self.memory.append(message)
+        message = Message(
+            role=message["role"],
+            content=message["content"],
+            conversation_id=self.conversation_id,
+        )
+        await message.save()
+        self.truncate_memory()
 
     async def load_conversation(
         self,
         conversation_id: Optional[str] = None,
         initial_system_message: Optional[str] = None,
-        convert_system_to_instructions: bool = False,
-        instructions_understood_message: str = "Instructions understood.",
     ):
         """
         Load the last conversation from the database.
 
-        :param conversation_id: Optional ID of the conversation to load.
-        :param initial_system_message: Optional initial system message to add to the conversation.
-        :param convert_system_to_instructions: If True, convert system messages to user/assistant pairs
-                                              with "Instructions understood" responses.
-        :param instructions_understood_message: Message that the assistant uses to acknowledge instructions.
+        Args:
+            conversation_id: Optional ID of the conversation to load.
+            initial_system_message: Optional initial system message to add to the conversation.
         """
         if conversation_id:
-            conversation = await conversations_table.get_conversation(conversation_id)
-            if not conversation:
-                conversation = Conversation(
-                    id=conversation_id,
-                    conversation=(
-                        json.dumps(
-                            [{"role": "system", "content": initial_system_message}]
-                        )
-                        if initial_system_message
-                        else "[]"
-                    ),
-                    last_updated=datetime.now(),
-                )
+            await self._load_specific_conversation(conversation_id)
         else:
-            conversation = await conversations_table.get_last_conversation()
+            await self._load_latest_conversation()
 
-        self.memory = json.loads(conversation.conversation) if conversation else []
-        self.conversation_id = conversation.id if conversation else uuid.uuid4().hex
+    async def _load_specific_conversation(self, conversation_id: str):
+        """Load a conversation with a specific ID or create it if it doesn't exist."""
+        conversation = await conversations_table.get(id=conversation_id)
+        if not conversation:
+            # Create a new conversation if it doesn't exist
+            conversation = Conversation(
+                id=conversation_id,
+                conversation="",  # deprecated, but kept for compatibility
+                last_updated=datetime.now(),
+            )
+            await conversation.save()
+        else:
+            if conversation.conversation:
+                self.memory.extend(json.loads(conversation.conversation))
 
-        # If requested, convert system messages to user/assistant pairs with "Instructions understood" responses
-        if convert_system_to_instructions:
-            temp_memory = []
-            for message in self.memory:
-                if message["role"] == "system":
-                    temp_memory.extend(
-                        [
-                            {
-                                "role": "user",
-                                "content": message["content"],
-                            },
-                            {
-                                "role": "assistant",
-                                "content": instructions_understood_message,
-                            },
-                        ]
-                    )
+        messages = await messages_table.get_by_conversation_id(conversation_id)
+        if messages:
+            self._load_memory_from_messages(messages)
+
+        self.conversation_id = conversation_id
+
+    async def _load_latest_conversation(self):
+        """Load the most recent conversation or create a new one if none exists."""
+        latest = await conversations_table.get_last_conversation()
+
+        if not latest:
+            # Create a new conversation if none exists
+            self.conversation_id = uuid.uuid4().hex
+            latest = Conversation(
+                id=self.conversation_id,
+                conversation="",
+                last_updated=datetime.now(),
+            )
+            await latest.save()
+            self.memory = []
+        else:
+            self.conversation_id = latest.id
+
+            # Try to load from the conversation JSON first
+            if latest.conversation:
+                self.memory = json.loads(latest.conversation)
+            else:
+                # Fall back to loading from the messages table
+                messages = await messages_table.get_by_conversation_id(latest.id)
+                if messages:
+                    self._load_memory_from_messages(messages)
                 else:
-                    temp_memory.append(message)
-            self.memory = temp_memory
+                    self.memory = []
+
+    def _load_memory_from_messages(self, messages: list[Message]) -> None:
+        """Convert database message objects to memory format."""
+        self.memory.extend(
+            [
+                MessageDict(role=message.role, content=message.content)
+                for message in messages
+            ]
+        )
+        self.truncate_memory()
+
+    def _convert_system_messages_to_instructions(
+        self, instructions_understood_message: str
+    ):
+        """Convert system messages to user/assistant pairs."""
+        temp_memory = []
+        for message in self.memory:
+            if message["role"] == "system":
+                temp_memory.extend(
+                    [
+                        {"role": "user", "content": message["content"]},
+                        {
+                            "role": "assistant",
+                            "content": instructions_understood_message,
+                        },
+                    ]
+                )
+            else:
+                temp_memory.append(message)
+        self.memory = temp_memory
 
     async def async_get_conversation_id(self):
         if not self.conversation_id:
@@ -136,7 +191,7 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         if self.conversation_id is None:
             self.conversation_id = uuid.uuid4().hex
 
-        await conversations_table.save_conversation(
+        await conversations_table.update(
             Conversation(
                 id=self.conversation_id,
                 conversation=json.dumps(self.memory),

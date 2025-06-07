@@ -161,9 +161,7 @@ class OpenAIAssistant(
         """
         Initialize the message history with system instructions.
         """
-        if self.instructions and not self.memory:
-            self.remember({"role": "system", "content": self.instructions})
-        self.reasoning = None
+        pass
 
     @property
     def assistant_id(self) -> str:
@@ -205,32 +203,19 @@ class OpenAIAssistant(
         """
         self.last_prompt = prompt
 
-        input_messages = []
+        self.memory = self.clean_audio_messages()
 
-        # Add system message if instructions are available
-        if self.instructions and not any(
-            msg.get("role") == "system" for msg in self.memory
-        ):
-            input_messages.append({"role": "system", "content": self.instructions})
-
-        # If we have history, use it
-        temp_memory = self.clean_audio_messages()
-        if temp_memory:
-            input_messages.extend(temp_memory)
-
-        # Add the new user message
-        input_messages.append({"role": "user", "content": prompt})
+        await self.remember({"role": "user", "content": prompt})
 
         response = self.client.responses.create(
             model=self.model,
-            input=input_messages if len(input_messages) > 1 else prompt,
+            input=self._prepend_instructions(),
             reasoning=self.reasoning if self.is_reasoning_model else NOT_GIVEN,
             store=True,
+            max_output_tokens=self.max_response_tokens or None,
         )
 
-        # Update message history
-        self.remember({"role": "user", "content": prompt})
-        self.remember({"role": "assistant", "content": response.output_text})
+        await self.remember({"role": "assistant", "content": response.output_text})
 
         return response
 
@@ -277,12 +262,35 @@ class OpenAIAssistant(
             thread_id=self.conversation_id or "",
         )
 
+    def _prepend_instructions(self) -> list[EasyInputMessageParam]:
+        """
+        Prepend system instructions to the conversation memory.
+
+        :return: List of messages with system instructions prepended.
+        """
+        if not self.instructions:
+            return self.memory  # type: ignore
+
+        # Check if the first message is already a system message with instructions
+        if self.memory and self.memory[0].get("role") == "system":
+            if self.memory[0].get("content") == self.instructions:
+                # If the instructions are already set, return the memory as is
+                return self.memory  # type: ignore
+            else:
+                # If the instructions are different, update the first message
+                self.memory[0]["content"] = self.instructions
+                return self.memory  # type: ignore
+
+        return [{"role": "system", "content": self.instructions}, *self.memory]
+
     async def _provider_stream_response(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> AsyncIterator[str]:
+        conversation_payload: list[EasyInputMessageParam] = self._prepend_instructions()
+
         stream = self.client.responses.create(
             model=self.model,
-            input=cast(list[EasyInputMessageParam], self.memory),
+            input=conversation_payload,
             reasoning=self.reasoning if self.is_reasoning_model else NOT_GIVEN,
             stream=True,
         )
@@ -341,7 +349,7 @@ class OpenAICompletion(
         """
         pass
 
-    def complete(self, prompt: str) -> ChatCompletionMessage:
+    async def complete(self, prompt: str) -> ChatCompletionMessage:
         """
         Generate a completion for the given prompt.
 
@@ -352,7 +360,7 @@ class OpenAICompletion(
             role="user",
             content=prompt,
         )
-        self.remember(new_prompt)
+        await self.remember(new_prompt)
         temp_memory = self.clean_audio_messages()
 
         response = self.client.chat.completions.create(
@@ -361,7 +369,7 @@ class OpenAICompletion(
             reasoning_effort=self.reasoning["effort"] if self.reasoning else NotGiven,
         )
         message = response.choices[0].message
-        self.remember({"role": "assistant", "content": message.content or ""})
+        await self.remember({"role": "assistant", "content": message.content or ""})
         return response.choices[0].message
 
     async def converse(
@@ -377,7 +385,7 @@ class OpenAICompletion(
         if not user_input:
             return None
 
-        message = self.complete(user_input)
+        message = await self.complete(user_input)
         return MessageData(
             text_content=message.content or "", thread_id=self.conversation_id
         )

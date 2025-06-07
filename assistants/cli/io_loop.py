@@ -60,6 +60,7 @@ class AssistantIoHandler:
             )
 
             # Create a temporary IoEnviron for backward compatibility with existing commands
+            print(self.thread_id)
             environ = IoEnviron(
                 assistant=self.assistant,
                 thread_id=self.thread_id,
@@ -99,6 +100,10 @@ class AssistantIoHandler:
         """Handle streaming conversation with real-time highlighting."""
         full_text = ""
         highlighter = StreamHighlighter()
+
+        if not isinstance(self.assistant, StreamingAssistantInterface):
+            output.warn("Streaming is not supported by this assistant.")
+            return
 
         async for chunk in self.assistant.stream_converse(
             self.user_input, thread_id_to_use
