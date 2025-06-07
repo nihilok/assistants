@@ -13,6 +13,7 @@ Classes:
     - TelegramSqliteUserData: Class implementing the UserData interface using the table classes.
 """
 
+import json
 from typing import List, Optional
 
 import aiosqlite
@@ -72,7 +73,7 @@ class ChatHistory(BaseModel):
     chat_id: int
     thread_id: Optional[str] = None
     auto_reply: bool = True
-    chat_history: Optional[str] = None  # JSON string of chat history
+    history: Optional[str] = None  # JSON string of chat history
 
 
 class AuthorisedChatsTable(Table[AuthorisedChat]):
@@ -383,7 +384,7 @@ class ChatHistoryTable(Table[ChatHistory]):
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
-                SELECT chat_id, thread_id, auto_reply FROM chat_history WHERE chat_id = ?
+                SELECT chat_id, thread_id, auto_reply, chat_history FROM chat_history WHERE chat_id = ?
                 """,
                 (chat_id,),
             )
@@ -393,6 +394,7 @@ class ChatHistoryTable(Table[ChatHistory]):
                     chat_id=row[0],
                     thread_id=row[1],
                     auto_reply=row[2],
+                    history=row[3] if row[3] else None,
                 )
         return None
 
@@ -484,6 +486,9 @@ class TelegramSqliteUserData(UserData):
                 chat_id=chat_history.chat_id,
                 thread_id=chat_history.thread_id,
                 auto_reply=chat_history.auto_reply,
+                chat_history=json.loads(chat_history.history)
+                if chat_history.history
+                else [],
             )
 
         # Create a new chat history record
@@ -491,12 +496,14 @@ class TelegramSqliteUserData(UserData):
             chat_id=chat_id,
             thread_id=None,
             auto_reply=True,
+            history=json.dumps([]),  # Initialize with empty history
         )
         await self.chat_history_table.insert(new_chat_history)
         return ChatHistoryInterface(
             chat_id=chat_id,
             thread_id=None,
             auto_reply=True,
+            chat_history=[],
         )
 
     async def save_chat_history(self, history: ChatHistoryInterface):
@@ -510,6 +517,7 @@ class TelegramSqliteUserData(UserData):
             chat_id=history.chat_id,
             thread_id=history.thread_id,
             auto_reply=history.auto_reply,
+            history=json.dumps(history.chat_history) if history.chat_history else "[]",
         )
         await self.chat_history_table.update(chat_history)
 
@@ -647,3 +655,181 @@ class TelegramSqliteUserData(UserData):
 
 # Create a singleton instance
 telegram_data = TelegramSqliteUserData()
+
+# Add to assistants/user_data/sqlite_backend/telegram_chat_data.py
+
+
+class BotConversationMessage(BaseModel):
+    """
+    Pydantic model representing a message in a multi-bot conversation.
+
+    Attributes:
+        id: Optional[int]: Auto-incremented message ID
+        chat_id (int): The chat ID where the message was sent
+        bot_id (str): The bot identifier ("user" for user messages)
+        user_id (int): The user ID (bot ID for bot messages)
+        text (str): The message content
+        timestamp (float): When the message was sent
+    """
+
+    id: Optional[int] = None
+    chat_id: int
+    bot_id: str  # "user" for user messages, bot identifier for bot messages
+    user_id: int
+    text: str
+    timestamp: float
+
+
+class BotConversationsTable(Table[BotConversationMessage]):
+    """Table for multi-bot conversation messages."""
+
+    def get_table_name(self) -> str:
+        return "bot_conversations"
+
+    def get_model_class(self):
+        return BotConversationMessage
+
+    def get_create_table_sql(self) -> str:
+        return """
+            CREATE TABLE IF NOT EXISTS bot_conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat_id INTEGER NOT NULL,
+                bot_id TEXT NOT NULL,
+                user_id INTEGER NOT NULL,
+                text TEXT NOT NULL,
+                timestamp REAL NOT NULL
+            )
+        """
+
+    async def migrate_if_needed(self) -> None:
+        # No migrations needed for new table
+        pass
+
+    async def insert(self, record: BotConversationMessage) -> None:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """
+                INSERT INTO bot_conversations 
+                (chat_id, bot_id, user_id, text, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    record.chat_id,
+                    record.bot_id,
+                    record.user_id,
+                    record.text,
+                    record.timestamp,
+                ),
+            )
+            await db.commit()
+            record.id = cursor.lastrowid
+
+    async def update(self, record: BotConversationMessage) -> None:
+        pass
+
+    async def delete(self, **kwargs) -> None:
+        pass
+
+    async def get(self, **kwargs) -> Optional[BotConversationMessage]:
+        pass
+
+    async def get_all(self) -> List[BotConversationMessage]:
+        pass
+
+    async def get_chat_messages(
+        self, chat_id: int, limit: int = 100
+    ) -> List[BotConversationMessage]:
+        """Get messages for a specific chat, ordered by timestamp."""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """
+                SELECT id, chat_id, bot_id, user_id, text, timestamp 
+                FROM bot_conversations
+                WHERE chat_id = ?
+                ORDER BY timestamp ASC
+                LIMIT ?
+                """,
+                (chat_id, limit),
+            )
+            rows = await cursor.fetchall()
+            return [
+                BotConversationMessage(
+                    id=row[0],
+                    chat_id=row[1],
+                    bot_id=row[2],
+                    user_id=row[3],
+                    text=row[4],
+                    timestamp=row[5],
+                )
+                for row in rows
+            ]
+
+    async def get_messages_since_last_bot_response(
+        self, chat_id: int, bot_id: str, limit: int = 100
+    ) -> List[BotConversationMessage]:
+        """Get all messages since the last response from the specified bot."""
+        async with aiosqlite.connect(self.db_path) as db:
+            # First, find the timestamp of the bot's last message
+            cursor = await db.execute(
+                """
+                SELECT MAX(timestamp) 
+                FROM bot_conversations
+                WHERE chat_id = ? AND bot_id = ?
+                """,
+                (chat_id, bot_id),
+            )
+            row = await cursor.fetchone()
+            if not row or not row[0]:
+                # If the bot hasn't sent any messages yet, get all messages
+                return await self.get_chat_messages(chat_id, limit)
+
+            last_response_time = row[0]
+
+            # Now get all messages after that timestamp
+            cursor = await db.execute(
+                """
+                SELECT id, chat_id, bot_id, user_id, text, timestamp 
+                FROM bot_conversations
+                WHERE chat_id = ? AND timestamp > ?
+                ORDER BY timestamp ASC
+                LIMIT ?
+                """,
+                (chat_id, last_response_time, limit),
+            )
+            rows = await cursor.fetchall()
+            return [
+                BotConversationMessage(
+                    id=row[0],
+                    chat_id=row[1],
+                    bot_id=row[2],
+                    user_id=row[3],
+                    text=row[4],
+                    timestamp=row[5],
+                )
+                for row in rows
+            ]
+
+    async def get_last_message(self, chat_id: int) -> Optional[BotConversationMessage]:
+        """Get the most recent message for a chat."""
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                """
+                SELECT id, chat_id, bot_id, user_id, text, timestamp 
+                FROM bot_conversations
+                WHERE chat_id = ?
+                ORDER BY timestamp DESC
+                LIMIT 1
+                """,
+                (chat_id,),
+            )
+            row = await cursor.fetchone()
+            if row:
+                return BotConversationMessage(
+                    id=row[0],
+                    chat_id=row[1],
+                    bot_id=row[2],
+                    user_id=row[3],
+                    text=row[4],
+                    timestamp=row[5],
+                )
+            return None

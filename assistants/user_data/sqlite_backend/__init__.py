@@ -5,6 +5,7 @@ import aiosqlite
 from assistants.config.file_management import DB_PATH
 from assistants.log import logger
 from assistants.user_data.sqlite_backend.conversations import conversations_table
+from assistants.user_data.sqlite_backend.message import messages_table
 from assistants.user_data.sqlite_backend.telegram_chat_data import telegram_data
 
 
@@ -37,6 +38,7 @@ async def init_db():
         DB_PATH.parent.mkdir(parents=True)
 
     await conversations_table.create_table()
+    await messages_table.create_table()
 
     if os.getenv("TELEGRAM_DATA"):
         await telegram_data.create_db()
@@ -78,15 +80,12 @@ async def migrate():
     if not DB_PATH.exists():
         raise RuntimeError("Database does not exist. Please run init_db() first.")
 
-    # Check if the conversations table exists
+    # Create tables if they do not exist
     if not await table_exists(DB_PATH, "conversations"):
         logger.info("Conversations table does not exist. Creating it.")
         await conversations_table.create_table()
 
-    await conversations_table.migrate_if_needed()
-
     if os.getenv("TELEGRAM_DATA"):
-        # Check if the telegram_data tables exist
         if not await table_exists(DB_PATH, "authorised_chats"):
             logger.info("Authorised chats table does not exist. Creating it.")
             await telegram_data.authorised_chats_table.create_table()
@@ -103,12 +102,15 @@ async def migrate():
             logger.info("Chat history table does not exist. Creating it.")
             await telegram_data.chat_history_table.create_table()
 
-        for table in [
-            telegram_data.authorised_chats_table,
-            telegram_data.authorised_users_table,
-            telegram_data.superusers_table,
-            telegram_data.chat_history_table,
-        ]:
-            await table.migrate_if_needed()
+    # Run migrations for all tables
+    for table in [
+        telegram_data.authorised_chats_table,
+        telegram_data.authorised_users_table,
+        telegram_data.superusers_table,
+        telegram_data.chat_history_table,
+        conversations_table,
+        messages_table,
+    ]:
+        await table.migrate_if_needed()
 
     logger.info("Database migration completed successfully.")

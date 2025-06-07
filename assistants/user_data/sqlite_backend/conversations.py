@@ -29,6 +29,15 @@ class Conversation(BaseModel):
     conversation: str
     last_updated: datetime
 
+    async def save(self) -> None:
+        """
+        Insert or update the conversation record in the database.
+
+        Returns:
+            The saved Conversation object.
+        """
+        await conversations_table.insert(self)
+
 
 class ConversationsTable(Table[Conversation]):
     """

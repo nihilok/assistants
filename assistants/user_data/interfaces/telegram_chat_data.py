@@ -14,6 +14,7 @@ class ChatHistory(BaseModel):
     chat_id: int
     thread_id: Optional[str] = None
     auto_reply: bool
+    chat_history: list[dict] = []
 
 
 class UserData(ABC):
