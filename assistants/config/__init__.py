@@ -46,7 +46,6 @@ class Config:
     CODE_MODEL: str  # pylint: disable=invalid-name
     IMAGE_MODEL: str  # pylint: disable=invalid-name
     ASSISTANT_INSTRUCTIONS: str  # pylint: disable=invalid-name
-    ASSISTANT_NAME: str  # pylint: disable=invalid-name
     TELEGRAM_BOT_TOKEN: str  # pylint: disable=invalid-name
     DEFAULT_MAX_HISTORY_TOKENS: int  # pylint: disable=invalid-name
     DEFAULT_MAX_RESPONSE_TOKENS: int  # pylint: disable=invalid-name
@@ -86,7 +85,6 @@ def get_config() -> Config:
         ASSISTANT_INSTRUCTIONS=os.environ.get(
             "ASSISTANT_INSTRUCTIONS", "You are a helpful assistant."
         ),
-        ASSISTANT_NAME=os.environ.get("ASSISTANT_NAME", "DefaultAssistant"),
         TELEGRAM_BOT_TOKEN=os.environ.get("TG_BOT_TOKEN", None),
         DEFAULT_MAX_HISTORY_TOKENS=int(
             os.environ.get("DEFAULT_MAX_TOKENS", DEFAULT_MAX_HISTORY_TOKENS)

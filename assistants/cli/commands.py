@@ -514,6 +514,30 @@ class UpdateThinkingMode(Command):
 update_thinking_mode = UpdateThinkingMode()
 
 
+class EnvironmentCommand(Command):
+    """
+    Command to print the current environment variables.
+    """
+
+    help = "Print the current environment variables"
+
+    async def __call__(self, environ: IoEnviron, *args) -> None:
+        """
+        Call the command to print the current environment variables.
+
+        :param environ: The environment variables for the input/output loop.
+        """
+        output.inform("Current Environment Variables:")
+        for key, value in environment.__dict__.items():
+            if not key.startswith("__") and not callable(value):
+                pattern = "KEY$|TOKEN$"
+                if re.search(pattern, key) and value is not None:
+                    value = "********"
+                output.output(f"{key}: {value}")
+
+
+environment_command = EnvironmentCommand()
+
 COMMAND_MAP = {
     "/e": editor,
     "/edit": editor,
@@ -537,6 +561,7 @@ COMMAND_MAP = {
     "/image": generate_image,
     "/last": show_last_message,
     "/l": show_last_message,
+    "/env": environment_command,
 }
 
 EXIT_COMMANDS = {

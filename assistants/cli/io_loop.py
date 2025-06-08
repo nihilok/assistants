@@ -60,7 +60,6 @@ class AssistantIoHandler:
             )
 
             # Create a temporary IoEnviron for backward compatibility with existing commands
-            print(self.thread_id)
             environ = IoEnviron(
                 assistant=self.assistant,
                 thread_id=self.thread_id,
