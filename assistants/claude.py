@@ -1,13 +1,15 @@
 import asyncio
+import os
 import sys
 
 from assistants.cli import cli
 from assistants.config import environment
 from assistants.user_data.sqlite_backend import init_db
 
-CLAUDE_SONNET_MODEL = "claude-sonnet-4-20250514"
-CLAUDE_OPUS_MODEL = "claude-opus-4-20250514"
-
+CLAUDE_SONNET_MODEL = os.getenv(
+    "DEFAULT_CLAUDE_SONNET_MODEL", "claude-sonnet-4-20250514"
+)
+CLAUDE_OPUS_MODEL = os.getenv("DEFAULT_CLAUDE_OPUS_MODEL", "claude-opus-4-20250514")
 
 
 def main():

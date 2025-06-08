@@ -127,7 +127,7 @@ MODEL_LOOKUP = {
     "default": {
         "claude-": ClaudeAssistant,
         "dummy-model": DummyAssistant,
-        "gpt-4o": OpenAIAssistant,
+        "gpt-4": OpenAIAssistant,
         "o1": OpenAIAssistant,
         "o3": OpenAIAssistant,
         "o4": OpenAIAssistant,

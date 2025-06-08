@@ -53,6 +53,7 @@ dev = [
 
 [project.scripts]
 ai-cli = "assistants.main:main"
+chatgpt = "assistants.chatgpt:main"
 ai-tg-bot = "assistants.main_tg:main"
 claude = "assistants.claude:main"
 
