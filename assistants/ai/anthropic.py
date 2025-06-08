@@ -75,7 +75,11 @@ class ClaudeAssistant(
         self.model = model
         self.max_response_tokens = max_response_tokens
         self.instructions = instructions
-        self.thinking = self.set_thinking_budget(thinking) if thinking else ThinkingConfig(level=0, type="enabled")
+        self.thinking = (
+            self.set_thinking_budget(thinking)
+            if thinking
+            else ThinkingConfig(level=0, type="enabled")
+        )
 
     def set_thinking_budget(self, thinking: ThinkingConfig) -> ThinkingConfig:
         """
@@ -95,50 +99,6 @@ class ClaudeAssistant(
         """
         Do nothing
         """
-
-    async def load_conversation(
-        self,
-        conversation_id: Optional[str] = None,
-        initial_system_message: Optional[str] = None,
-        **kwargs,
-    ) -> None:
-        """
-        Load the conversation from the database.
-        Also adds the instructions to the memory if provided and not
-        already present, or not the most recent instructions.
-
-        :param conversation_id: Optional ID of the conversation to load.
-        :param initial_system_message: Optional initial system message to add.
-        """
-        await super().load_conversation(
-            conversation_id=conversation_id,
-            initial_system_message=initial_system_message,
-            convert_system_to_instructions=True,
-            instructions_understood_message=INSTRUCTIONS_UNDERSTOOD,
-        )
-
-        # Add instructions if provided
-        if self.instructions:
-            # Check if instructions already exist as the most recent ones
-            instructions_already_set = False
-            for idx, message in enumerate(self.memory):
-                if (
-                    message.get("role") == "user"
-                    and message.get("content") == self.instructions
-                    and idx + 1 < len(self.memory)
-                    and self.memory[idx + 1].get("role") == "assistant"
-                    and self.memory[idx + 1].get("content") == INSTRUCTIONS_UNDERSTOOD
-                ):
-                    instructions_already_set = True
-                    break
-
-            if not instructions_already_set:
-                self.memory.extend(
-                    [
-                        MessageDict(role="user", content=self.instructions),
-                        MessageDict(role="assistant", content=INSTRUCTIONS_UNDERSTOOD),
-                    ]
-                )
 
     async def converse(
         self,
@@ -201,12 +161,10 @@ class ClaudeAssistant(
     async def _provider_stream_response(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> AsyncIterator[str]:
-        conversation_payload = self._prepend_instructions()
-
         response = await self.client.messages.create(
             max_tokens=self.max_response_tokens,
             model=self.model,
-            messages=conversation_payload,
+            messages=self.conversation_payload,
             stream=True,
         )
 
@@ -217,3 +175,12 @@ class ClaudeAssistant(
     @property
     def is_reasoning_model(self):
         return True
+
+    @property
+    def conversation_payload(self) -> list[MessageDict]:
+        """
+        Get the conversation payload for the assistant.
+
+        :return: The conversation payload.
+        """
+        return self._prepend_instructions()

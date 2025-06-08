@@ -87,14 +87,12 @@ class ConversationHistoryMixin(ConversationManagementInterface):
     async def load_conversation(
         self,
         conversation_id: Optional[str] = None,
-        initial_system_message: Optional[str] = None,
     ):
         """
         Load the last conversation from the database.
 
         Args:
             conversation_id: Optional ID of the conversation to load.
-            initial_system_message: Optional initial system message to add to the conversation.
         """
         if conversation_id:
             await self._load_specific_conversation(conversation_id)

@@ -263,6 +263,15 @@ class OpenAIAssistant(
             thread_id=self.conversation_id or "",
         )
 
+    @property
+    def conversation_payload(self) -> list[EasyInputMessageParam]:
+        """
+        Get the conversation payload with system instructions prepended.
+
+        :return: List of messages in the conversation.
+        """
+        return self._prepend_instructions()
+
     def _prepend_instructions(self) -> list[EasyInputMessageParam]:
         """
         Prepend system instructions to the conversation memory.
@@ -448,7 +457,7 @@ You should always respond in audio format.
 
         response = completion.choices[0].message
 
-        if response.audio and hasattr(response.audio, 'data'):
+        if response.audio and hasattr(response.audio, "data"):
             await self.remember(
                 {
                     "role": "assistant",
@@ -458,6 +467,8 @@ You should always respond in audio format.
             )
             return base64.b64decode(response.audio.data)
         else:
-            await self.remember({"role": "assistant", "content": response.content or ""})
+            await self.remember(
+                {"role": "assistant", "content": response.content or ""}
+            )
 
         return response.content

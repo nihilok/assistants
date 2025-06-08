@@ -145,6 +145,15 @@ class AssistantInterface(ABC):
         If no conversation ID is provided, a new conversation will be created.
         """
 
+    @property
+    @abstractmethod
+    def conversation_payload(self) -> list[MessageDict]:
+        """
+        Get the conversation payload.
+
+        :return: List of messages in the conversation.
+        """
+
     @abstractmethod
     async def converse(
         self, user_input: str, thread_id: Optional[str] = None

@@ -59,20 +59,33 @@ class MistralAssistant(ConversationHistoryMixin, AssistantInterface):
     async def converse(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[MessageData]:
+        if thread_id and not self.memory:
+            await self.load_conversation(
+                conversation_id=thread_id,
+            )
         async with Mistral(
             api_key=self.api_key,
         ) as mistral:
-            self.remember(MessageDict(role="user", content=user_input))
+            await self.remember(MessageDict(role="user", content=user_input))
             res = await mistral.chat.complete_async(
                 model=self.model,
                 messages=self.memory,
             )
             message_text = res.choices[0].message.content
-            self.remember(MessageDict(role="assistant", content=message_text))
+            await self.remember(MessageDict(role="assistant", content=message_text))
             return MessageData(
                 text_content=message_text,
                 thread_id=thread_id,
             )
+
+    @property
+    def conversation_payload(self) -> list[MessageDict]:
+        """
+        Get the conversation payload.
+
+        :return: List of messages in the conversation.
+        """
+        return self.memory
 
 
 if __name__ == "__main__":
