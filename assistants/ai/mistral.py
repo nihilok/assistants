@@ -7,6 +7,7 @@ from assistants.ai.types import (
     AssistantInterface,
     MessageData,
     MessageDict,
+    MessageInput,
     ThinkingConfig,
 )
 from assistants.config import environment
@@ -79,7 +80,7 @@ class MistralAssistant(ConversationHistoryMixin, AssistantInterface):
             )
 
     @property
-    def conversation_payload(self) -> list[MessageDict]:
+    def conversation_payload(self) -> list[MessageInput]:
         """
         Get the conversation payload.
 

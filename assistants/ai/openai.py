@@ -22,6 +22,7 @@ from assistants.ai.types import (
     AssistantInterface,
     MessageData,
     MessageDict,
+    MessageInput,
     StreamingAssistantInterface,
     ThinkingConfig,
 )
@@ -430,7 +431,7 @@ You should always respond in audio format.
 
 {message["content"]}
 """
-
+        completion = None
         complete = False
         while not complete:
             if not temp_memory or all(msg.get("audio") is None for msg in temp_memory):
@@ -474,5 +475,5 @@ You should always respond in audio format.
         return response.content
 
     @property
-    def conversation_payload(self) -> list[MessageDict]:
+    def conversation_payload(self) -> list[MessageInput]:
         return self.memory

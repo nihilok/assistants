@@ -11,7 +11,10 @@ Classes:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncIterator, Literal, NotRequired, Optional, TypedDict
+from typing import AsyncIterator, Literal, NotRequired, Optional, TypedDict, Union
+
+from anthropic.types import MessageParam
+from openai.types.responses import EasyInputMessageParam
 
 ThinkingLevel = Literal[0, 1, 2]
 
@@ -78,6 +81,9 @@ class MessageDict(TypedDict):
     role: str
     content: str | None
     audio: NotRequired[AudioMessageData]
+
+
+MessageInput = Union[MessageDict, EasyInputMessageParam, MessageParam]
 
 
 class ConversationManagementInterface(ABC):
@@ -147,7 +153,7 @@ class AssistantInterface(ABC):
 
     @property
     @abstractmethod
-    def conversation_payload(self) -> list[MessageDict]:
+    def conversation_payload(self) -> list[MessageInput]:
         """
         Get the conversation payload.
 

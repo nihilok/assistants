@@ -16,6 +16,7 @@ from assistants.ai.types import (
     AssistantInterface,
     MessageData,
     MessageDict,
+    MessageInput,
     StreamingAssistantInterface,
     ThinkingConfig,
 )
@@ -177,7 +178,7 @@ class ClaudeAssistant(
         return True
 
     @property
-    def conversation_payload(self) -> list[MessageDict]:
+    def conversation_payload(self) -> list[MessageInput]:
         """
         Get the conversation payload for the assistant.
 
