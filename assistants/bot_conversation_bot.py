@@ -20,7 +20,7 @@ from assistants.user_data.sqlite_backend import init_db
 from assistants.user_data.sqlite_backend.telegram_chat_data import (
     BotConversationMessage,
     BotConversationsTable,
-    telegram_data,
+    get_telegram_data,
 )
 
 # Configure logging
@@ -63,7 +63,7 @@ class BotConversationManager:
     """Manages the conversation history for all bots"""
 
     def __init__(self, db_path=None):
-        self.db_path = db_path or telegram_data.db_path
+        self.db_path = db_path or get_telegram_data().db_path
         self.bot_conversations_table = BotConversationsTable(self.db_path)
 
     async def initialize(self):

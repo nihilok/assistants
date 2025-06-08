@@ -654,7 +654,15 @@ class TelegramSqliteUserData(UserData):
 
 
 # Create a singleton instance
-telegram_data = TelegramSqliteUserData()
+def get_telegram_data() -> TelegramSqliteUserData:
+    """
+    Get the singleton instance of TelegramSqliteUserData.
+
+    Returns:
+        TelegramSqliteUserData: The singleton instance.
+    """
+    return TelegramSqliteUserData()
+
 
 # Add to assistants/user_data/sqlite_backend/telegram_chat_data.py
 

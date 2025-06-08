@@ -22,9 +22,14 @@ from assistants.ai.types import (
     MessageDict,
 )
 from assistants.config import environment
-from assistants.user_data.sqlite_backend import conversations_table
-from assistants.user_data.sqlite_backend.conversations import Conversation
-from assistants.user_data.sqlite_backend.message import Message, messages_table
+from assistants.user_data.sqlite_backend.conversations import (
+    Conversation,
+    get_conversations_table,
+)
+from assistants.user_data.sqlite_backend.message import (
+    Message,
+    get_messages_table,
+)
 
 encoding = tiktoken.encoding_for_model("gpt-4o-mini")
 
@@ -98,7 +103,7 @@ class ConversationHistoryMixin(ConversationManagementInterface):
 
     async def _load_specific_conversation(self, conversation_id: str):
         """Load a conversation with a specific ID or create it if it doesn't exist."""
-        conversation = await conversations_table.get(id=conversation_id)
+        conversation = await get_conversations_table().get(id=conversation_id)
         if not conversation:
             # Create a new conversation if it doesn't exist
             conversation = Conversation(
@@ -111,7 +116,7 @@ class ConversationHistoryMixin(ConversationManagementInterface):
             if conversation.conversation:
                 self.memory.extend(json.loads(conversation.conversation))
 
-        messages = await messages_table.get_by_conversation_id(conversation_id)
+        messages = await get_messages_table().get_by_conversation_id(conversation_id)
         if messages:
             self._load_memory_from_messages(messages)
 
@@ -119,7 +124,7 @@ class ConversationHistoryMixin(ConversationManagementInterface):
 
     async def _load_latest_conversation(self):
         """Load the most recent conversation or create a new one if none exists."""
-        latest = await conversations_table.get_last_conversation()
+        latest = await get_conversations_table().get_last_conversation()
 
         if not latest:
             # Create a new conversation if none exists
@@ -139,7 +144,7 @@ class ConversationHistoryMixin(ConversationManagementInterface):
                 self.memory = json.loads(latest.conversation)
             else:
                 # Fall back to loading from the messages table
-                messages = await messages_table.get_by_conversation_id(latest.id)
+                messages = await get_messages_table().get_by_conversation_id(latest.id)
                 if messages:
                     self._load_memory_from_messages(messages)
                 else:
@@ -191,7 +196,7 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         if self.conversation_id is None:
             self.conversation_id = uuid.uuid4().hex
 
-        await conversations_table.update(
+        await get_conversations_table().update(
             Conversation(
                 id=self.conversation_id,
                 conversation=json.dumps(self.memory),

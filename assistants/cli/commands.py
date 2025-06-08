@@ -22,8 +22,11 @@ from assistants.config import environment
 from assistants.config.file_management import DATA_DIR
 from assistants.lib.constants import IO_INSTRUCTIONS
 from assistants.lib.exceptions import ConfigError
-from assistants.user_data.sqlite_backend import conversations_table, messages_table
-from assistants.user_data.sqlite_backend.conversations import Conversation
+from assistants.user_data.sqlite_backend.conversations import (
+    Conversation,
+    get_conversations_table,
+)
+from assistants.user_data.sqlite_backend.message import get_messages_table
 
 
 @dataclass
@@ -271,7 +274,7 @@ class SelectThread(Command):
         :return: The first prompt from the thread.
         """
         if not thread.conversation:
-            messages = await messages_table.get_by_conversation_id(thread.id)
+            messages = await get_messages_table().get_by_conversation_id(thread.id)
             return messages[0].content if messages else ""
 
         conversation = json.loads(thread.conversation)
@@ -286,7 +289,7 @@ class SelectThread(Command):
         :param environ: The environment variables for the input/output loop.
         """
         if isinstance(environ.assistant, ConversationHistoryMixin):
-            threads = await conversations_table.get_all()
+            threads = await get_conversations_table().get_all()
             thread_options = [
                 TerminalSelectorOption(
                     label=f"{thread.last_updated} | {await self.get_first_prompt(thread)}",

@@ -26,7 +26,7 @@ class Message(BaseModel):
         """
         Insert Message into the database.
         """
-        await messages_table.insert(self)
+        await get_messages_table().insert(self)
         return self
 
 
@@ -104,9 +104,6 @@ class MessageTable(Table[Message]):
         """
 
 
-messages_table = MessageTable()
-
-
 async def create_message(
     role: str, content: str, conversation_id: Optional[str] = None
 ) -> Message:
@@ -122,5 +119,15 @@ async def create_message(
         The created Message object.
     """
     message = Message(role=role, content=content, conversation_id=conversation_id)
-    await messages_table.insert(message)
+    await get_messages_table().insert(message)
     return message
+
+
+def get_messages_table() -> MessageTable:
+    """
+    Get the messages table instance.
+
+    Returns:
+        The MessageTable instance.
+    """
+    return MessageTable()

@@ -36,7 +36,7 @@ class Conversation(BaseModel):
         Returns:
             The saved Conversation object.
         """
-        await conversations_table.insert(self)
+        await get_conversations_table().insert(self)
 
 
 class ConversationsTable(Table[Conversation]):
@@ -215,4 +215,11 @@ class ConversationsTable(Table[Conversation]):
 
 
 # Create a singleton instance
-conversations_table = ConversationsTable()
+def get_conversations_table() -> ConversationsTable:
+    """
+    Get the singleton instance of ConversationsTable.
+
+    Returns:
+        An instance of ConversationsTable.
+    """
+    return ConversationsTable()

@@ -29,14 +29,16 @@ class Table(Generic[T], ABC):
         model_class (Type[T]): Pydantic model class for the table records
     """
 
-    def __init__(self, db_path: str = DB_PATH):
+    DB_PATH: str = DB_PATH  # Default database path
+
+    def __init__(self, db_path: Optional[str] = None) -> None:
         """
         Initialize the Table instance.
 
         Args:
             db_path: Path to the SQLite database file
         """
-        self.db_path = db_path
+        self.db_path = db_path or self.DB_PATH
         self.table_name = self.get_table_name()
         self.model_class = self.get_model_class()
 

@@ -16,7 +16,7 @@ from assistants.telegram_ui.lib import (
     requires_reply_to_message,
 )
 from assistants.user_data.interfaces.telegram_chat_data import ChatHistory
-from assistants.user_data.sqlite_backend import conversations_table
+from assistants.user_data.sqlite_backend.conversations import get_conversations_table
 
 
 @requires_superuser
@@ -74,7 +74,7 @@ async def deauthorise_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @restricted_access
 async def new_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await chat_data.clear_last_thread_id(update.effective_chat.id)
-    await conversations_table.delete_conversation(update.effective_chat.id)
+    await get_conversations_table().delete(id=update.effective_chat.id)
     assistant.last_message = None
     await context.bot.send_message(
         update.effective_chat.id, "Conversation history cleared."

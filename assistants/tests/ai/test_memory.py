@@ -59,90 +59,95 @@ class TestConversationHistoryMixin:
         assert memory_mixin.memory[0]["content"] == "Response 1"
 
     @pytest.mark.asyncio
-    @patch("assistants.user_data.sqlite_backend.conversations_table.get")
-    async def test_load_conversation_with_id(self, mock_get, memory_mixin):
+    async def test_load_conversation_with_id(self, memory_mixin):
         """Test loading a conversation with a specific ID."""
         conversation = Conversation(
             id="test-id",
             conversation=json.dumps([{"role": "user", "content": "Hello"}]),
             last_updated=datetime.now(),
         )
-        mock_get.return_value = conversation
 
-        await memory_mixin.load_conversation("test-id")
+        # Patch the ConversationsTable.get method directly
+        with patch(
+            "assistants.user_data.sqlite_backend.conversations.ConversationsTable.get",
+            return_value=conversation,
+        ):
+            await memory_mixin.load_conversation("test-id")
 
-        mock_get.assert_called_once_with(id="test-id")
-        assert memory_mixin.memory == [{"role": "user", "content": "Hello"}]
-        assert memory_mixin.conversation_id == "test-id"
+            assert memory_mixin.memory == [{"role": "user", "content": "Hello"}]
+            assert memory_mixin.conversation_id == "test-id"
 
     @pytest.mark.asyncio
-    @patch(
-        "assistants.user_data.sqlite_backend.conversations_table.get_last_conversation"
-    )
-    async def test_load_conversation_without_id(
-        self, mock_get_last_conversation, memory_mixin
-    ):
+    async def test_load_conversation_without_id(self, memory_mixin):
         """Test loading the last conversation when no ID is provided."""
         conversation = Conversation(
             id="last-id",
             conversation=json.dumps([{"role": "user", "content": "Last message"}]),
             last_updated=datetime.now(),
         )
-        mock_get_last_conversation.return_value = conversation
 
-        await memory_mixin.load_conversation()
+        # Patch the ConversationsTable.get_last_conversation method directly
+        with patch(
+            "assistants.user_data.sqlite_backend.conversations.ConversationsTable.get_last_conversation",
+            return_value=conversation,
+        ):
+            await memory_mixin.load_conversation()
 
-        mock_get_last_conversation.assert_called_once()
-        assert memory_mixin.memory == [{"role": "user", "content": "Last message"}]
-        assert memory_mixin.conversation_id == "last-id"
+            assert memory_mixin.memory == [{"role": "user", "content": "Last message"}]
+            assert memory_mixin.conversation_id == "last-id"
 
     @pytest.mark.asyncio
-    @patch("assistants.user_data.sqlite_backend.conversations_table.update")
-    async def test_save_conversation_state(self, mock_update, memory_mixin):
+    async def test_save_conversation_state(self, memory_mixin):
         """Test saving the conversation state."""
         memory_mixin.memory = [{"role": "user", "content": "Hello"}]
         memory_mixin.conversation_id = "test-id"
 
-        result = await memory_mixin.save_conversation_state()
+        # Patch the ConversationsTable.update method directly
+        with patch(
+            "assistants.user_data.sqlite_backend.conversations.ConversationsTable.update"
+        ) as mock_update:
+            result = await memory_mixin.save_conversation_state()
 
-        assert result == "test-id"
-        mock_update.assert_called_once()
-        # Check that the conversation was saved with the correct ID and content
-        saved_conversation = mock_update.call_args[0][0]
-        assert saved_conversation.id == "test-id"
-        assert json.loads(saved_conversation.conversation) == [
-            {"role": "user", "content": "Hello"}
-        ]
+            assert result == "test-id"
+            mock_update.assert_called_once()
+            # Check that the conversation was saved with the correct ID and content
+            saved_conversation = mock_update.call_args[0][0]
+            assert saved_conversation.id == "test-id"
+            assert json.loads(saved_conversation.conversation) == [
+                {"role": "user", "content": "Hello"}
+            ]
 
     @pytest.mark.asyncio
-    @patch("assistants.user_data.sqlite_backend.conversations_table.update")
-    async def test_save_conversation_state_empty_memory(
-        self, mock_update, memory_mixin
-    ):
+    async def test_save_conversation_state_empty_memory(self, memory_mixin):
         """Test saving an empty conversation state."""
         memory_mixin.memory = []
 
-        result = await memory_mixin.save_conversation_state()
+        # Patch the ConversationsTable.update method directly
+        with patch(
+            "assistants.user_data.sqlite_backend.conversations.ConversationsTable.update"
+        ) as mock_update:
+            result = await memory_mixin.save_conversation_state()
 
-        assert result is None
-        mock_update.assert_not_called()
+            assert result is None
+            mock_update.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch("uuid.uuid4")
-    @patch("assistants.user_data.sqlite_backend.conversations_table.update")
-    async def test_save_conversation_state_no_id(
-        self, mock_update, mock_uuid4, memory_mixin
-    ):
+    async def test_save_conversation_state_no_id(self, memory_mixin):
         """Test saving a conversation state without an existing ID."""
-        mock_uuid4.return_value.hex = "new-id"
-        memory_mixin.memory = [{"role": "user", "content": "Hello"}]
-        memory_mixin.conversation_id = None
+        with patch("uuid.uuid4") as mock_uuid4:
+            mock_uuid4.return_value.hex = "new-id"
+            memory_mixin.memory = [{"role": "user", "content": "Hello"}]
+            memory_mixin.conversation_id = None
 
-        result = await memory_mixin.save_conversation_state()
+            # Patch the ConversationsTable.update method directly
+            with patch(
+                "assistants.user_data.sqlite_backend.conversations.ConversationsTable.update"
+            ) as mock_update:
+                result = await memory_mixin.save_conversation_state()
 
-        assert result == "new-id"
-        assert memory_mixin.conversation_id == "new-id"
-        mock_update.assert_called_once()
+                assert result == "new-id"
+                assert memory_mixin.conversation_id == "new-id"
+                mock_update.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_last_message(self, memory_mixin):
