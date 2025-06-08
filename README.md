@@ -54,6 +54,12 @@ Use the `claude` command for Anthropic models (Now defaults to Claude 4):
 claude -e  # Open editor for Claude
 ```
 
+There's also a `chatgpt` command that uses the default ChatGPT model:
+
+```bash
+chatgpt -t  # Continue the last thread with ChatGPT (`gpt-4.1-mini`)
+```
+
 Rebuild the database:
 
 ```bash
