@@ -1,6 +1,10 @@
 Changelog
 ---
 
+### 08/06/2025 v0.7.2
+
+- add command to print current environment variables (`/env`)
+
 ### 08/06/2025 v0.7.1
 
 - add support for Mistral API
