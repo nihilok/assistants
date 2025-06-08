@@ -6,7 +6,8 @@ A flexible framework for creating AI assistants with multiple frontend interface
 
 - **Multi-Front-End Support**: CLI and Telegram interfaces built on the same core framework
 - **CLI Features**: Code highlighting, thread management, editor integration, file input, image generation
-- **Multiple LLM Support**: OpenAI (`gpt-*`, `o*`), Anthropic (`claude-*`), and image generation (DALL-E)
+- **Multiple LLM Support**: OpenAI (`gpt-*`, `o*`), Anthropic (`claude-*`), MistralAI (`mistral-*`, `codestral-*`,
+  `devstral-*`), and image generation (DALL-E)
 
 ## Installation
 
@@ -28,8 +29,6 @@ Add commands to your PATH:
 ai-cli install
 ```
 
-
-
 ## Usage
 
 ### Command Line Interface
@@ -39,6 +38,7 @@ ai-cli --help
 ```
 
 Key CLI commands (prefixed with `/`):
+
 - `/help` - Show help message
 - `/editor` - Open editor for prompt composition
 - `/image <prompt>` - Generate an image
@@ -64,13 +64,14 @@ ai-cli rebuild
 
 The framework includes a Telegram bot interface with the following features:
 
-- **User Management**: Authorise/deauthore users and chats, promote/demote users
+- **User Management**: Authorise/deauthorise users and chats, promote/demote users
 - **Thread Management**: Start new conversation threads
 - **Auto-Reply Toggle**: Enable/disable automatic responses
 - **Media Generation**: Generate images from text prompts
 - **Voice Responses**: Generate audio responses with the `/voice` command
 
 Key Telegram commands:
+
 - `/new_thread` - Clear conversation history and start a new thread
 - `/auto_reply` - Toggle automatic responses on/off
 - `/image <prompt>` - Generate an image from a text prompt
@@ -81,6 +82,7 @@ Key Telegram commands:
 - `ASSISTANT_INSTRUCTIONS` - System message (default: "You are a helpful assistant")
 - `ASSISTANTS_API_KEY_NAME` - API key variable name (default: `OPENAI_API_KEY`)
 - `ANTHROPIC_API_KEY_NAME` - Anthropic API key variable (default: `ANTHROPIC_API_KEY`)
+- `MISTRAL_API_KEY_NAME` - Mistral API key variable (default: `MISTRAL_API_KEY`)
 - `DEFAULT_MODEL` - Default model (default: `gpt-4o-mini`)
 - `CODE_MODEL` - Reasoning model (default: `o3-mini`)
 - `IMAGE_MODEL` - Image model (default: `dall-e-3`)
@@ -96,7 +98,8 @@ Key Telegram commands:
 Contributions welcome! Fork the repository, make changes, and submit a pull request.
 
 #### TODOs:
-- Improved conversation handling/truncation for token limits
+
+- Improved conversation handling/truncation for token limits - currently uses tiktoken for all models
 - Additional model/API support
 - Additional database support
 
