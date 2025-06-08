@@ -8,7 +8,7 @@ aiofiles==24.1.0
     # via assistants-framework (pyproject.toml)
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.9
+aiohttp==3.12.11
     # via assistants-framework (pyproject.toml)
 aiosignal==1.3.2
     # via aiohttp
