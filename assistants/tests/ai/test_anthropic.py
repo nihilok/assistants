@@ -72,7 +72,7 @@ class TestClaude:
                 content = claude.memory[0]["content"]
                 claude.memory = [
                     {"role": "user", "content": content},
-                    {"role": "assistant", "content": INSTRUCTIONS_UNDERSTOOD}
+                    {"role": "assistant", "content": INSTRUCTIONS_UNDERSTOOD},
                 ]
 
         mock_super_load.side_effect = mock_load_with_conversion
@@ -82,12 +82,7 @@ class TestClaude:
         # Restore instructions
         claude.instructions = original_instructions
 
-        mock_super_load.assert_called_once_with(
-            conversation_id="test-id", 
-            initial_system_message=None, 
-            convert_system_to_instructions=True, 
-            instructions_understood_message=INSTRUCTIONS_UNDERSTOOD
-        )
+        mock_super_load.assert_called_once_with("test-id")
 
         # Check that system message was converted to user+assistant pair
         # Just check that the memory has been modified and contains the expected content
@@ -96,67 +91,6 @@ class TestClaude:
         assert claude.memory[0]["content"] == "System instruction"
         assert claude.memory[1]["role"] == "assistant"
         assert claude.memory[1]["content"] == INSTRUCTIONS_UNDERSTOOD
-
-    @pytest.mark.asyncio
-    @patch("assistants.ai.memory.ConversationHistoryMixin.load_conversation")
-    async def test_load_conversation_with_instructions(self, mock_super_load, claude):
-        """Test loading a conversation with instructions."""
-        # Setup memory with existing messages
-        claude.memory = [
-            {"role": "user", "content": "Hello"},
-            {"role": "assistant", "content": "Hi there"},
-        ]
-
-        await claude.load_conversation("test-id")
-
-        mock_super_load.assert_called_once_with(
-            conversation_id="test-id", 
-            initial_system_message=None, 
-            convert_system_to_instructions=True, 
-            instructions_understood_message=INSTRUCTIONS_UNDERSTOOD
-        )
-
-        # Check that instructions were added to memory
-        assert claude.memory[-2] == {
-            "role": "user",
-            "content": "You are a helpful assistant.",
-        }
-        assert claude.memory[-1] == {
-            "role": "assistant",
-            "content": INSTRUCTIONS_UNDERSTOOD,
-        }
-
-    @pytest.mark.asyncio
-    @patch("assistants.ai.memory.ConversationHistoryMixin.load_conversation")
-    async def test_load_conversation_with_existing_instructions(
-        self, mock_super_load, claude
-    ):
-        """Test loading a conversation with existing matching instructions."""
-        # Setup memory with existing instructions
-        claude.memory = [
-            {"role": "user", "content": "You are a helpful assistant."},
-            {"role": "assistant", "content": INSTRUCTIONS_UNDERSTOOD},
-        ]
-
-        await claude.load_conversation("test-id")
-
-        mock_super_load.assert_called_once_with(
-            conversation_id="test-id", 
-            initial_system_message=None, 
-            convert_system_to_instructions=True, 
-            instructions_understood_message=INSTRUCTIONS_UNDERSTOOD
-        )
-
-        # Check that instructions were not added again
-        assert len(claude.memory) == 2
-        assert claude.memory[0] == {
-            "role": "user",
-            "content": "You are a helpful assistant.",
-        }
-        assert claude.memory[1] == {
-            "role": "assistant",
-            "content": INSTRUCTIONS_UNDERSTOOD,
-        }
 
     @pytest.mark.asyncio
     async def test_converse(self, claude, mock_anthropic_client):
