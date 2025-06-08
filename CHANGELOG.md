@@ -1,6 +1,14 @@
 Changelog
 ---
 
+### 08/06/2025 v0.7.0
+
+- add support for Mistral API
+- refactor Assistant interfaces to support Mistral models and be more consistent across providers
+- refactor database models for consistency, introducing Table interface for different tables.
+- adds response streaming support for OpenAI and Claude models in the CLI
+- update tests to cover new functionality/interfaces
+
 ### 26/04/2025 v0.6.13
 
 - fix mismatch between Completion reasoning_effort and Assistants API reasoning_effort
