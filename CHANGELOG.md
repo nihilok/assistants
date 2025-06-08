@@ -1,7 +1,7 @@
 Changelog
 ---
 
-### 08/06/2025 v0.7.0
+### 08/06/2025 v0.7.1
 
 - add support for Mistral API
 - refactor Assistant interfaces to support Mistral models and be more consistent across providers

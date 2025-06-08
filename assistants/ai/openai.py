@@ -472,3 +472,7 @@ You should always respond in audio format.
             )
 
         return response.content
+
+    @property
+    def conversation_payload(self) -> list[MessageDict]:
+        return self.memory
