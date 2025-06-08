@@ -1,8 +1,6 @@
-black
-isort
-flake8
-pytest==8.3.4
-pytest-mock
 setuptools~=75.8.0
 pip-tools
+pytest==8.3.4
+pytest-mock
 pytest-asyncio
+ruff
