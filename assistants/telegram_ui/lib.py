@@ -4,7 +4,7 @@ from typing import Type
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from assistants.ai.openai import OpenAIAssistant, OpenAICompletion
+from assistants.ai.openai import OpenAIAssistant
 from assistants.ai.types import AssistantInterface, ThinkingConfig
 from assistants.cli.assistant_config import AssistantParams
 from assistants.cli.utils import get_model_class
@@ -62,9 +62,3 @@ def get_telegram_assistant() -> AssistantInterface:
 
 
 assistant = get_telegram_assistant()
-
-audio_completion = OpenAICompletion(
-    model="gpt-4o-audio-preview",
-    api_key=environment.OPENAI_API_KEY,
-    instructions=environment.ASSISTANT_INSTRUCTIONS,
-)

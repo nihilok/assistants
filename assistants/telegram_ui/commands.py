@@ -11,7 +11,6 @@ from assistants.telegram_ui.auth import (
 )
 from assistants.telegram_ui.lib import (
     assistant,
-    audio_completion,
     requires_reply_to_message,
 )
 from assistants.user_data.interfaces.telegram_chat_data import ChatHistory
@@ -182,9 +181,7 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def respond_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     existing_chat = await chat_data.get_chat_history(update.effective_chat.id)
 
-    await audio_completion.load_conversation(
-        existing_chat.thread_id or update.effective_chat.id,
-    )
+    thread_id = existing_chat.thread_id or str(update.effective_chat.id)
 
     bot_username = f"@{context.bot.username}"
     bot_name = context.bot.first_name or context.bot.username
@@ -195,19 +192,19 @@ Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'.
 """
 
     response = await assistant.audio_response(
-        update.message.text.replace("/voice ", ""), str(update.effective_chat.id)
+        update.message.text.replace("/voice ", ""), thread_id=thread_id
     )
 
     if not existing_chat.thread_id:
         await chat_data.save_chat_history(
             ChatHistory(
                 chat_id=update.effective_chat.id,
-                thread_id=str(audio_completion.conversation_id),
+                thread_id=str(assistant.conversation_id),
                 auto_reply=existing_chat.auto_reply,
             )
         )
 
-    await audio_completion.save_conversation_state()
+    await assistant.save_conversation_state()
     if isinstance(response, bytes):
         await context.bot.send_voice(
             chat_id=update.effective_chat.id,
