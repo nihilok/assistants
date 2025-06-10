@@ -66,4 +66,5 @@ assistant = get_telegram_assistant()
 audio_completion = OpenAICompletion(
     model="gpt-4o-audio-preview",
     api_key=environment.OPENAI_API_KEY,
+    instructions=environment.ASSISTANT_INSTRUCTIONS,
 )

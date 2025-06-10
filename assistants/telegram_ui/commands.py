@@ -4,7 +4,6 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from assistants.ai.types import MessageDict
-from assistants.config import environment
 from assistants.telegram_ui.auth import (
     chat_data,
     requires_superuser,
@@ -121,10 +120,12 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await assistant.save_conversation_state()
             return
 
-    await assistant.load_conversation(
-        chat_thread_id,
-        initial_system_message=f"{environment.ASSISTANT_INSTRUCTIONS}\nThe users interact with you via a Telegram bot called {bot_name} (i.e. this is your name). What follows is a rolling window of the conversation in a given chat according to what your context limits allow. New threads will start with a single message and grow until they approach the limit. User's messages are prefixed with their name, so that you can see who says what; however, you should NOT prefix your own responses with your own name in the same way.",
-    )
+    await assistant.load_conversation(chat_thread_id)
+
+    assistant.instructions = f"""\
+{assistant.instructions}
+Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'.
+"""
 
     response_message = await assistant.converse(message_text, existing_chat.thread_id)
 
@@ -183,11 +184,18 @@ async def respond_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await audio_completion.load_conversation(
         existing_chat.thread_id or update.effective_chat.id,
-        initial_system_message=f"You are a Telegram bot called {context.bot.first_name or context.bot.username}.\n{environment.ASSISTANT_INSTRUCTIONS}",
     )
 
-    response = await audio_completion.complete_audio(
-        update.message.text.replace("/voice ", "")
+    bot_username = f"@{context.bot.username}"
+    bot_name = context.bot.first_name or context.bot.username
+
+    assistant.instructions = f"""\
+{assistant.instructions}
+Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'.
+"""
+
+    response = await assistant.audio_response(
+        update.message.text.replace("/voice ", ""), str(update.effective_chat.id)
     )
 
     if not existing_chat.thread_id:

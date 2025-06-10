@@ -113,6 +113,7 @@ class AssistantInterface(ABC):
     memory: list[MessageDict]
     thinking: ThinkingConfig
 
+    @abstractmethod
     def __init__(
         self,
         model: str,

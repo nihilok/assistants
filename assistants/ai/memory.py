@@ -79,7 +79,7 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         message = Message(
             role=message["role"],
             content=message["content"],
-            conversation_id=self.conversation_id,
+            conversation_id=str(self.conversation_id),
         )
         await message.save()
         self.truncate_memory()
@@ -105,7 +105,7 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         if not conversation:
             # Create a new conversation if it doesn't exist
             conversation = Conversation(
-                id=conversation_id,
+                id=str(conversation_id),
                 conversation="",  # deprecated, but kept for compatibility
                 last_updated=datetime.now(),
             )
@@ -196,8 +196,8 @@ class ConversationHistoryMixin(ConversationManagementInterface):
 
         await get_conversations_table().update(
             Conversation(
-                id=self.conversation_id,
-                conversation=json.dumps(self.memory),
+                id=str(self.conversation_id),
+                conversation="",
                 last_updated=datetime.now(),
             )
         )

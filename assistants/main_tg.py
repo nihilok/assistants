@@ -26,6 +26,11 @@ def main():
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
+    environment.ASSISTANT_INSTRUCTIONS = f"""\
+Users interact with you through Telegram. Their messages will be prefixed with their name; 
+however, you should not prefix your responses with your own name in the same way.
+{environment.ASSISTANT_INSTRUCTIONS}
+"""
     setup_and_run(environment.TELEGRAM_BOT_TOKEN)
 
 

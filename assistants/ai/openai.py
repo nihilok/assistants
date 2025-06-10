@@ -310,6 +310,31 @@ class OpenAIAssistant(
                 if event.delta:
                     yield event.delta
 
+    async def audio_response(
+        self, user_input: str, thread_id: Optional[str] = None
+    ) -> Union[bytes, None]:
+        """
+        Generate an audio response for the given user input.
+
+        :param user_input: The user's input message.
+        :param thread_id: Optional ID of the conversation to continue.
+        :return: Bytes containing the audio response or None if generation failed.
+        """
+        text_message = await self.converse(user_input, thread_id)
+        if not text_message:
+            return None
+        message_content = text_message.text_content if text_message else None
+        audio_response = self.client.audio.speech.create(
+            model="gpt-4o-mini-tts",
+            voice="fable",
+            instructions="You're a British man with a calm and soothing voice. You have lived all over "
+            "the world, but have always retained your Oxford accent. If there are emojis or other "
+            "punctuation in the text, do not read them out loud.",
+            input=message_content,
+            response_format="mp3",
+        )
+        return audio_response.content
+
 
 class OpenAICompletion(
     ReasoningModelMixin, ConversationHistoryMixin, AssistantInterface
@@ -332,8 +357,10 @@ class OpenAICompletion(
     def __init__(
         self,
         model: str,
-        max_tokens: int = 4096,
         api_key: str = environment.OPENAI_API_KEY,
+        instructions: Optional[str] = None,
+        max_history_tokens: int = 0,
+        max_response_tokens: int = 4096,
         thinking: Optional[ThinkingConfig] = None,
     ):
         """
@@ -347,10 +374,12 @@ class OpenAICompletion(
         if not api_key:
             raise ConfigError("Missing 'OPENAI_API_KEY' environment variable")
 
-        ConversationHistoryMixin.__init__(self, max_tokens)
+        ConversationHistoryMixin.__init__(self, max_history_tokens)
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
         self.reasoning = None
+        self.instructions = instructions
+        self.max_response_tokens = max_response_tokens
         self.thinking = thinking or ThinkingConfig.get_thinking_config(level=1)
         self.reasoning_model_init(self.thinking)
 
@@ -376,8 +405,9 @@ class OpenAICompletion(
 
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=cast(list[dict[str, str]], temp_memory),
-            reasoning_effort=self.reasoning["effort"] if self.reasoning else NotGiven,
+            messages=cast(list, temp_memory),
+            reasoning_effort=self.reasoning["effort"] if self.reasoning else NOT_GIVEN,
+            max_tokens=self.max_response_tokens or NOT_GIVEN,
         )
         message = response.choices[0].message
         await self.remember({"role": "assistant", "content": message.content or ""})
@@ -417,20 +447,22 @@ class OpenAICompletion(
             content=user_input,
         )
         await self.remember(new_prompt)
-        temp_memory = deepcopy(self.memory)
+        temp_memory = deepcopy(self.conversation_payload)
+
+        # If the first message is a system message, prepend the audio instruction
+        if temp_memory and temp_memory[0]["role"] == "system":
+            message = temp_memory[0]
+            if not message["content"].startswith(
+                "You have the capability to respond in audio format."
+            ):
+                message["content"] = f"""\
+You have the capability to respond in audio format, and you should always respond using this modality.
+{message["content"]}
+"""
 
         # Create a default message if needed
         default_message = {"role": "user", "content": user_input}
 
-        # Process system message if it exists
-        if temp_memory and temp_memory[0]["role"] == "system":
-            message = temp_memory[0]
-            if "You should always respond in audio format." not in message["content"]:
-                message["content"] = f"""\
-You should always respond in audio format.
-
-{message["content"]}
-"""
         completion = None
         complete = False
         while not complete:
@@ -445,7 +477,7 @@ You should always respond in audio format.
                         voice="ballad",
                         format="wav",
                     ),
-                    messages=temp_memory,
+                    messages=cast(list, temp_memory),
                 )
 
             except BadRequestError as e:
@@ -476,4 +508,11 @@ You should always respond in audio format.
 
     @property
     def conversation_payload(self) -> list[MessageInput]:
+        if self.instructions:
+            # Prepend system instructions if they exist
+            print(self.instructions)
+            return [
+                {"role": "system", "content": self.instructions},
+                *self.memory,
+            ]
         return self.memory

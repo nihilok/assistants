@@ -352,12 +352,13 @@ class ChatHistoryTable(Table[ChatHistory]):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """
-                REPLACE INTO chat_history VALUES (?, ?, ?)
+                REPLACE INTO chat_history VALUES (?, ?, ?, ?)
                 """,
                 (
                     record.chat_id,
                     record.thread_id,
                     record.auto_reply,
+                    record.history if record.history else None,
                 ),
             )
             await db.commit()
