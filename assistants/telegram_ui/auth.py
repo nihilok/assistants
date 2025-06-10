@@ -25,9 +25,18 @@ def restricted_access(f):
 
 def requires_superuser(f):
     @wraps(f)
-    async def wrapper(update: Update, *args, **kwargs):
+    async def wrapper(*args, **kwargs):
+        if args and isinstance(args[0], Update):
+            update = args[0]
+        elif args and isinstance(args[1], Update):
+            update = args[1]
+        elif "update" in kwargs:
+            update = kwargs["update"]
+        else:
+            raise ValueError("Update object not found in arguments")
+
         await chat_data.check_superuser(update.effective_user.id)
 
-        return await f(update, *args, **kwargs)
+        return await f(*args, **kwargs)
 
     return wrapper

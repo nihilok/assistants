@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import random
+import sys
 import time
 from typing import List, Optional
 
@@ -15,6 +16,8 @@ from telegram.ext import (
 )
 
 from assistants.ai.types import AssistantInterface
+from assistants.config import environment
+from assistants.telegram_ui.auth import requires_superuser
 from assistants.telegram_ui.lib import get_telegram_assistant
 from assistants.user_data.sqlite_backend import init_db
 from assistants.user_data.sqlite_backend.telegram_chat_data import (
@@ -128,8 +131,6 @@ class BotConversationManager:
         return None
 
 
-from assistants.config import environment
-
 DEFAULT_CONVERSATION_BOT_INSTRUCTIONS = (
     "You communicate with users over Telegram. You may receive multiple messages from different users, and you may "
     "choose to respond to any of them at any time. You can tag the user in your response by using '@' followed by "
@@ -146,8 +147,7 @@ environment.ASSISTANT_INSTRUCTIONS = (
     DEFAULT_CONVERSATION_BOT_INSTRUCTIONS
     + "\n\n"
     + (
-        "You are a butler called Jeeves. Your sexuality is questionable and you are "
-        "prone to innuendo. You are well educated, but can be obtuse and opinionated."
+        "You are a product manager with a background in software development. You are friendly, and enthusiastic. You have a track record of delivering successful products."
     )
 )
 assistant_b = get_telegram_assistant()
@@ -156,8 +156,7 @@ environment.ASSISTANT_INSTRUCTIONS = (
     DEFAULT_CONVERSATION_BOT_INSTRUCTIONS
     + "\n\n"
     + (
-        "You are a depressed but talented physicist and theologian called Woofter (pronounced 'whu-sta' - the 'f' is a relic from "
-        "Old English). You have a short temper but always remain professional."
+        "You are a lead software engineer with a background in product management. You are friendly, and enthusiastic. You have a track record of delivering successful products."
     )
 )
 assistant_a = get_telegram_assistant()
@@ -297,6 +296,7 @@ class MainConversationBot(ConversationBot):
             MessageHandler(filters.TEXT & ~filters.COMMAND, self._message_handler)
         )
 
+    @requires_superuser
     async def _start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle the /start command"""
         chat_id = update.effective_chat.id
@@ -348,6 +348,7 @@ class SecondaryConversationBot(ConversationBot):
         self.application.add_handler(CommandHandler("start", self._start_command))
         self.application.add_handler(CommandHandler("stop", self._stop_command))
 
+    @requires_superuser
     async def _start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle the /start command"""
         chat_id = update.effective_chat.id
@@ -371,12 +372,18 @@ async def main():
     manager = BotConversationManager()
     await manager.initialize()
 
+    if (args := sys.argv[1:]) and len(args) == 2:
+        bot_1_name, bot_2_name = args
+    else:
+        bot_1_name = "bot_a"
+        bot_2_name = "bot_b"
+
     # Create the bots with different response intervals
     main_bot = MainConversationBot(
         token=os.environ.get("MAIN_BOT_TOKEN"),
         manager=manager,
         assistant=assistant_a,
-        bot_id="woofterbot",
+        bot_id=bot_1_name,
         response_interval=(5, 30),  # Respond every 5-30 seconds
     )
 
@@ -384,7 +391,7 @@ async def main():
         token=os.environ.get("SECONDARY_BOT_TOKEN"),
         manager=manager,
         assistant=assistant_b,
-        bot_id="jeevzbot",
+        bot_id=bot_2_name,
         response_interval=(5, 30),  # Respond every 5-30 seconds
     )
 
@@ -400,16 +407,3 @@ async def main():
         # Stop the bots on keyboard interrupt
         await main_bot.stop()
         await secondary_bot.stop()
-
-
-if __name__ == "__main__":
-    # Check if required environment variables are set
-    if not os.environ.get("MAIN_BOT_TOKEN") or not os.environ.get(
-        "SECONDARY_BOT_TOKEN"
-    ):
-        print(
-            "Please set MAIN_BOT_TOKEN and SECONDARY_BOT_TOKEN environment variables."
-        )
-        exit(1)
-
-    asyncio.run(main())
