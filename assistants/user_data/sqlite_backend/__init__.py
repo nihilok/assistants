@@ -66,7 +66,7 @@ async def rebuild_db():
         await get_telegram_data().authorised_chats_table.drop_table()
         await get_telegram_data().authorised_users_table.drop_table()
         await get_telegram_data().superusers_table.drop_table()
-        await get_telegram_data().chat_history_table.drop_table()
+        await get_telegram_data().chat_data_table.drop_table()
 
     await get_conversations_table().drop_table()
 
@@ -74,7 +74,7 @@ async def rebuild_db():
     await drop_table(DB_PATH, "responses")
     await drop_table(DB_PATH, "threads")
     await drop_table(DB_PATH, "assistants")
-    await drop_table(DB_PATH, "chat_history")  # From the old chat_history.py module
+    await drop_table(DB_PATH, "chat_data")  # From the old chat_data.py module
 
     await init_db()
 
@@ -104,16 +104,19 @@ async def migrate():
             logger.info("Superusers table does not exist. Creating it.")
             await get_telegram_data().superusers_table.create_table()
 
-        if not await table_exists(DB_PATH, "chat_history"):
-            logger.info("Chat history table does not exist. Creating it.")
-            await get_telegram_data().chat_history_table.create_table()
+        if not await table_exists(DB_PATH, "chat_data"):
+            if not await table_exists(DB_PATH, "chat_history"):
+                logger.info(
+                    "chat_data, formerly chat_history, table does not exist. Creating it."
+                )
+                await get_telegram_data().chat_data_table.create_table()
 
     # Run migrations for all tables
     for table in [
         get_telegram_data().authorised_chats_table,
         get_telegram_data().authorised_users_table,
         get_telegram_data().superusers_table,
-        get_telegram_data().chat_history_table,
+        get_telegram_data().chat_data_table,
         get_conversations_table(),
         get_messages_table(),
     ]:

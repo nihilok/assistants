@@ -13,7 +13,7 @@ from assistants.telegram_ui.lib import (
     assistant,
     requires_reply_to_message,
 )
-from assistants.user_data.interfaces.telegram_chat_data import ChatHistory
+from assistants.user_data.interfaces.telegram_chat_data import ChatData
 from assistants.user_data.sqlite_backend.conversations import get_conversations_table
 
 
@@ -81,11 +81,9 @@ async def new_thread(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @restricted_access
 async def toggle_auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_history = await chat_data.get_chat_history(update.effective_chat.id)
-    result = "OFF" if chat_history.auto_reply else "ON"
-    await chat_data.set_auto_reply(
-        update.effective_chat.id, not chat_history.auto_reply
-    )
+    chat_data = await chat_data.get_chat_data(update.effective_chat.id)
+    result = "OFF" if chat_data.auto_reply else "ON"
+    await chat_data.set_auto_reply(update.effective_chat.id, not chat_data.auto_reply)
     await context.bot.send_message(
         chat_id=update.effective_chat.id, text=f"Auto reply is {result}"
     )
@@ -93,7 +91,7 @@ async def toggle_auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @restricted_access
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    existing_chat = await chat_data.get_chat_history(update.effective_chat.id)
+    existing_chat = await chat_data.get_chat_data(update.effective_chat.id)
     chat_thread_id = existing_chat.thread_id or update.effective_chat.id
     message_text = update.message.text
     bot_username = f"@{context.bot.username}"
@@ -129,8 +127,8 @@ Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'.
     response_message = await assistant.converse(message_text, existing_chat.thread_id)
 
     if not existing_chat.thread_id:
-        await chat_data.save_chat_history(
-            ChatHistory(
+        await chat_data.save_chat_data(
+            ChatData(
                 chat_id=update.effective_chat.id,
                 thread_id=str(assistant.conversation_id),
                 auto_reply=existing_chat.auto_reply,
@@ -179,7 +177,7 @@ async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @restricted_access
 async def respond_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    existing_chat = await chat_data.get_chat_history(update.effective_chat.id)
+    existing_chat = await chat_data.get_chat_data(update.effective_chat.id)
 
     thread_id = existing_chat.thread_id or str(update.effective_chat.id)
 
@@ -196,8 +194,8 @@ Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'.
     )
 
     if not existing_chat.thread_id:
-        await chat_data.save_chat_history(
-            ChatHistory(
+        await chat_data.save_chat_data(
+            ChatData(
                 chat_id=update.effective_chat.id,
                 thread_id=str(assistant.conversation_id),
                 auto_reply=existing_chat.auto_reply,

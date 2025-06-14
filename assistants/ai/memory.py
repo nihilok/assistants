@@ -69,7 +69,6 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         if self.conversation_id is None:
             conversation = Conversation(
                 id=uuid.uuid4().hex,
-                conversation="",  # deprecated, but kept for compatibility
                 last_updated=datetime.now(),
             )
             await conversation.save()
@@ -106,13 +105,9 @@ class ConversationHistoryMixin(ConversationManagementInterface):
             # Create a new conversation if it doesn't exist
             conversation = Conversation(
                 id=str(conversation_id),
-                conversation="",  # deprecated, but kept for compatibility
                 last_updated=datetime.now(),
             )
             await conversation.save()
-        else:
-            if conversation.conversation:
-                self.memory.extend(json.loads(conversation.conversation))
 
         messages = await get_messages_table().get_by_conversation_id(conversation_id)
         if messages:
@@ -129,7 +124,6 @@ class ConversationHistoryMixin(ConversationManagementInterface):
             self.conversation_id = uuid.uuid4().hex
             latest = Conversation(
                 id=self.conversation_id,
-                conversation="",
                 last_updated=datetime.now(),
             )
             await latest.save()
@@ -137,16 +131,11 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         else:
             self.conversation_id = latest.id
 
-            # Try to load from the conversation JSON first
-            if latest.conversation:
-                self.memory = json.loads(latest.conversation)
+            messages = await get_messages_table().get_by_conversation_id(latest.id)
+            if messages:
+                self._load_memory_from_messages(messages)
             else:
-                # Fall back to loading from the messages table
-                messages = await get_messages_table().get_by_conversation_id(latest.id)
-                if messages:
-                    self._load_memory_from_messages(messages)
-                else:
-                    self.memory = []
+                self.memory = []
 
     def _load_memory_from_messages(self, messages: list[Message]) -> None:
         """Convert database message objects to memory format."""

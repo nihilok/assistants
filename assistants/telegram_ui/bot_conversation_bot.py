@@ -73,7 +73,7 @@ class BotConversationManager:
         await init_db()
         await self.bot_conversations_table.create_table()
 
-    async def get_chat_history(self, chat_id: int) -> List[MessageRecord]:
+    async def get_chat_data(self, chat_id: int) -> List[MessageRecord]:
         """Get the conversation history for a chat"""
         messages = await self.bot_conversations_table.get_chat_messages(chat_id)
         return [

@@ -13,14 +13,13 @@ Classes:
     - TelegramSqliteUserData: Class implementing the UserData interface using the table classes.
 """
 
-import json
 from typing import List, Optional
 
 import aiosqlite
 from pydantic import BaseModel
 
 from assistants.user_data.interfaces.telegram_chat_data import (
-    ChatHistory as ChatHistoryInterface,
+    ChatData,
     NotAuthorised,
     UserData,
 )
@@ -58,22 +57,6 @@ class Superuser(BaseModel):
     """
 
     user_id: int
-
-
-class ChatHistory(BaseModel):
-    """
-    Pydantic model representing chat history.
-
-    Attributes:
-        chat_id (int): The unique identifier of the chat.
-        thread_id (Optional[str]): The thread ID, if any.
-        auto_reply (bool): Whether auto-reply is enabled.
-    """
-
-    chat_id: int
-    thread_id: Optional[str] = None
-    auto_reply: bool = True
-    history: Optional[str] = None  # JSON string of chat history
 
 
 class AuthorisedChatsTable(Table[AuthorisedChat]):
@@ -309,56 +292,68 @@ class SuperusersTable(Table[Superuser]):
             return [Superuser(user_id=row[0]) for row in rows]
 
 
-class ChatHistoryTable(Table[ChatHistory]):
+class ChatDataTable(Table[ChatData]):
     """
     Table for chat history.
     """
 
     def get_table_name(self) -> str:
-        return "chat_history"
+        return "chat_data"
 
     def get_model_class(self):
-        return ChatHistory
+        return ChatData
 
     def get_create_table_sql(self) -> str:
         return """
-            CREATE TABLE IF NOT EXISTS chat_history (
+            CREATE TABLE IF NOT EXISTS chat_data (
                 chat_id INTEGER,
                 thread_id TEXT,
                 auto_reply BOOLEAN DEFAULT TRUE,
-                chat_history TEXT DEFAULT NULL,
                 PRIMARY KEY (chat_id),
                 FOREIGN KEY (chat_id) REFERENCES authorised_chats(chat_id)
             )
         """
 
     async def migrate_if_needed(self) -> None:
-        # Add the chat_history column if it doesn't exist
-        alter_sql = """
-            ALTER TABLE chat_history ADD COLUMN chat_history TEXT DEFAULT NULL
-        """
+        # Update the table name from "chat_history" to "chat_data"
         async with aiosqlite.connect(self.db_path) as db:
             try:
-                await db.execute(alter_sql)
-            except aiosqlite.OperationalError as e:
-                # If the column already exists, ignore the error
-                if "duplicate column name: chat_history" not in str(e):
-                    raise
+                await db.execute(
+                    """
+                    ALTER TABLE chat_history RENAME TO chat_data
+                    """
+                )
+                await db.commit()
+            except aiosqlite.OperationalError:
+                # If the table doesn't exist, we can ignore this error
+                pass
 
-    async def insert(self, record: ChatHistory) -> None:
+        # Drop the "chat_history" column if it exists
+        async with aiosqlite.connect(self.db_path) as db:
+            try:
+                await db.execute(
+                    """
+                    ALTER TABLE chat_data DROP COLUMN chat_history
+                    """
+                )
+                await db.commit()
+            except aiosqlite.OperationalError:
+                # If the column doesn't exist, we can ignore this error
+                pass
+
+    async def insert(self, record: ChatData) -> None:
         await self.update(record)
 
-    async def update(self, record: ChatHistory) -> None:
+    async def update(self, record: ChatData) -> None:
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """
-                REPLACE INTO chat_history VALUES (?, ?, ?, ?)
+                REPLACE INTO chat_data VALUES (?, ?, ?, ?)
                 """,
                 (
                     record.chat_id,
                     record.thread_id,
                     record.auto_reply,
-                    record.history if record.history else None,
                 ),
             )
             await db.commit()
@@ -371,13 +366,13 @@ class ChatHistoryTable(Table[ChatHistory]):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """
-                DELETE FROM chat_history WHERE chat_id = ?
+                DELETE FROM chat_data WHERE chat_id = ?
                 """,
                 (chat_id,),
             )
             await db.commit()
 
-    async def get(self, **kwargs) -> Optional[ChatHistory]:
+    async def get(self, **kwargs) -> Optional[ChatData]:
         if "chat_id" not in kwargs:
             raise ValueError("Chat ID is required")
 
@@ -385,30 +380,29 @@ class ChatHistoryTable(Table[ChatHistory]):
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
-                SELECT chat_id, thread_id, auto_reply, chat_history FROM chat_history WHERE chat_id = ?
+                SELECT chat_id, thread_id, auto_reply FROM chat_data WHERE chat_id = ?
                 """,
                 (chat_id,),
             )
             row = await cursor.fetchone()
             if row:
-                return ChatHistory(
+                return ChatData(
                     chat_id=row[0],
                     thread_id=row[1],
                     auto_reply=row[2],
-                    history=row[3] if row[3] else None,
                 )
         return None
 
-    async def get_all(self) -> List[ChatHistory]:
+    async def get_all(self) -> List[ChatData]:
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
-                SELECT chat_id, thread_id, auto_reply FROM chat_history
+                SELECT chat_id, thread_id, auto_reply FROM chat_data
                 """
             )
             rows = await cursor.fetchall()
             return [
-                ChatHistory(
+                ChatData(
                     chat_id=row[0],
                     thread_id=row[1],
                     auto_reply=row[2],
@@ -426,7 +420,7 @@ class ChatHistoryTable(Table[ChatHistory]):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """
-                UPDATE chat_history SET thread_id = NULL WHERE chat_id = ?
+                UPDATE chat_data SET thread_id = NULL WHERE chat_id = ?
                 """,
                 (chat_id,),
             )
@@ -443,7 +437,7 @@ class ChatHistoryTable(Table[ChatHistory]):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """
-                UPDATE chat_history SET auto_reply = ? WHERE chat_id = ?
+                UPDATE chat_data SET auto_reply = ? WHERE chat_id = ?
                 """,
                 (auto_reply, chat_id),
             )
@@ -460,7 +454,7 @@ class TelegramSqliteUserData(UserData):
         self.authorised_chats_table = AuthorisedChatsTable(self.db_path)
         self.authorised_users_table = AuthorisedUsersTable(self.db_path)
         self.superusers_table = SuperusersTable(self.db_path)
-        self.chat_history_table = ChatHistoryTable(self.db_path)
+        self.chat_data_table = ChatDataTable(self.db_path)
 
     async def create_db(self):
         """
@@ -469,9 +463,9 @@ class TelegramSqliteUserData(UserData):
         await self.authorised_chats_table.create_table()
         await self.authorised_users_table.create_table()
         await self.superusers_table.create_table()
-        await self.chat_history_table.create_table()
+        await self.chat_data_table.create_table()
 
-    async def get_chat_history(self, chat_id: int) -> ChatHistoryInterface:
+    async def get_chat_data(self, chat_id: int) -> ChatData:
         """
         Get chat history for a chat.
 
@@ -481,46 +475,27 @@ class TelegramSqliteUserData(UserData):
         Returns:
             The chat history
         """
-        chat_history = await self.chat_history_table.get(chat_id=chat_id)
-        if chat_history:
-            return ChatHistoryInterface(
-                chat_id=chat_history.chat_id,
-                thread_id=chat_history.thread_id,
-                auto_reply=chat_history.auto_reply,
-                chat_history=json.loads(chat_history.history)
-                if chat_history.history
-                else [],
-            )
+        chat_data = await self.chat_data_table.get(chat_id=chat_id)
+        if chat_data:
+            return chat_data
 
         # Create a new chat history record
-        new_chat_history = ChatHistory(
+        new_chat_data = ChatData(
             chat_id=chat_id,
             thread_id=None,
             auto_reply=True,
-            history=json.dumps([]),  # Initialize with empty history
         )
-        await self.chat_history_table.insert(new_chat_history)
-        return ChatHistoryInterface(
-            chat_id=chat_id,
-            thread_id=None,
-            auto_reply=True,
-            chat_history=[],
-        )
+        await self.chat_data_table.insert(new_chat_data)
+        return new_chat_data
 
-    async def save_chat_history(self, history: ChatHistoryInterface):
+    async def save_chat_data(self, history: ChatData):
         """
         Save chat history.
 
         Args:
             history: The chat history to save
         """
-        chat_history = ChatHistory(
-            chat_id=history.chat_id,
-            thread_id=history.thread_id,
-            auto_reply=history.auto_reply,
-            history=json.dumps(history.chat_history) if history.chat_history else "[]",
-        )
-        await self.chat_history_table.update(chat_history)
+        await self.chat_data_table.update(history)
 
     async def check_user_authorised(self, user_id: int):
         """
@@ -641,7 +616,7 @@ class TelegramSqliteUserData(UserData):
         Args:
             chat_id: The ID of the chat
         """
-        await self.chat_history_table.clear_thread_id(chat_id)
+        await self.chat_data_table.clear_thread_id(chat_id)
 
     async def set_auto_reply(self, chat_id: int, auto_reply: bool):
         """
@@ -651,7 +626,7 @@ class TelegramSqliteUserData(UserData):
             chat_id: The ID of the chat
             auto_reply: The auto-reply flag
         """
-        await self.chat_history_table.set_auto_reply(chat_id, auto_reply)
+        await self.chat_data_table.set_auto_reply(chat_id, auto_reply)
 
 
 # Create a singleton instance

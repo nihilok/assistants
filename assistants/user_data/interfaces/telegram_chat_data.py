@@ -10,11 +10,10 @@ class NotAuthorised(ValueError):
     pass
 
 
-class ChatHistory(BaseModel):
+class ChatData(BaseModel):
     chat_id: int
     thread_id: Optional[str] = None
     auto_reply: bool
-    chat_history: list[dict] = []
 
 
 class UserData(ABC):
@@ -29,11 +28,11 @@ class UserData(ABC):
         pass
 
     @abstractmethod
-    async def get_chat_history(self, chat_id: int) -> ChatHistory:
+    async def get_chat_data(self, chat_id: int) -> ChatData:
         pass
 
     @abstractmethod
-    async def save_chat_history(self, history: ChatHistory):
+    async def save_chat_data(self, history: ChatData):
         pass
 
     @abstractmethod

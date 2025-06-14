@@ -6,12 +6,15 @@ Classes:
     - ConversationsTable: Class for interacting with the conversations table in the SQLite database.
 """
 
+import asyncio
+import json
 from datetime import datetime
 from typing import List, Optional
 
 import aiosqlite
 from pydantic import BaseModel
 
+from assistants.user_data.sqlite_backend.message import Message
 from assistants.user_data.sqlite_backend.table import Table
 
 
@@ -21,12 +24,10 @@ class Conversation(BaseModel):
 
     Attributes:
         id (str): The unique identifier of the conversation.
-        conversation (str): The conversation data in JSON format.
         last_updated (datetime): The timestamp of the last update to the conversation.
     """
 
     id: str
-    conversation: str
     last_updated: datetime
 
     async def save(self) -> None:
@@ -72,7 +73,6 @@ class ConversationsTable(Table[Conversation]):
         return """
             CREATE TABLE IF NOT EXISTS conversations (
                 id TEXT PRIMARY KEY,
-                conversation TEXT,
                 last_updated TEXT
             )
         """
@@ -84,8 +84,38 @@ class ConversationsTable(Table[Conversation]):
         This method checks the current schema and performs migrations
         if the schema has changed.
         """
-        # Currently no migrations needed for this table
-        pass
+        # Convert the `conversation` field to rows in the MessageTable
+        conversations = await self.get_all()
+        for row in conversations:
+            if not row.conversation:
+                continue
+
+            from assistants.user_data.sqlite_backend.message import MessageTable
+
+            messages_table = MessageTable(self.db_path)
+            messages = json.loads(row.conversation)
+            for message in messages:
+                message_record = Message(
+                    role=message.get("role", "user"),
+                    content=message.get("content", ""),
+                    conversation_id=row.id,
+                )
+                await messages_table.insert(message_record)
+                await asyncio.sleep(
+                    0.1
+                )  # To avoid overwhelming the database with inserts and preserve order
+            new_conversation = Conversation(
+                id=row.id,
+                last_updated=row.last_updated,
+            )
+            await self.update(new_conversation)
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                """
+                ALTER TABLE conversations DROP COLUMN conversation
+                """
+            )
+            await db.commit()
 
     async def insert(self, record: Conversation) -> None:
         """
@@ -106,11 +136,10 @@ class ConversationsTable(Table[Conversation]):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """
-                REPLACE INTO conversations (id, conversation, last_updated) VALUES (?, ?, ?)
+                REPLACE INTO conversations (id, last_updated) VALUES (?, ?)
                 """,
                 (
                     record.id,
-                    record.conversation,
                     record.last_updated.isoformat(),
                 ),
             )
@@ -153,7 +182,7 @@ class ConversationsTable(Table[Conversation]):
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
-                SELECT id, conversation, last_updated FROM conversations WHERE id = ?
+                SELECT id, last_updated FROM conversations WHERE id = ?
                 """,
                 (conversation_id,),
             )
@@ -161,8 +190,7 @@ class ConversationsTable(Table[Conversation]):
             if row:
                 return Conversation(
                     id=row[0],
-                    conversation=row[1],
-                    last_updated=datetime.fromisoformat(row[2]),
+                    last_updated=datetime.fromisoformat(row[1]),
                 )
         return None
 
@@ -176,7 +204,7 @@ class ConversationsTable(Table[Conversation]):
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
-                SELECT id, conversation, last_updated FROM conversations ORDER BY last_updated DESC
+                SELECT id, last_updated FROM conversations ORDER BY last_updated DESC
                 """
             )
             rows = await cursor.fetchall()
@@ -185,8 +213,7 @@ class ConversationsTable(Table[Conversation]):
                 result.append(
                     Conversation(
                         id=row[0],
-                        conversation=row[1],
-                        last_updated=datetime.fromisoformat(row[2]),
+                        last_updated=datetime.fromisoformat(row[1]),
                     )
                 )
             return result
@@ -208,8 +235,7 @@ class ConversationsTable(Table[Conversation]):
             if row:
                 return Conversation(
                     id=row[0],
-                    conversation=row[1],
-                    last_updated=datetime.fromisoformat(row[2]),
+                    last_updated=datetime.fromisoformat(row[1]),
                 )
         return None
 

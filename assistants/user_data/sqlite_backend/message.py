@@ -38,7 +38,7 @@ class MessageTable(Table[Message]):
     async def migrate_if_needed(self) -> None:
         pass
 
-    async def insert(self, record: T) -> None:
+    async def insert(self, record: Message) -> None:
         async with aiosqlite.connect(self.db_path) as db:
             async with db.execute(
                 "INSERT INTO messages (role, content, conversation_id) VALUES (?, ?, ?)",

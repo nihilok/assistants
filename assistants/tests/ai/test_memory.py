@@ -1,4 +1,3 @@
-import json
 import pytest
 from unittest.mock import patch
 from datetime import datetime
@@ -63,7 +62,6 @@ class TestConversationHistoryMixin:
         """Test loading a conversation with a specific ID."""
         conversation = Conversation(
             id="test-id",
-            conversation=json.dumps([{"role": "user", "content": "Hello"}]),
             last_updated=datetime.now(),
         )
 
@@ -74,7 +72,7 @@ class TestConversationHistoryMixin:
         ):
             await memory_mixin.load_conversation("test-id")
 
-            assert memory_mixin.memory == [{"role": "user", "content": "Hello"}]
+            assert memory_mixin.memory == []
             assert memory_mixin.conversation_id == "test-id"
 
     @pytest.mark.asyncio
@@ -82,7 +80,6 @@ class TestConversationHistoryMixin:
         """Test loading the last conversation when no ID is provided."""
         conversation = Conversation(
             id="last-id",
-            conversation=json.dumps([{"role": "user", "content": "Last message"}]),
             last_updated=datetime.now(),
         )
 
@@ -93,7 +90,7 @@ class TestConversationHistoryMixin:
         ):
             await memory_mixin.load_conversation()
 
-            assert memory_mixin.memory == [{"role": "user", "content": "Last message"}]
+            assert memory_mixin.memory == []
             assert memory_mixin.conversation_id == "last-id"
 
     @pytest.mark.asyncio
@@ -113,9 +110,7 @@ class TestConversationHistoryMixin:
             # Check that the conversation was saved with the correct ID and content
             saved_conversation = mock_update.call_args[0][0]
             assert saved_conversation.id == "test-id"
-            assert json.loads(saved_conversation.conversation) == [
-                {"role": "user", "content": "Hello"}
-            ]
+            assert saved_conversation.last_updated is not None
 
     @pytest.mark.asyncio
     async def test_save_conversation_state_empty_memory(self, memory_mixin):
