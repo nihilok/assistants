@@ -300,6 +300,7 @@ class MainConversationBot(ConversationBot):
     async def _start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle the /start command"""
         chat_id = update.effective_chat.id
+        self.bot_id = context.bot.username or str(context.bot.id)
         await self.start_responding(chat_id)
         await update.message.reply_text(
             f"Bot {self.bot_id} is active. Type /stop to deactivate."
@@ -352,6 +353,7 @@ class SecondaryConversationBot(ConversationBot):
     async def _start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle the /start command"""
         chat_id = update.effective_chat.id
+        self.bot_id = context.bot.username or str(context.bot.id)
         logger.info(f"Starting bot {self.bot_id} for chat {chat_id}")
         await self.start_responding(chat_id)
         await update.message.reply_text(
