@@ -11,9 +11,9 @@ from assistants.lib.constants import (
 
 
 class CustomKeyNames(str, Enum):
-    ASSISTANTS_API_KEY_NAME: str = "ASSISTANTS_API_KEY_NAME"
-    ANTHROPIC_API_KEY_NAME: str = "ANTHROPIC_API_KEY_NAME"
-    MISTRAL_API_KEY_NAME: str = "MISTRAL_API_KEY_NAME"
+    ASSISTANTS_API_KEY_NAME = "ASSISTANTS_API_KEY_NAME"
+    ANTHROPIC_API_KEY_NAME = "ANTHROPIC_API_KEY_NAME"
+    MISTRAL_API_KEY_NAME = "MISTRAL_API_KEY_NAME"
 
 
 @dataclass
@@ -76,16 +76,16 @@ def get_config() -> Config:
     """
     custom_keys = get_keynames()
     return Config(
-        OPENAI_API_KEY=os.environ.get(custom_keys.ASSISTANTS_API_KEY_NAME, None),
-        ANTHROPIC_API_KEY=os.environ.get(custom_keys.ANTHROPIC_API_KEY_NAME, None),
-        MISTRAL_API_KEY=os.environ.get(custom_keys.MISTRAL_API_KEY_NAME, None),
+        OPENAI_API_KEY=os.environ.get(custom_keys.ASSISTANTS_API_KEY_NAME, ""),
+        ANTHROPIC_API_KEY=os.environ.get(custom_keys.ANTHROPIC_API_KEY_NAME, ""),
+        MISTRAL_API_KEY=os.environ.get(custom_keys.MISTRAL_API_KEY_NAME, ""),
         DEFAULT_MODEL=os.environ.get("DEFAULT_MODEL", "gpt-4o-mini"),
         CODE_MODEL=os.environ.get("CODE_MODEL", "o4-mini"),
         IMAGE_MODEL=os.environ.get("IMAGE_MODEL", "dall-e-3"),
         ASSISTANT_INSTRUCTIONS=os.environ.get(
             "ASSISTANT_INSTRUCTIONS", "You are a helpful assistant."
         ),
-        TELEGRAM_BOT_TOKEN=os.environ.get("TG_BOT_TOKEN", None),
+        TELEGRAM_BOT_TOKEN=os.environ.get("TG_BOT_TOKEN", ""),
         DEFAULT_MAX_HISTORY_TOKENS=int(
             os.environ.get("DEFAULT_MAX_TOKENS", DEFAULT_MAX_HISTORY_TOKENS)
         ),

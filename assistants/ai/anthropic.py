@@ -138,7 +138,7 @@ class ClaudeAssistant(
                 "budget_tokens": self.thinking.budget_tokens,
             }
 
-        response = await self.client.messages.create(**kwargs)
+        response = await self.client.messages.create(**kwargs)  # type: ignore
         text_content = next(
             (block for block in response.content if hasattr(block, "text")), None
         )
@@ -149,13 +149,10 @@ class ClaudeAssistant(
         await self.remember({"role": "assistant", "content": text_content.text})
         return MessageData(text_content=text_content.text)
 
-    def _prepend_instructions(self) -> list[MessageDict]:
+    def _prepend_instructions(self) -> list[MessageInput]:
         return [
-            {"role": "user", "content": self.instructions},
-            {
-                "role": "assistant",
-                "content": INSTRUCTIONS_UNDERSTOOD,
-            },
+            MessageDict(role="user", content=self.instructions),
+            MessageDict(role="assistant", content=INSTRUCTIONS_UNDERSTOOD),
             *self.memory,
         ]
 
@@ -165,11 +162,11 @@ class ClaudeAssistant(
         response = await self.client.messages.create(
             max_tokens=self.max_response_tokens,
             model=self.model,
-            messages=self.conversation_payload,
+            messages=self.conversation_payload,  # type: ignore
             stream=True,
         )
 
-        async for chunk in response:
+        async for chunk in response:  # type: ignore
             if hasattr(chunk, "delta") and hasattr(chunk.delta, "text"):
                 yield chunk.delta.text
 

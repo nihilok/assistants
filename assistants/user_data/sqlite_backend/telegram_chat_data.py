@@ -708,16 +708,16 @@ class BotConversationsTable(Table[BotConversationMessage]):
             await db.commit()
             record.id = cursor.lastrowid
 
-    async def update(self, record: BotConversationMessage) -> None:
+    async def update(self, record: BotConversationMessage) -> None:  # type: ignore
         pass
 
-    async def delete(self, **kwargs) -> None:
+    async def delete(self, **kwargs) -> None:  # type: ignore
         pass
 
-    async def get(self, **kwargs) -> Optional[BotConversationMessage]:
+    async def get(self, **kwargs) -> Optional[BotConversationMessage]:  # type: ignore
         pass
 
-    async def get_all(self) -> List[BotConversationMessage]:
+    async def get_all(self) -> List[BotConversationMessage]:  # type: ignore
         pass
 
     async def get_chat_messages(

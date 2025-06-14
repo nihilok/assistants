@@ -12,7 +12,7 @@ import uuid
 from abc import abstractmethod
 from copy import deepcopy
 from datetime import datetime
-from typing import Optional
+from typing import Optional, cast
 
 import tiktoken
 
@@ -20,6 +20,7 @@ from assistants.ai.types import (
     ConversationManagementInterface,
     MessageData,
     MessageDict,
+    MessageInput,
 )
 from assistants.config import environment
 from assistants.user_data.sqlite_backend.conversations import (
@@ -45,7 +46,7 @@ class ConversationHistoryMixin(ConversationManagementInterface):
 
         :param max_tokens: Maximum number of messages to retain in memory.
         """
-        self.memory: list[MessageDict] = []
+        self.memory: list[MessageInput] = []
         self.max_history_tokens = max_tokens
         self.conversation_id: str | None = None
 
@@ -75,18 +76,18 @@ class ConversationHistoryMixin(ConversationManagementInterface):
             self.conversation_id = conversation.id
 
         self.memory.append(message)
-        message = Message(
+        db_message = Message(
             role=message["role"],
-            content=message["content"],
+            content=message["content"] or "",
             conversation_id=str(self.conversation_id),
         )
-        await message.save()
+        await db_message.save()
         self.truncate_memory()
 
     async def load_conversation(
         self,
         conversation_id: Optional[str] = None,
-    ):
+    ) -> None:
         """
         Load the last conversation from the database.
 
@@ -151,16 +152,15 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         self, instructions_understood_message: str
     ):
         """Convert system messages to user/assistant pairs."""
-        temp_memory = []
+        temp_memory: list[MessageInput] = []
         for message in self.memory:
             if message["role"] == "system":
                 temp_memory.extend(
                     [
-                        {"role": "user", "content": message["content"]},
-                        {
-                            "role": "assistant",
-                            "content": instructions_understood_message,
-                        },
+                        MessageDict(role="user", content=cast(str, message["content"])),
+                        MessageDict(
+                            role="assistant", content=instructions_understood_message
+                        ),
                     ]
                 )
             else:
@@ -186,7 +186,6 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         await get_conversations_table().update(
             Conversation(
                 id=str(self.conversation_id),
-                conversation="",
                 last_updated=datetime.now(),
             )
         )
@@ -203,7 +202,8 @@ class ConversationHistoryMixin(ConversationManagementInterface):
         if not self.memory:
             return None
         return MessageData(
-            text_content=self.memory[-1]["content"], thread_id=self.conversation_id
+            text_content=cast(str, self.memory[-1]["content"]) or "",
+            thread_id=self.conversation_id,
         )
 
     @abstractmethod
@@ -216,7 +216,7 @@ class ConversationHistoryMixin(ConversationManagementInterface):
     async def start(self) -> None:
         raise NotImplementedError
 
-    async def get_whole_thread(self) -> list[MessageDict]:
+    async def get_whole_thread(self) -> list[MessageInput]:
         """
         Get the whole thread of messages.
         :return: List of messages in the thread.

@@ -6,6 +6,7 @@ records in SQLite tables, as well as support for schema migrations.
 """
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import List, Optional, Type, TypeVar, Generic
 
 import aiosqlite
@@ -29,9 +30,9 @@ class Table(Generic[T], ABC):
         model_class (Type[T]): Pydantic model class for the table records
     """
 
-    DB_PATH: str = DB_PATH  # Default database path
+    DB_PATH: Path | str = DB_PATH  # Default database path
 
-    def __init__(self, db_path: Optional[str] = None) -> None:
+    def __init__(self, db_path: Optional[Path | str] = None) -> None:
         """
         Initialize the Table instance.
 

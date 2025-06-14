@@ -8,13 +8,21 @@ Classes:
 
 import hashlib
 from copy import deepcopy
-from typing import Any, AsyncIterator, Dict, Literal, Optional, TypeGuard, Union, cast
+from typing import (
+    Any,
+    AsyncIterator,
+    Literal,
+    Optional,
+    TypeGuard,
+    Union,
+    cast,
+)
 
 import openai
 from openai import BadRequestError
 from openai._types import NOT_GIVEN, NotGiven
 from openai.types.chat import ChatCompletionAudioParam, ChatCompletionMessage
-from openai.types.responses import EasyInputMessageParam
+from openai.types.shared_params import Reasoning
 
 from assistants.ai.constants import REASONING_MODELS
 from assistants.ai.memory import ConversationHistoryMixin
@@ -58,6 +66,8 @@ class ReasoningModelMixin:
     """
 
     REASONING_MODELS = REASONING_MODELS
+    model: str
+    tools: list | NotGiven = NOT_GIVEN
 
     def reasoning_model_init(self, thinking: ThinkingConfig) -> None:
         """
@@ -73,14 +83,16 @@ class ReasoningModelMixin:
 
     def _set_reasoning_effort(self, thinking: ThinkingLevel) -> None:
         try:
-            thinking = int(thinking)
+            thinking = cast(ThinkingLevel, int(thinking))
         except (ValueError, TypeError):
             raise ConfigError(
                 f"Invalid thinking level: {thinking}. Must be 0, 1, or 2."
             )
 
         if is_valid_thinking_level(thinking):
-            self.reasoning = {"effort": THINKING_MAP[thinking]}
+            self.reasoning: Optional[Reasoning] = Reasoning(
+                effort=THINKING_MAP[thinking]
+            )
         else:
             raise ConfigError(
                 f"Invalid thinking level: {thinking}. Must be 0, 1, or 2."
@@ -151,7 +163,7 @@ class OpenAIAssistant(
         self._config_hash: Optional[str] = None
         self.last_message: Optional[dict] = None
         self.last_prompt: Optional[str] = None
-        self.reasoning: Optional[Dict[str, OpenAIThinkingLevel]] = None
+        self.reasoning: Optional[Reasoning] = None
         self.thinking = thinking or ThinkingConfig.get_thinking_config(level=1)
         self.max_response_tokens = max_response_tokens
         ConversationHistoryMixin.__init__(self, max_tokens=max_history_tokens)
@@ -211,7 +223,7 @@ class OpenAIAssistant(
 
         response = self.client.responses.create(
             model=self.model,
-            input=self._prepend_instructions(),
+            input=self._prepend_instructions(),  # type: ignore
             reasoning=self.reasoning if self.is_reasoning_model else NOT_GIVEN,
             store=True,
             max_output_tokens=self.max_response_tokens or None,
@@ -236,6 +248,9 @@ class OpenAIAssistant(
             quality="standard",
             n=1,
         )
+        if not response.data or not response.data[0].url:
+            return None
+
         return response.data[0].url
 
     async def converse(
@@ -265,7 +280,7 @@ class OpenAIAssistant(
         )
 
     @property
-    def conversation_payload(self) -> list[EasyInputMessageParam]:
+    def conversation_payload(self) -> list[MessageInput]:
         """
         Get the conversation payload with system instructions prepended.
 
@@ -273,7 +288,7 @@ class OpenAIAssistant(
         """
         return self._prepend_instructions()
 
-    def _prepend_instructions(self) -> list[EasyInputMessageParam]:
+    def _prepend_instructions(self) -> list[MessageInput]:
         """
         Prepend system instructions to the conversation memory.
 
@@ -297,18 +312,16 @@ class OpenAIAssistant(
     async def _provider_stream_response(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> AsyncIterator[str]:
-        conversation_payload: list[EasyInputMessageParam] = self._prepend_instructions()
-
         stream = self.client.responses.create(
             model=self.model,
-            input=conversation_payload,
+            input=self.conversation_payload,  # type: ignore
             reasoning=self.reasoning if self.is_reasoning_model else NOT_GIVEN,
             stream=True,
         )
         for event in stream:
-            if event.type == "response.output_text.delta":
-                if event.delta:
-                    yield event.delta
+            if event.type == "response.output_text.delta":  # type: ignore
+                if event.delta:  # type: ignore
+                    yield event.delta  # type: ignore
 
     async def audio_response(
         self, user_input: str, thread_id: Optional[str] = None
@@ -323,7 +336,12 @@ class OpenAIAssistant(
         text_message = await self.converse(user_input, thread_id)
         if not text_message:
             return None
+
         message_content = text_message.text_content if text_message else None
+
+        if not message_content:
+            return None
+
         audio_response = self.client.audio.speech.create(
             model="gpt-4o-mini-tts",
             voice="fable",
@@ -451,8 +469,12 @@ class OpenAICompletion(
 
         # If the first message is a system message, prepend the audio instruction
         if temp_memory and temp_memory[0]["role"] == "system":
-            message = temp_memory[0]
-            if not message["content"].startswith(
+            message: MessageDict = cast(MessageDict, temp_memory[0])
+            if message["content"] is None:
+                message["content"] = (
+                    "You have the capability to respond in audio format, and you should always respond using this modality."
+                )
+            elif not message["content"].startswith(
                 "You have the capability to respond in audio format."
             ):
                 message["content"] = f"""\
@@ -461,7 +483,7 @@ You have the capability to respond in audio format, and you should always respon
 """
 
         # Create a default message if needed
-        default_message = {"role": "user", "content": user_input}
+        default_message = MessageDict(role="user", content=user_input)
 
         completion = None
         complete = False
@@ -481,12 +503,15 @@ You have the capability to respond in audio format, and you should always respon
                 )
 
             except BadRequestError as e:
-                if e.body.get("code") == "audio_not_found":
-                    idx = int(e.body["param"].split("[")[-1].split("]")[0])
-                    del temp_memory[idx]["audio"]
+                if e.body.get("code") == "audio_not_found":  # type: ignore
+                    idx = int(e.body["param"].split("[")[-1].split("]")[0])  # type: ignore
+                    del temp_memory[idx]["audio"]  # type: ignore
                     continue
                 raise
             complete = True
+
+        if not completion or not completion.choices:
+            raise ValueError("No valid completion received from OpenAI API.")
 
         response = completion.choices[0].message
 
@@ -512,7 +537,7 @@ You have the capability to respond in audio format, and you should always respon
             # Prepend system instructions if they exist
             print(self.instructions)
             return [
-                {"role": "system", "content": self.instructions},
+                MessageDict(role="system", content=self.instructions),
                 *self.memory,
             ]
         return self.memory

@@ -1,9 +1,9 @@
-from typing import List, Optional, Self
+from typing import List, Optional, Self, Union
 
 import aiosqlite
 from pydantic import BaseModel
 
-from assistants.user_data.sqlite_backend.table import T, Table
+from assistants.user_data.sqlite_backend.table import Table
 
 
 class Message(BaseModel):
@@ -46,21 +46,21 @@ class MessageTable(Table[Message]):
             ):
                 await db.commit()
 
-    async def update(self, record: T) -> None:
+    async def update(self, record: Message) -> None:  # type: ignore
         pass
 
-    async def delete(self, **kwargs) -> None:
+    async def delete(self, **kwargs) -> None:  # type: ignore
         pass
 
-    async def get(self, **kwargs) -> Optional[T]:
+    async def get(self, **kwargs) -> Optional[Message]:  # type: ignore
         pass
 
-    async def get_all(self) -> List[T]:
+    async def get_all(self) -> List[Message]:  # type: ignore
         pass
 
     async def get_by_conversation_id(
         self, conversation_id: str, limit: Optional[int] = None
-    ) -> List[T]:
+    ) -> List[Message]:
         """
         Get all messages for a specific conversation ID.
 
@@ -71,6 +71,7 @@ class MessageTable(Table[Message]):
             A list of Message objects associated with the given conversation ID.
         """
         statement = "SELECT role, content, conversation_id FROM messages WHERE conversation_id = ? ORDER BY timestamp ASC"
+        params: Union[tuple[str, int], tuple[str]]
         if limit is not None:
             statement += " LIMIT ?"
             params = (conversation_id, limit)

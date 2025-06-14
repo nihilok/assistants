@@ -11,7 +11,15 @@ Classes:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncIterator, Literal, NotRequired, Optional, TypedDict, Union
+from typing import (
+    AsyncIterator,
+    Literal,
+    NotRequired,
+    Optional,
+    TypedDict,
+    Union,
+    Sequence,
+)
 
 from anthropic.types import MessageParam
 from openai.types.responses import EasyInputMessageParam
@@ -90,7 +98,7 @@ class ConversationManagementInterface(ABC):
     """Interface for conversation state management functionality."""
 
     @abstractmethod
-    async def save_conversation_state(self) -> str:
+    async def save_conversation_state(self) -> Optional[str]:
         """Save the current conversation state."""
 
     @abstractmethod
@@ -102,16 +110,16 @@ class ConversationManagementInterface(ABC):
         """Get the conversation ID."""
 
     @abstractmethod
-    async def get_whole_thread(self) -> list[MessageDict]:
+    async def get_whole_thread(self) -> list[MessageInput]:
         """Get the whole thread of messages."""
 
 
 class AssistantInterface(ABC):
     """Core assistant functionality interface."""
 
-    conversation_id = None
-    memory: list[MessageDict]
-    thinking: ThinkingConfig
+    conversation_id: str | None = None
+    memory: list[MessageInput]
+    thinking: ThinkingConfig | None
 
     @abstractmethod
     def __init__(
@@ -145,16 +153,15 @@ class AssistantInterface(ABC):
     async def load_conversation(
         self,
         conversation_id: Optional[str] = None,
-        initial_system_message: Optional[str] = None,
     ) -> None:
         """
-        Load a conversation by ID or initialize a new one with an optional system message.
+        Load a conversation by ID or initialize a new one.
         If no conversation ID is provided, a new conversation will be created.
         """
 
     @property
     @abstractmethod
-    def conversation_payload(self) -> list[MessageInput]:
+    def conversation_payload(self) -> Sequence[MessageInput]:
         """
         Get the conversation payload.
 
