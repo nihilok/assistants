@@ -11,7 +11,7 @@ A flexible framework for creating AI assistants with multiple frontend interface
 
 ## Installation
 
-Requires Python 3.10+
+Requires Python 3.11+
 
 ```bash
 pip install assistants-framework
