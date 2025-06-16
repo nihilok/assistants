@@ -88,38 +88,44 @@ class ConversationsTable(Table[Conversation]):
         from assistants.user_data.sqlite_backend.message import MessageTable
 
         messages_table = MessageTable(self.db_path)
-        async with aiosqlite.connect(self.db_path) as db:
-            cursor = await db.execute(
-                """
-                SELECT id, conversation, last_updated FROM conversations ORDER BY last_updated DESC
-                """
-            )
-            try:
-                rows = await cursor.fetchall()
-            except aiosqlite.OperationalError as e:
-                if "no such column: conversation" in str(e):
-                    # If the column doesn't exist, we can skip migration
-                    return
-                else:
-                    raise e
 
-            for row in rows:
-                messages = json.loads(row[1])
-                for message in messages:
-                    message_record = Message(
-                        role=message.get("role", "user"),
-                        content=message.get("content", ""),
-                        conversation_id=row[0],
-                    )
-                    await messages_table.insert(message_record)
-                    await asyncio.sleep(
-                        0.1
-                    )  # To avoid overwhelming the database with inserts and preserve order
-                new_conversation = Conversation(
-                    id=row[0],
-                    last_updated=row[2],
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                cursor = await db.execute(
+                    """
+                    SELECT id, conversation, last_updated FROM conversations ORDER BY last_updated DESC
+                    """
                 )
-                await self.update(new_conversation)
+                try:
+                    rows = await cursor.fetchall()
+                except aiosqlite.OperationalError as e:
+                    if "no such column" in str(e):
+                        # If the column doesn't exist, we can skip migration
+                        return
+                    else:
+                        raise e
+
+                for row in rows:
+                    messages = json.loads(row[1])
+                    for message in messages:
+                        message_record = Message(
+                            role=message.get("role", "user"),
+                            content=message.get("content", ""),
+                            conversation_id=row[0],
+                        )
+                        await messages_table.insert(message_record)
+                        await asyncio.sleep(
+                            0.1
+                        )  # To avoid overwhelming the database with inserts and preserve order
+                    new_conversation = Conversation(
+                        id=row[0],
+                        last_updated=row[2],
+                    )
+                    await self.update(new_conversation)
+        except aiosqlite.OperationalError as e:
+            if "no such column" in str(e):
+                # If the column doesn't exist, we can skip this step
+                pass
         try:
             async with aiosqlite.connect(self.db_path) as db:
                 await db.execute(
@@ -129,7 +135,7 @@ class ConversationsTable(Table[Conversation]):
                 )
                 await db.commit()
         except aiosqlite.OperationalError as e:
-            if "no such column: conversation" in str(e):
+            if "no such column" in str(e):
                 # If the column doesn't exist, we can skip this step
                 pass
             else:
