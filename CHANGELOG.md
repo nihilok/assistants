@@ -5,6 +5,7 @@ Changelog
 
 - fix typechecking errors and add mypy GH workflow
 - update minimum Python version to 3.11
+- add `ai-cli migrate` command to run migrations easily
 
 ### 08/06/2025 v0.7.2
 
