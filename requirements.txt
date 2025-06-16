@@ -139,9 +139,13 @@ tiktoken==0.9.0
     # via assistants-framework (pyproject.toml)
 tqdm==4.67.1
     # via openai
+types-aiofiles==24.1.0.20250606
+    # via assistants-framework (pyproject.toml)
 types-docutils==0.21.0.20250604
     # via types-pygments
 types-pygments==2.19.0.20250516
+    # via assistants-framework (pyproject.toml)
+types-pyyaml==6.0.12.20250516
     # via assistants-framework (pyproject.toml)
 typing-extensions==4.14.0
     # via

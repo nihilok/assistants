@@ -34,7 +34,9 @@ dependencies = [
     "tiktoken==0.9.0",
     "pydantic~=2.11.5",
     "mistralai~=1.8.1",
-    "types-pygments~=2.19.0.20250516"
+    "types-pygments~=2.19.0.20250516",
+    "types-aiofiles~=24.1.0.20250606",
+    "types-PyYAML~=6.0.12.20250516",
 ]
 
 [project.optional-dependencies]
