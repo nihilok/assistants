@@ -24,7 +24,7 @@ class AssistantIoHandler:
         self.assistant = assistant
         self.thread_id = thread_id
         self.last_message = None
-        self.user_input = None
+        self.user_input: Optional[str] = None
         self.is_streaming = isinstance(assistant, StreamingAssistantInterface)
 
     async def process_input(self, input_text: str) -> bool:

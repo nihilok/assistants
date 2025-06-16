@@ -9,7 +9,7 @@ from assistants.ai.openai import (
     ReasoningModelMixin,
     is_valid_thinking_level,
 )
-from assistants.ai.types import ThinkingConfig
+from assistants.ai.types import MessageData, ThinkingConfig
 from assistants.lib.exceptions import ConfigError
 
 
@@ -178,7 +178,9 @@ class TestAssistant:
         assert result.text_content == "AI response"
         # The thread_id could be an empty string or None depending on the implementation
         assert result.thread_id is not None
-        assert assistant.last_message == {"role": "assistant", "content": "AI response"}
+        assert assistant.last_message == MessageData(
+            text_content="AI response", thread_id=assistant.conversation_id
+        )
 
     @pytest.mark.asyncio
     async def test_converse_empty_input(self, assistant):
@@ -266,8 +268,10 @@ class TestCompletion:
     @pytest.mark.asyncio
     async def test_complete_audio(self, completion, mock_openai_client):
         """Test completing an audio prompt."""
-        with patch("base64.b64decode") as mock_b64decode, \
-             patch.object(completion, "remember", return_value=None) as mock_remember:
+        with (
+            patch("base64.b64decode") as mock_b64decode,
+            patch.object(completion, "remember", return_value=None) as mock_remember,
+        ):
             mock_b64decode.return_value = b"audio data"
 
             # Create a proper structure for the mock response

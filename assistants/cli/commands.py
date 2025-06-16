@@ -1,4 +1,3 @@
-import json
 import re
 import webbrowser
 from abc import ABC, abstractmethod
@@ -8,7 +7,7 @@ from typing import Optional
 
 import aiofiles
 import aiohttp
-import pyperclip
+import pyperclip  # type: ignore[import-untyped]
 
 from assistants.ai.anthropic import ClaudeAssistant
 from assistants.ai.memory import ConversationHistoryMixin
@@ -273,14 +272,8 @@ class SelectThread(Command):
         :param thread: The thread to get the first prompt from.
         :return: The first prompt from the thread.
         """
-        if not thread.conversation:
-            messages = await get_messages_table().get_by_conversation_id(thread.id)
-            return messages[0].content if messages else ""
-
-        conversation = json.loads(thread.conversation)
-        if not conversation:
-            return ""
-        return next((p["content"] for p in conversation if p["role"] == "user"), "")
+        messages = await get_messages_table().get_by_conversation_id(thread.id)
+        return messages[0].content if messages else ""
 
     async def __call__(self, environ: IoEnviron, *args) -> None:
         """
@@ -476,6 +469,9 @@ class UpdateThinkingMode(Command):
             output.warn("This model does not support thinking/reasoning.")
             return
 
+        default_on_param: int | str
+        default_off_param: int | str
+
         if isinstance(assistant, ClaudeAssistant):
             default_on_param = "enabled"
             default_off_param = "disabled"
@@ -500,7 +496,8 @@ class UpdateThinkingMode(Command):
             try:
                 thinking_level = int(args[0])
                 assistant.thinking = ThinkingConfig.get_thinking_config(
-                    thinking_level, max_response_tokens
+                    thinking_level,  # type: ignore
+                    max_response_tokens,
                 )
                 output.inform(
                     f"Thinking mode set to {thinking_level}{' (' + assistant.thinking.type + ')' if assistant.thinking.level else ''}."
@@ -581,7 +578,7 @@ def generate_help_text() -> str:
     :return: The help text for the commands with commands sharing the same help grouped together.
     """
     # Group commands by their help text
-    help_to_commands = {}
+    help_to_commands: dict[str, list[str]] = {}
     for command, cmd in COMMAND_MAP.items():
         if cmd.help in help_to_commands:
             help_to_commands[cmd.help].append(command)

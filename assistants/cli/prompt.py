@@ -46,4 +46,4 @@ def get_user_input() -> str:
     """Get user input from interactive/styled prompt (prompt_toolkit)."""
     if not sys.stdin.isatty():
         sys.stdin = open("/dev/tty")
-    return prompt(PROMPT, style=config.style, history=history, in_thread=True)
+    return prompt(PROMPT, style=config.style, history=history, in_thread=True)  # type: ignore

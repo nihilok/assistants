@@ -4,7 +4,7 @@ import os
 import random
 import sys
 import time
-from typing import List, Optional
+from typing import List, Optional, Set, Dict, Any, Union
 
 from telegram import Update
 from telegram.ext import (
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 class MessageRecord:
     """Represents a message in the conversation history"""
 
-    def __init__(self, bot_id: str, user_id: int, text: str, timestamp: float = None):
+    def __init__(self, bot_id: str, user_id: int, text: str, timestamp: Optional[float] = None):
         self.bot_id = (
             bot_id  # "user" for user messages, bot token identifier for bot messages
         )
@@ -156,7 +156,7 @@ environment.ASSISTANT_INSTRUCTIONS = (
     DEFAULT_CONVERSATION_BOT_INSTRUCTIONS
     + "\n\n"
     + (
-        "You are a lead software engineer with a background in product management. You are friendly, and enthusiastic. You have a track record of delivering successful products."
+        "You are a dog that has interfaced with a Telegram bot. You are friendly, and enthusiastic. You have a track record of catching tennis balls mid-air."
     )
 )
 assistant_a = get_telegram_assistant()
@@ -181,7 +181,7 @@ class ConversationBot:
         self.application = Application.builder().token(token).build()
         self.bot = self.application.bot
         self._setup_handlers()
-        self.active_chats = set()
+        self.active_chats: Set[int] = set()
 
     def _setup_handlers(self):
         """Set up the message handlers"""
@@ -238,7 +238,7 @@ class ConversationBot:
 
     async def _generate_response(
         self, chat_id: int, last_message: MessageRecord
-    ) -> str:
+    ) -> Optional[str]:
         """Generate a response considering all messages since the bot's last response"""
         # Get all messages since this bot's last response
         recent_messages = await self.manager.get_messages_since_last_bot_response(
@@ -260,7 +260,10 @@ class ConversationBot:
 
             # Update the assistant's memory with this conversation context
             if previous := conversation_history[:-1]:
-                self.assistant.memory.extend(previous)
+                # Convert to the format expected by the memory.extend method
+                from assistants.ai.types import MessageDict
+                memory_messages = [MessageDict(role=msg["role"], content=msg["content"]) for msg in previous]
+                self.assistant.memory.extend(memory_messages)
 
         # If there are multiple messages, use the most recent one as the direct prompt
         # but the assistant will have context from all messages
@@ -299,17 +302,29 @@ class MainConversationBot(ConversationBot):
     @requires_superuser
     async def _start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle the /start command"""
+        if update.effective_chat is None:
+            logger.warning("Received a command without a chat.")
+            return
         chat_id = update.effective_chat.id
         self.bot_id = context.bot.username or str(context.bot.id)
         await self.start_responding(chat_id)
+        if update.message is None:
+            logger.warning("Received a command without a message.")
+            return
         await update.message.reply_text(
             f"Bot {self.bot_id} is active. Type /stop to deactivate."
         )
 
     async def _stop_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle the /stop command"""
+        if update.effective_chat is None:
+            logger.warning("Received a command without a chat.")
+            return
         chat_id = update.effective_chat.id
         await self.stop_responding(chat_id)
+        if update.message is None:
+            logger.warning("Received a command without a message.")
+            return
         await update.message.reply_text(
             f"Bot {self.bot_id} is now inactive. Type /start to reactivate."
         )
@@ -319,16 +334,35 @@ class MainConversationBot(ConversationBot):
     ):
         """Handle incoming messages"""
         # Record the user message
+        if update.effective_chat is None:
+            logger.warning("Received a message without a chat.")
+            return
         chat_id = update.effective_chat.id
+
+        if update.effective_user is None:
+            logger.warning("Received a message without a user.")
+            return
         user_id = update.effective_user.id
+
         if not update.message:
             logger.warning("Received an update without a message.")
             logger.info("Update details: %s", update.to_dict())
             return
+
+        if update.message.text is None:
+            logger.warning("Received a message without text.")
+            return
         text = update.message.text
 
         # Create JSON prefix with user info and timestamp
-        user_name = update.effective_user.username or update.effective_user.first_name
+        user_name = ""
+        if update.effective_user.username is not None:
+            user_name = update.effective_user.username
+        elif update.effective_user.first_name is not None:
+            user_name = update.effective_user.first_name
+        else:
+            user_name = str(user_id)
+
         current_time = time.strftime("%Y-%m-%d %H:%M:%S")
         prefix = f'{{"user": "{user_name}", "time": "{current_time}"}} '
         prefixed_text = prefix + text
@@ -352,18 +386,30 @@ class SecondaryConversationBot(ConversationBot):
     @requires_superuser
     async def _start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle the /start command"""
+        if update.effective_chat is None:
+            logger.warning("Received a command without a chat.")
+            return
         chat_id = update.effective_chat.id
         self.bot_id = context.bot.username or str(context.bot.id)
         logger.info(f"Starting bot {self.bot_id} for chat {chat_id}")
         await self.start_responding(chat_id)
+        if update.message is None:
+            logger.warning("Received a command without a message.")
+            return
         await update.message.reply_text(
             f"Bot {self.bot_id} is now active. Type /stop to deactivate."
         )
 
     async def _stop_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle the /stop command"""
+        if update.effective_chat is None:
+            logger.warning("Received a command without a chat.")
+            return
         chat_id = update.effective_chat.id
         await self.stop_responding(chat_id)
+        if update.message is None:
+            logger.warning("Received a command without a message.")
+            return
         await update.message.reply_text(
             f"Bot {self.bot_id} is now inactive. Type /start to reactivate."
         )

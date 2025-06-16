@@ -21,4 +21,4 @@ jobs:
           pip install mypy
       - name: Type checking with mypy
         run: |
-          mypy assistants/ --ignore-missing-imports --show-error-codes
+          mypy assistants/ --show-error-codes

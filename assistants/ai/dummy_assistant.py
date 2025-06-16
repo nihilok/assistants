@@ -2,19 +2,23 @@
 Dummy Assistant
 """
 
-from typing import Optional
+from typing import Optional, Sequence
 
 from assistants.ai.memory import ConversationHistoryMixin
-from assistants.ai.types import MessageData
+from assistants.ai.types import AssistantInterface, MessageData, MessageInput
 
 
-class DummyAssistant(ConversationHistoryMixin):
+class DummyAssistant(ConversationHistoryMixin, AssistantInterface):
     """
     DummyAssistant class encapsulates interactions with the Dummy API.
 
     Inherits from:
         - MemoryMixin: Mixin class to handle memory-related functionality.
     """
+
+    @property
+    def conversation_payload(self) -> Sequence[MessageInput]:
+        return self.memory
 
     def __init__(self, *args, **kwargs) -> None:
         """

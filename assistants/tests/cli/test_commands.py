@@ -1,7 +1,7 @@
 import asyncio
 from unittest.mock import MagicMock, patch
 
-import pyperclip
+import pyperclip  # type: ignore[import-untyped]
 
 from assistants.cli.commands import CopyCodeBlocks, CopyResponse, IoEnviron
 

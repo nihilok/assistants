@@ -13,7 +13,7 @@ from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
 from pygments.lexers.special import TextLexer
 from pygments.util import ClassNotFound
-from pygments_tsx.tsx import TypeScriptXLexer, patch_pygments
+from pygments_tsx.tsx import TypeScriptXLexer, patch_pygments  # type: ignore[import-untyped]
 
 from assistants import version
 from assistants.ai.anthropic import ClaudeAssistant
@@ -117,7 +117,7 @@ def get_text_from_default_editor(initial_text=None):
     return text
 
 
-MODEL_LOOKUP = {
+MODEL_LOOKUP: dict[str, dict[str, Type[AssistantInterface]]] = {
     "code": {
         "o1": OpenAICompletion,
         "o3": OpenAICompletion,
@@ -163,7 +163,8 @@ def build_assistant_params(
         1 if args.code and model_class == ClaudeAssistant else args.thinking
     )
     thinking_config = ThinkingConfig.get_thinking_config(
-        thinking_level, env.DEFAULT_MAX_RESPONSE_TOKENS
+        thinking_level,  # type: ignore
+        env.DEFAULT_MAX_RESPONSE_TOKENS,
     )
 
     # Create the assistant parameters

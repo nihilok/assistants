@@ -161,7 +161,7 @@ class OpenAIAssistant(
         self.model = model
         self.tools = tools
         self._config_hash: Optional[str] = None
-        self.last_message: Optional[dict] = None
+        self.last_message: Optional[MessageData] = None
         self.last_prompt: Optional[str] = None
         self.reasoning: Optional[Reasoning] = None
         self.thinking = thinking or ThinkingConfig.get_thinking_config(level=1)
@@ -272,12 +272,11 @@ class OpenAIAssistant(
         response = await self.prompt(user_input)
 
         # Store the assistant's response for future reference
-        self.last_message = {"role": "assistant", "content": response.output_text}
-
-        return MessageData(
-            text_content=response.output_text,
-            thread_id=self.conversation_id or "",
+        self.last_message = MessageData(
+            text_content=response.output_text, thread_id=self.conversation_id or ""
         )
+
+        return self.last_message
 
     @property
     def conversation_payload(self) -> list[MessageInput]:

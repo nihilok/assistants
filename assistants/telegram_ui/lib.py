@@ -1,27 +1,95 @@
 from functools import wraps
-from typing import Type
+from typing import Type, Protocol
 
-from telegram import Update
+from telegram import Update, Chat, User
 from telegram.ext import ContextTypes
+from telegram._message import Message
 
 from assistants.ai.openai import OpenAIAssistant
-from assistants.ai.types import AssistantInterface, ThinkingConfig
+from assistants.ai.types import (
+    AssistantInterface,
+    ThinkingConfig,
+)
 from assistants.cli.assistant_config import AssistantParams
 from assistants.cli.utils import get_model_class
 from assistants.config import environment
 
+from typing import TypeGuard
+
+
+# Define Protocol type for Update with non-None properties
+class StandardUpdate(Protocol):
+    """Protocol for Update with non-None properties."""
+
+    update_id: int
+
+    @property
+    def effective_chat(self) -> Chat: ...
+
+    @property
+    def message(self) -> Message: ...
+
+    @property
+    def effective_message(self) -> Message: ...
+
+    @property
+    def effective_user(self) -> "User": ...
+
+
+def update_has_effective_chat(update: Update) -> TypeGuard[StandardUpdate]:
+    """TypeGuard to ensure update.effective_chat is not None."""
+    return update.effective_chat is not None
+
+
+def update_has_message(update: Update) -> TypeGuard[Update]:
+    """TypeGuard to ensure update.message is not None."""
+    return update.message is not None
+
+
+def requires_effective_chat(func):
+    @wraps(func)
+    async def wrapped(
+        update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs
+    ):
+        # Use assert to convince mypy that update.effective_chat is not None
+        if update_has_effective_chat(update):
+            return await func(update, context, *args, **kwargs)
+        return None
+
+    return wrapped
+
+
+def requires_message(func):
+    @wraps(func)
+    async def wrapped(
+        update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs
+    ):
+        if not update_has_message(update):
+            return None
+        # Use assert to convince mypy that update.message is not None
+        assert update.message is not None
+        return await func(update, context, *args, **kwargs)
+
+    return wrapped
+
 
 def requires_reply_to_message(f):
+    @requires_effective_chat
+    @requires_message
     @wraps(f)
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        try:
-            return await f(update, context)
-        except AttributeError:
+        # The decorators above ensure that update.effective_chat and update.message are not None
+        assert update.effective_chat is not None
+        assert update.message is not None
+
+        if update.message.reply_to_message is None:
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="You must reply to a message from the target user to use this command",
             )
             return None
+
+        return await f(update, context)
 
     return wrapper
 

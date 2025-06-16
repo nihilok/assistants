@@ -67,6 +67,8 @@ class ConversationHistoryMixin(ConversationManagementInterface):
 
         :param message: The message to remember.
         """
+        conversation: Optional[Conversation]
+
         if self.conversation_id is None:
             conversation = Conversation(
                 id=uuid.uuid4().hex,
@@ -74,6 +76,16 @@ class ConversationHistoryMixin(ConversationManagementInterface):
             )
             await conversation.save()
             self.conversation_id = conversation.id
+        else:
+            conversation = await get_conversations_table().get(id=self.conversation_id)
+            if not conversation:
+                # If the conversation doesn't exist, create a new one
+                conversation = Conversation(
+                    id=self.conversation_id,
+                    last_updated=datetime.now(),
+                )
+            conversation.last_updated = datetime.now()
+            await conversation.save()
 
         self.memory.append(message)
         db_message = Message(
@@ -170,25 +182,6 @@ class ConversationHistoryMixin(ConversationManagementInterface):
     async def async_get_conversation_id(self):
         if not self.conversation_id:
             await self.load_conversation()
-        return self.conversation_id
-
-    async def save_conversation_state(self) -> Optional[str]:
-        """
-        Save the current conversation to the database.
-        :return: The conversation ID.
-        """
-        if not self.memory:
-            return None
-
-        if self.conversation_id is None:
-            self.conversation_id = uuid.uuid4().hex
-
-        await get_conversations_table().update(
-            Conversation(
-                id=str(self.conversation_id),
-                last_updated=datetime.now(),
-            )
-        )
         return self.conversation_id
 
     async def get_last_message(self, thread_id: str) -> Optional[MessageData]:

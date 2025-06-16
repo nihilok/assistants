@@ -97,9 +97,7 @@ MessageInput = Union[MessageDict, EasyInputMessageParam, MessageParam]
 class ConversationManagementInterface(ABC):
     """Interface for conversation state management functionality."""
 
-    @abstractmethod
-    async def save_conversation_state(self) -> Optional[str]:
-        """Save the current conversation state."""
+    conversation_id: str | None = None
 
     @abstractmethod
     async def get_last_message(self, thread_id: str) -> Optional[MessageData]:
@@ -117,9 +115,11 @@ class ConversationManagementInterface(ABC):
 class AssistantInterface(ABC):
     """Core assistant functionality interface."""
 
-    conversation_id: str | None = None
+    conversation_id: str | None
     memory: list[MessageInput]
     thinking: ThinkingConfig | None
+    instructions: Optional[str]
+    last_message: Optional[MessageData]
 
     @abstractmethod
     def __init__(
@@ -186,6 +186,26 @@ class AssistantInterface(ABC):
         :return: True if the assistant is a reasoning model, False otherwise.
         """
         return False
+
+    @abstractmethod
+    async def get_last_message(self, thread_id: str) -> Optional[MessageData]:
+        """
+        Get the last message from the conversation or None if no message exists.
+        Conversation must have already been loaded.
+
+        :param thread_id: Not used; required by protocol
+        :return: MessageData with the last message and current conversation_id.
+        """
+
+    @abstractmethod
+    async def async_get_conversation_id(self) -> str:
+        """
+        Get the conversation ID asynchronously.
+        If no conversation ID is set, it will load the conversation.
+
+        :return: The conversation ID.
+        """
+        pass
 
 
 class StreamingAssistantInterface(AssistantInterface):
