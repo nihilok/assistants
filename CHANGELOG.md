@@ -1,6 +1,11 @@
 Changelog
 ---
 
+### 16/06/2025 v0.7.3
+
+- fix typechecking errors and add mypy GH workflow
+- update minimum Python version to 3.11
+
 ### 08/06/2025 v0.7.2
 
 - add command to print current environment variables (`/env`)
