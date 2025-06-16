@@ -102,7 +102,7 @@ def main():
             except (KeyboardInterrupt, EOFError):
                 print("\nInstallation cancelled.")
                 sys.exit(1)
-        elif sys.argv[1] in {"build", "rebuild"}:
+        elif sys.argv[1] in {"build", "rebuild", "migrate"}:
             from assistants.build import main as build_main
 
             build_main()

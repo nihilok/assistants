@@ -25,9 +25,11 @@ def main():
 
         asyncio.run(rebuild_db())
         logger.info("Database has been rebuilt.")
+
     elif len(sys.argv) > 1 and sys.argv[1] == "migrate":
         asyncio.run(migrate())
         logger.info("Database ready.")
+
     else:
         asyncio.run(init_db())
         logger.info("Database ready.")

@@ -60,6 +60,12 @@ There's also a `chatgpt` command that uses the default ChatGPT model:
 chatgpt -t  # Continue the last thread with ChatGPT (`gpt-4.1-mini`)
 ```
 
+Run migrations in case of breaking changes:
+
+```bash
+ai-cli migrate
+```
+
 Rebuild the database:
 
 ```bash
