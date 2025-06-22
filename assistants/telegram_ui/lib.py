@@ -116,7 +116,7 @@ def build_assistant_params(
 
     # Add tools for OpenAI assistant in non-code mode
     if model_class == OpenAIAssistant:
-        params.tools = [{"type": "code_interpreter"}]
+        params.tools = [{"type": "code_interpreter"}, {"type": "web_search"}]
 
     return params, model_class
 
