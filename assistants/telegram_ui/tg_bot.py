@@ -8,6 +8,7 @@ from telegram.ext import (
 
 from assistants.log import logger
 from assistants.telegram_ui.commands import (
+    clear_pending_buttons,
     promote_user,
     demote_user,
     authorise_chat,
@@ -35,6 +36,9 @@ def build_bot(token: str) -> Application:
     application.add_handler(CommandHandler("auto_reply", toggle_auto_reply))
     application.add_handler(CommandHandler("image", generate_image))
     application.add_handler(CommandHandler("voice", respond_voice))
+    application.add_handler(
+        CommandHandler("unfinished_business", clear_pending_buttons)
+    )
     application.add_handler(MessageHandler(filters.TEXT, message_handler))
     logger.info("Setup complete!")
     return application
