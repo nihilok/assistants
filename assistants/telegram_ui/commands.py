@@ -256,38 +256,14 @@ Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'.
 async def clear_pending_buttons(
     update: StandardUpdate, context: ContextTypes.DEFAULT_TYPE
 ):
-    """Clear any pending button requests for the user."""
+    """Clear any pending keyboards for the user."""
     try:
-        # First, try to remove any custom keyboard
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Removing keyboard...",
             reply_markup=ReplyKeyboardRemove(),
         )
 
-        # Also try to find and clear any inline buttons in recent messages
-        messages = await context.bot.get_chat_history(
-            chat_id=update.effective_chat.id, limit=10
-        )
-
-        found_inline_buttons = False
-        for message in messages:
-            if message.from_user.id == context.bot.id and message.reply_markup:
-                await context.bot.edit_message_reply_markup(
-                    chat_id=update.effective_chat.id,
-                    message_id=message.message_id,
-                    reply_markup=None,
-                )
-                found_inline_buttons = True
-
-        if found_inline_buttons:
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id, text="Cleared all button requests."
-            )
-        else:
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id, text="Keyboard removed."
-            )
     except Exception as e:
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text=f"Failed to clear requests: {str(e)}"
