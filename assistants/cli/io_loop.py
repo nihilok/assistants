@@ -91,8 +91,7 @@ class AssistantIoHandler:
         else:
             await self._handle_standard_conversation(thread_id_to_use)
 
-        # Save conversation state for future interactions
-        self.thread_id = await self.assistant.save_conversation_state()
+        self.thread_id = await self.assistant.async_get_conversation_id()
         output.new_line(2)
 
     async def _handle_streaming_conversation(self, thread_id_to_use):

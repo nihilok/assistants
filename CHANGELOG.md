@@ -1,6 +1,10 @@
 Changelog
 ---
 
+### 27/06/2025 v0.7.4
+
+- fix issue calling non-existent `save_conversation_state` method in AssistantIoHandler
+
 ### 16/06/2025 v0.7.3
 
 - fix typechecking errors and add mypy GH workflow

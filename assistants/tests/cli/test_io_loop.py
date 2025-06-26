@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, patch, AsyncMock
 from assistants.ai.types import (
     AssistantInterface,
     MessageData,
-    StreamingAssistantInterface,
 )
 from assistants.cli.io_loop import io_loop, io_loop_async, AssistantIoHandler
 
@@ -14,7 +13,7 @@ from assistants.cli.io_loop import io_loop, io_loop_async, AssistantIoHandler
 def mock_assistant():
     assistant = MagicMock(spec=AssistantInterface)
     assistant.converse = AsyncMock()
-    assistant.save_conversation_state = AsyncMock()
+    assistant.async_get_conversation_id = AsyncMock()
     return assistant
 
 
@@ -29,7 +28,7 @@ def mock_message():
 @pytest.fixture
 def setup_assistant(mock_assistant, mock_message):
     mock_assistant.converse.return_value = mock_message
-    mock_assistant.save_conversation_state.return_value = "new-thread-id"
+    mock_assistant.async_get_conversation_id.return_value = "new-thread-id"
     return mock_assistant
 
 
@@ -180,7 +179,7 @@ async def test_assistant_io_handler_conversation(
     mock_output.default.assert_called_once()
 
     # Verify conversation state was saved
-    setup_assistant.save_conversation_state.assert_called_once()
+    setup_assistant.async_get_conversation_id.assert_called_once()
 
     # Verify handler state was updated
     assert handler.last_message == mock_message
