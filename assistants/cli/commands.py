@@ -1,12 +1,12 @@
 import re
 import webbrowser
+import base64
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Optional
 
 import aiofiles
-import aiohttp
 import pyperclip  # type: ignore[import-untyped]
 
 from assistants.ai.anthropic import ClaudeAssistant
@@ -337,30 +337,31 @@ class GenerateImage(Command):
     help = "Generate an image from a prompt"
 
     @staticmethod
-    async def save_image(image_url: str, prompt: str) -> None:
+    async def save_image_from_b64(image_b64: str, prompt: str) -> str:
         """
-        Save the image URL to the database.
+        Save the base64 image to file.
 
-        :param image_url: The URL of the image to save.
+        :param image_b64: The base64 string of the image.
         :param prompt: The prompt that was used to create the image.
+        :return: The file path where the image was saved.
         """
-        # Get the image content
-        async with aiohttp.ClientSession() as session:
-            async with session.get(image_url) as response:
-                image_content = await response.read()
+        # Decode the base64 string
+        image_content = base64.b64decode(image_b64)
 
         # Save the image to file
         image_path = DATA_DIR / "images"
         if not image_path.exists():
             image_path.mkdir(parents=True)
 
-        filename = f"{'_'.join(prompt.split())}_{datetime.now(UTC).timestamp()}.png"
-        image_path /= filename
+        filename = (
+            f"{'_'.join(prompt.split()[:5])}_{datetime.now(UTC).timestamp():.0f}.png"
+        )
+        full_image_path = image_path / filename
 
-        async with aiofiles.open(image_path, "wb") as file:
+        async with aiofiles.open(full_image_path, "wb") as file:
             await file.write(image_content)
 
-        output.inform(f"Image saved to {image_path}")
+        return str(full_image_path)
 
     async def __call__(self, environ: IoEnviron, *args) -> None:
         assistant = environ.assistant
@@ -369,22 +370,24 @@ class GenerateImage(Command):
 
         prompt = " ".join(args)
 
-        image_url = await assistant.image_prompt(prompt)
+        image_b64 = await assistant.image_prompt(
+            prompt, model="gpt-image-1", quality="low"
+        )
 
-        if image_url:
-            output.default(f"Here's your image:\n{image_url}")
+        if image_b64:
+            # Save the image to file by default
+            image_file_path = await self.save_image_from_b64(image_b64, prompt)
+
+            output.default(f"Image generated and saved to: {image_file_path}")
             output.new_line(2)
 
             environ.last_message = MessageData(
-                text_content=image_url, thread_id=environ.thread_id
+                text_content=image_file_path, thread_id=environ.thread_id
             )
 
             if environment.OPEN_IMAGES_IN_BROWSER:
-                webbrowser.open(image_url)
+                webbrowser.open(f"file://{image_file_path}")
                 output.inform("Opening image in browser...")
-
-            if input("Would you like to save this image? (y/N): ").lower() == "y":
-                await self.save_image(image_url, prompt)
 
         else:
             output.warn("No image returned...")

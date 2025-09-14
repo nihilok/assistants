@@ -19,9 +19,9 @@ from typing import (
 )
 
 import openai
-from openai import BadRequestError
-from openai._types import NOT_GIVEN, NotGiven
+from openai import BadRequestError, NOT_GIVEN, NotGiven
 from openai.types.chat import ChatCompletionAudioParam, ChatCompletionMessage
+from openai.types.responses import Response
 from openai.types.shared_params import Reasoning
 
 from assistants.ai.constants import REASONING_MODELS
@@ -174,8 +174,7 @@ class OpenAIAssistant(
         """
         Initialize the message history with system instructions.
         """
-        if not self.memory:
-            self.memory = [{"role": "system", "content": self.instructions}]
+        pass
 
     @property
     def assistant_id(self) -> str:
@@ -207,12 +206,11 @@ class OpenAIAssistant(
             f"{self.instructions}{self.model}{self.tools}".encode()
         ).hexdigest()
 
-    async def prompt(self, prompt: str) -> Any:
+    async def prompt(self, prompt: str) -> Response:
         """
         Send a prompt to the model using the Responses API.
 
         :param prompt: The message content.
-        :param thread_id: Optional ID of the conversation to continue.
         :return: The response object.
         """
         self.last_prompt = prompt
@@ -233,25 +231,52 @@ class OpenAIAssistant(
 
         return response
 
-    async def image_prompt(self, prompt: str) -> Optional[str]:
+    async def image_prompt(
+        self,
+        prompt: str,
+        model: Literal["dall-e-3", "gpt-image-1"] = "dall-e-3",
+        quality: Literal[
+            "standard", "hd", "low", "medium", "high", "auto"
+        ] = "standard",
+        size: Literal[
+            "auto",
+            "1024x1024",
+            "1536x1024",
+            "1024x1536",
+            "256x256",
+            "512x512",
+            "1792x1024",
+            "1024x1792",
+        ] = "1024x1024",
+    ) -> Optional[str]:
         """
         Request an image to be generated using a separate image model.
 
         :param prompt: The image prompt.
+        :param quality: The quality of the image to be generated (default is "standard").
+        :param size: The size of the image to be generated (default is "1024x1024").
+        :param model: The model to use for image generation (default is "dall-e-3").
         :return: The URL of the generated image or None if generation failed.
+
         """
         self.last_prompt = prompt
-        response = self.client.images.generate(
-            model=environment.IMAGE_MODEL,
-            prompt=prompt,
-            size="1024x1024",
-            quality="standard",
-            n=1,
-        )
-        if not response.data or not response.data[0].url:
+
+        image_kwargs = {
+            "model": model,
+            "prompt": prompt,
+            "n": 1,
+            "quality": quality,
+            "size": size,
+        }
+
+        if model == "dall-e-3":
+            image_kwargs["response_format"] = "b64_json"
+
+        response = self.client.images.generate(**image_kwargs)
+        if not response.data or not response.data[0].b64_json:
             return None
 
-        return response.data[0].url
+        return response.data[0].b64_json
 
     async def converse(
         self, user_input: str, thread_id: Optional[str] = None
