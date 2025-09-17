@@ -125,7 +125,7 @@ class UniversalAssistant(
             await self.remember(MessageDict(role="assistant", content=response.content))
 
             return MessageData(
-                text_content=response.content,
+                text_content=str(response.content),
                 thread_id=thread_id,
             )
 
