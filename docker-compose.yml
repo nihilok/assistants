@@ -1,0 +1,48 @@
+services:
+  mypy-check:
+    build:
+      context: .
+      args:
+        USER_ID: ${USER_ID:-502}
+        GROUP_ID: ${GROUP_ID:-20}
+    volumes:
+      - .:/app
+      - mypy-cache:/app/.mypy_cache
+    working_dir: /app
+    command: ./scripts/check_mypy.sh
+    environment:
+      - PYTHONPATH=/app
+
+  mypy-generate:
+    build:
+      context: .
+      args:
+        USER_ID: ${USER_ID:-502}
+        GROUP_ID: ${GROUP_ID:-20}
+    volumes:
+      - .:/app
+      - mypy-cache:/app/.mypy_cache
+    working_dir: /app
+    command: ./scripts/check_mypy.sh --generate
+    environment:
+      - PYTHONPATH=/app
+
+  cli:
+    build:
+      context: .
+      args:
+        USER_ID: ${USER_ID:-502}
+        GROUP_ID: ${GROUP_ID:-20}
+    volumes:
+      - .:/app
+      - ~/.config:/home/app/.config
+      - ~/.local:/home/app/.local
+    working_dir: /app
+    environment:
+      - PYTHONPATH=/app
+    stdin_open: true
+    tty: true
+    command: python -m assistants.main
+
+volumes:
+  mypy-cache:

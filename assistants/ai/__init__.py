@@ -36,13 +36,11 @@ __all__ = [
     # New unified interface
     "UniversalAssistant",
     "create_universal_assistant",
-
     # Legacy classes (deprecated)
     "OpenAIAssistant",
     "OpenAICompletion",
     "ClaudeAssistant",
     "MistralAssistant",
-
     # Types and utilities
     "AssistantInterface",
     "StreamingAssistantInterface",

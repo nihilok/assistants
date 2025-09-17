@@ -25,6 +25,7 @@ from typing import (
 import openai
 from openai import BadRequestError, NOT_GIVEN, NotGiven
 from openai.types import Reasoning
+from openai.types.shared_params.reasoning import Reasoning as ReasoningTypedDict
 from openai.types.chat import ChatCompletionAudioParam, ChatCompletionMessage
 from openai.types.responses import Response
 
@@ -45,7 +46,7 @@ from assistants.lib.exceptions import ConfigError
 warnings.warn(
     "assistants.ai.openai is deprecated. Use assistants.ai.universal.UniversalAssistant instead.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 ThinkingLevel = Literal[0, 1, 2]
@@ -234,7 +235,11 @@ class OpenAIAssistant(
         response = self.client.responses.create(
             model=self.model,
             input=self._prepend_instructions(),  # type: ignore
-            reasoning=self.reasoning if self.is_reasoning_model else NOT_GIVEN,
+            reasoning=ReasoningTypedDict(
+                **self.reasoning.model_dump(exclude_unset=True)
+            )
+            if self.is_reasoning_model and self.reasoning
+            else NOT_GIVEN,
             store=True,
             max_output_tokens=self.max_response_tokens or None,
         )
@@ -351,7 +356,11 @@ class OpenAIAssistant(
         stream = self.client.responses.create(
             model=self.model,
             input=self.conversation_payload,  # type: ignore
-            reasoning=self.reasoning if self.is_reasoning_model else NOT_GIVEN,
+            reasoning=ReasoningTypedDict(
+                **self.reasoning.model_dump(exclude_unset=True)
+            )
+            if self.is_reasoning_model and self.reasoning
+            else NOT_GIVEN,
             stream=True,
         )
         for event in stream:
@@ -460,7 +469,9 @@ class OpenAICompletion(
         response = self.client.chat.completions.create(
             model=self.model,
             messages=cast(list, temp_memory),
-            reasoning_effort=self.reasoning.effort if isinstance(self.reasoning, Reasoning) else NOT_GIVEN,
+            reasoning_effort=self.reasoning.effort
+            if isinstance(self.reasoning, Reasoning)
+            else NOT_GIVEN,
             max_tokens=self.max_response_tokens or NOT_GIVEN,
         )
         message = response.choices[0].message
