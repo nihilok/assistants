@@ -2,9 +2,6 @@ services:
   mypy-check:
     build:
       context: .
-      args:
-        USER_ID: ${USER_ID:-502}
-        GROUP_ID: ${GROUP_ID:-20}
     volumes:
       - .:/app
       - mypy-cache:/app/.mypy_cache
@@ -16,9 +13,6 @@ services:
   mypy-generate:
     build:
       context: .
-      args:
-        USER_ID: ${USER_ID:-502}
-        GROUP_ID: ${GROUP_ID:-20}
     volumes:
       - .:/app
       - mypy-cache:/app/.mypy_cache
@@ -30,9 +24,6 @@ services:
   cli:
     build:
       context: .
-      args:
-        USER_ID: ${USER_ID:-502}
-        GROUP_ID: ${GROUP_ID:-20}
     volumes:
       - .:/app
       - ~/.config:/home/app/.config
@@ -42,7 +33,6 @@ services:
       - PYTHONPATH=/app
     stdin_open: true
     tty: true
-    command: python -m assistants.main
 
 volumes:
   mypy-cache:

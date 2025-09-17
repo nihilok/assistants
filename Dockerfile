@@ -27,10 +27,10 @@ RUN pip install -r dev_requirements.txt
 # Copy the rest of the application
 COPY . .
 
-## Create a non-root user for security
-#RUN useradd --create-home --shell /bin/bash app && \
-#    chown -R app:app /app
-#USER app
+# Create a non-root user for security
+RUN useradd --create-home --shell /bin/bash app && \
+    chown -R app:app /app
+USER app
 
 # Default command runs mypy check
 CMD ["./scripts/check_mypy.sh"]
