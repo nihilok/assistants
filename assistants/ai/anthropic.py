@@ -31,7 +31,7 @@ from assistants.lib.exceptions import ConfigError
 warnings.warn(
     "assistants.ai.anthropic is deprecated. Use assistants.ai.universal.UniversalAssistant instead.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 INSTRUCTIONS_UNDERSTOOD = "Instructions understood."

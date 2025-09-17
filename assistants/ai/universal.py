@@ -118,7 +118,9 @@ class UniversalAssistant(
             response = await self.client.complete(
                 messages=messages,
                 model=self.model,
-                max_tokens=self.max_response_tokens if self.max_response_tokens > 0 else None,
+                max_tokens=self.max_response_tokens
+                if self.max_response_tokens > 0
+                else None,
             )
 
             # Store assistant's response in memory
@@ -177,9 +179,7 @@ class UniversalAssistant(
         """
         return self.memory
 
-    async def load_conversation(
-        self, conversation_id: Optional[str] = None
-    ) -> None:
+    async def load_conversation(self, conversation_id: Optional[str] = None) -> None:
         """
         Load a conversation by ID or initialize a new one.
 
@@ -273,14 +273,13 @@ class UniversalAssistant(
         :return: A new conversation ID.
         """
         import uuid
+
         return str(uuid.uuid4())
 
 
 # Convenience function for backward compatibility
 def create_universal_assistant(
-    model: str,
-    provider: Optional[str] = None,
-    **kwargs
+    model: str, provider: Optional[str] = None, **kwargs
 ) -> UniversalAssistant:
     """
     Create a UniversalAssistant instance with optional provider specification.
@@ -294,7 +293,7 @@ def create_universal_assistant(
         warnings.warn(
             "Provider parameter is deprecated. Provider is auto-detected from model name.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
 
     return UniversalAssistant(model=model, **kwargs)

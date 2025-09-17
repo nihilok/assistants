@@ -36,7 +36,9 @@ logger = logging.getLogger(__name__)
 class MessageRecord:
     """Represents a message in the conversation history"""
 
-    def __init__(self, bot_id: str, user_id: int, text: str, timestamp: Optional[float] = None):
+    def __init__(
+        self, bot_id: str, user_id: int, text: str, timestamp: Optional[float] = None
+    ):
         self.bot_id = (
             bot_id  # "user" for user messages, bot token identifier for bot messages
         )
@@ -262,7 +264,11 @@ class ConversationBot:
             if previous := conversation_history[:-1]:
                 # Convert to the format expected by the memory.extend method
                 from assistants.ai.types import MessageDict
-                memory_messages = [MessageDict(role=msg["role"], content=msg["content"]) for msg in previous]
+
+                memory_messages = [
+                    MessageDict(role=msg["role"], content=msg["content"])
+                    for msg in previous
+                ]
                 self.assistant.memory.extend(memory_messages)
 
         # If there are multiple messages, use the most recent one as the direct prompt
