@@ -9,10 +9,6 @@
 
 set -e
 
-# Set user ID and group ID for consistent file permissions
-export USER_ID=$(id -u)
-export GROUP_ID=$(id -g)
-
 # Build the image if it doesn't exist or if Dockerfile changed
 echo "🔨 Building Docker image (if needed)..."
 docker compose build mypy-check
