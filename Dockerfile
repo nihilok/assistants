@@ -17,12 +17,10 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements files first for better caching
 COPY pyproject.toml setup.py ./
-COPY dev_requirements.txt ./
 
 # Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel
 RUN pip install -e .[dev]
-RUN pip install -r dev_requirements.txt
 
 # Copy the rest of the application
 COPY . .

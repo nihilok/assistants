@@ -6,8 +6,8 @@ A flexible framework for creating AI assistants with multiple frontend interface
 
 - **Multi-Front-End Support**: CLI and Telegram interfaces built on the same core framework
 - **CLI Features**: Code highlighting, thread management, editor integration, file input, image generation
-- **Multiple LLM Support**: OpenAI (`gpt-*`, `o*`), Anthropic (`claude-*`), MistralAI (`mistral-*`, `codestral-*`,
-  `devstral-*`), and image generation (DALL-E)
+- **Multiple LLM Support**: OpenAI (`gpt-*`, `o*`), Anthropic (`claude-*`), MistralAI (`mistral-*`, `codestral-*`), and image generation (DALL-E)
+- **New Universal Assistant Interface**: See MIGRATION_GUIDE.md for details
 
 ## Installation
 
@@ -97,7 +97,7 @@ Key Telegram commands:
 - `MISTRAL_API_KEY_NAME` - Mistral API key variable (default: `MISTRAL_API_KEY`)
 - `DEFAULT_MODEL` - Default model (default: `gpt-4o-mini`)
 - `DEFAULT_CLAUDE_SONNET_MODEL` - Default Claude model (default: `claude-sonnet-4-20250514`)
-- `DEFAULT_CLAUDE_OPUS_MODEL` - Default Claude Opus model (default: `claude-opus-4-20250514`)
+- `DEFAULT_CLAUDE_OPUS_MODEL` - Default Claude Opus model (default: `claude-opus-4-1-20250805`)
 - `DEFAULT_CHATGPT_MODEL` - Default ChatGPT model (default: `gpt-4.1-mini`)
 - `DEFAULT_GPT_REASONING_MODEL` - Default GPT reasoning model (default: `o4-mini`)
 - `CODE_MODEL` - Reasoning model (default: `o3-mini`)
