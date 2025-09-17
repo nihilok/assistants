@@ -121,9 +121,9 @@ class TestAssistant:
     async def test_start(self, assistant):
         """Test starting the assistant."""
         await assistant.start()
-        assert assistant.memory == [
-            {"role": "system", "content": "You are a helpful assistant."}
-        ]
+        # The start method doesn't add system messages to memory
+        # System instructions are handled dynamically in _prepend_instructions()
+        assert assistant.memory == []
         assert assistant.last_message is None
 
     @pytest.mark.asyncio
@@ -165,14 +165,14 @@ class TestAssistant:
     async def test_image_prompt(self, assistant, mock_openai_client):
         """Test sending an image prompt to the assistant."""
         mock_openai_client.images.generate.return_value = MagicMock(
-            data=[MagicMock(url="https://example.com/image.png")]
+            data=[MagicMock(b64_json="base64encodedimagedata")]
         )
 
-        url = await assistant.image_prompt("Generate an image of a cat")
+        result = await assistant.image_prompt("Generate an image of a cat")
 
         assert assistant.last_prompt == "Generate an image of a cat"
         mock_openai_client.images.generate.assert_called_once()
-        assert url == "https://example.com/image.png"
+        assert result == "base64encodedimagedata"
 
     @pytest.mark.asyncio
     async def test_converse(self, assistant, mock_openai_client):
