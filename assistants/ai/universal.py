@@ -144,11 +144,12 @@ class UniversalAssistant(
         """
         # Convert memory to univllm format
         messages = self._convert_memory_to_univllm_format()
+        max_tokens = self.max_response_tokens if self.max_response_tokens > 0 else None
 
         try:
             # Stream response from universal client
             async for chunk in self.client.stream_complete(
-                messages=messages, model=self.model, max_tokens=self.max_response_tokens if self.max_response_tokens > 0 else None
+                messages=messages, model=self.model, max_tokens=max_tokens
             ):
                 yield chunk
 

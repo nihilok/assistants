@@ -18,12 +18,13 @@ from typing import (
     Literal,
     Optional,
     TypeGuard,
-    TypedDict, Union,
+    Union,
     cast,
 )
 
 import openai
 from openai import BadRequestError, NOT_GIVEN, NotGiven
+from openai.types import Reasoning
 from openai.types.chat import ChatCompletionAudioParam, ChatCompletionMessage
 from openai.types.responses import Response
 
@@ -50,8 +51,6 @@ warnings.warn(
 ThinkingLevel = Literal[0, 1, 2]
 OpenAIThinkingLevel = Literal["low", "medium", "high"]
 
-class Reasoning(TypedDict):
-    effort: OpenAIThinkingLevel
 
 THINKING_MAP: dict[ThinkingLevel, OpenAIThinkingLevel] = {
     0: "low",
@@ -103,7 +102,7 @@ class ReasoningModelMixin:
             )
 
         if is_valid_thinking_level(thinking):
-            self.reasoning: Optional[Reasoning] = Reasoning(
+            self.reasoning: Optional[Reasoning] = Reaoning(
                 effort=THINKING_MAP[thinking]
             )
         else:
