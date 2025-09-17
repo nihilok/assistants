@@ -257,7 +257,7 @@ async def create_assistant_and_thread(
         # Find the right assistant class for this model using legacy lookup
         model_class = get_model_class(model_name, model_type)
 
-        if not model_class:
+        if model_class is None:
             # Fallback to UniversalAssistant if no legacy class found
             model_class = UniversalAssistant
             output.inform(
