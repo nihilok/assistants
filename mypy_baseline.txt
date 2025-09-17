@@ -1,4 +1,4 @@
-Found 20 errors in 8 files (checked 63 source files)
+Found 18 errors in 8 files (checked 63 source files)
 assistants/ai/openai.py:237: error: Argument "reasoning" to "create" of "Responses" has incompatible type "openai.types.shared.reasoning.Reasoning | NotGiven | None"; expected "openai.types.shared_params.reasoning.Reasoning | NotGiven | None"  [arg-type]
 assistants/ai/openai.py:287: error: No overload variant of "generate" of "Images" matches argument type "dict[str, object]"  [call-overload]
 assistants/ai/openai.py:287: note:     def generate(self, *, prompt: str, background: Literal['transparent', 'opaque', 'auto'] | NotGiven | None = ..., model: str | Literal['dall-e-2', 'dall-e-3', 'gpt-image-1'] | NotGiven | None = ..., moderation: Literal['low', 'auto'] | NotGiven | None = ..., n: int | NotGiven | None = ..., output_compression: int | NotGiven | None = ..., output_format: Literal['png', 'jpeg', 'webp'] | NotGiven | None = ..., partial_images: int | NotGiven | None = ..., quality: Literal['standard', 'hd', 'low', 'medium', 'high', 'auto'] | NotGiven | None = ..., response_format: Literal['url', 'b64_json'] | NotGiven | None = ..., size: Literal['auto', '1024x1024', '1536x1024', '1024x1536', '256x256', '512x512', '1792x1024', '1024x1792'] | NotGiven | None = ..., stream: Literal[False] | NotGiven | None = ..., style: Literal['vivid', 'natural'] | NotGiven | None = ..., user: str | NotGiven = ..., extra_headers: Mapping[str, str | Omit] | None = ..., extra_query: Mapping[str, object] | None = ..., extra_body: object | None = ..., timeout: float | Timeout | NotGiven | None = ...) -> ImagesResponse
@@ -9,14 +9,8 @@ assistants/ai/openai.py:354: error: Argument "reasoning" to "create" of "Respons
 assistants/ai/universal.py:14: error: Skipping analyzing "univllm": module is installed, but missing library stubs or py.typed marker  [import-untyped]
 assistants/ai/universal.py:15: error: Skipping analyzing "univllm.models": module is installed, but missing library stubs or py.typed marker  [import-untyped]
 assistants/ai/universal.py:15: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
-assistants/ai/universal.py:200: error: Signature of "remember" incompatible with supertype "assistants.ai.memory.ConversationHistoryMixin"  [override]
-assistants/ai/universal.py:200: note:          def remember(self, message: MessageDict) -> Coroutine[Any, Any, None]
-assistants/ai/universal.py:200: note:          def remember(self, message: MessageDict, audio: bool | None = ...) -> Coroutine[Any, Any, Any]
-assistants/ai/universal.py:200: note:      Subclass:
-assistants/ai/universal.py:200: note:      Superclass:
-assistants/ai/universal.py:223: error: Argument "text_content" to "MessageData" has incompatible type "str | list[ResponseInputTextParam | ResponseInputImageParam | ResponseInputFileParam | ResponseInputAudioParam] | Iterable[TextBlockParam | ImageBlockParam | DocumentBlockParam | SearchResultBlockParam | ThinkingBlockParam | <6 more items>] | None"; expected "str"  [arg-type]
+assistants/ai/universal.py:221: error: Argument "text_content" to "MessageData" has incompatible type "str | list[ResponseInputTextParam | ResponseInputImageParam | ResponseInputFileParam | ResponseInputAudioParam] | Iterable[TextBlockParam | ImageBlockParam | DocumentBlockParam | SearchResultBlockParam | ThinkingBlockParam | <6 more items>] | None"; expected "str"  [arg-type]
 assistants/cli/utils.py:258: error: Incompatible types in assignment (expression has type "type[AssistantInterface] | None", variable has type "type[UniversalAssistant]")  [assignment]
-assistants/cli/utils.py:260: error: Function "model_class" could always be true in boolean context  [truthy-function]
 assistants/cli/utils.py:268: error: Incompatible types in assignment (expression has type "type[AssistantInterface]", variable has type "type[UniversalAssistant]")  [assignment]
 assistants/telegram_ui/auth.py:3: error: Cannot find implementation or library stub for module named "telegram"  [import-not-found]
 assistants/telegram_ui/bot_conversation_bot.py:10: error: Cannot find implementation or library stub for module named "telegram.ext"  [import-not-found]
