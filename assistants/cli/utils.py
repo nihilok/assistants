@@ -249,6 +249,8 @@ async def create_assistant_and_thread(
         model_name
     )
 
+    model_class: Type[AssistantInterface]
+
     if use_universal:
         # Use UniversalAssistant for new unified interface
         model_class = UniversalAssistant

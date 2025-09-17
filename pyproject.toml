@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "assistants-framework"
-version = "0.7.5"
+version = "0.7.6"
 authors = [
     { name = "Michael Jarvis", email = "nihilok@jarv.dev" },
 ]
@@ -37,7 +37,7 @@ dependencies = [
     "types-pygments~=2.19.0.20250516",
     "types-aiofiles~=24.1.0.20250606",
     "types-PyYAML~=6.0.12.20250516",
-    "univllm>=0.1.1",
+    "univllm>=0.1.2",
 ]
 
 [project.optional-dependencies]

@@ -9,7 +9,7 @@ from assistants.user_data.sqlite_backend import init_db
 CLAUDE_SONNET_MODEL = os.getenv(
     "DEFAULT_CLAUDE_SONNET_MODEL", "claude-sonnet-4-20250514"
 )
-CLAUDE_OPUS_MODEL = os.getenv("DEFAULT_CLAUDE_OPUS_MODEL", "claude-opus-4-20250514")
+CLAUDE_OPUS_MODEL = os.getenv("DEFAULT_CLAUDE_OPUS_MODEL", "claude-opus-4-1-20250805")
 
 
 def main():
