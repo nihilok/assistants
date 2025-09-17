@@ -20,5 +20,5 @@ jobs:
           pip install '.[dev]'
       - name: Type checking with mypy
         run: |
-          chmod +x check_mypy.sh
-          ./check_mypy.sh
+          chmod +x ./scripts/check_mypy.sh
+          ./scripts/check_mypy.sh
