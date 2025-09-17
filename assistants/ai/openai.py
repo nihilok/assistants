@@ -102,7 +102,7 @@ class ReasoningModelMixin:
             )
 
         if is_valid_thinking_level(thinking):
-            self.reasoning: Optional[Reasoning] = Reaoning(
+            self.reasoning: Optional[Reasoning] = Reasoning(
                 effort=THINKING_MAP[thinking]
             )
         else:
