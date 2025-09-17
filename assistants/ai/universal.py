@@ -197,14 +197,12 @@ class UniversalAssistant(
             if self.instructions:
                 await self.start()
 
-    async def remember(self, message: MessageDict) -> None:
+    async def remember(self, *args, **kwargs) -> None:
         """
         Store a message in the assistant's memory.
-
-        :param message: The message to store.
         """
         # Delegate to the mixin
-        await self._remember_message(message)
+        await self._remember_message(*args, **kwargs)
 
     async def get_last_message(self, thread_id: str) -> Optional[MessageData]:
         """
