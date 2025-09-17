@@ -460,7 +460,7 @@ class OpenAICompletion(
         response = self.client.chat.completions.create(
             model=self.model,
             messages=cast(list, temp_memory),
-            reasoning_effort=self.reasoning["effort"] if self.reasoning else NOT_GIVEN,
+            reasoning_effort=self.reasoning.effort if self.reasoning else NOT_GIVEN,
             max_tokens=self.max_response_tokens or NOT_GIVEN,
         )
         message = response.choices[0].message

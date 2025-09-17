@@ -37,7 +37,9 @@ class TestReasoningModelMixin:
         """Test initialisation with a reasoning model."""
         with patch.object(ReasoningModelMixin, "REASONING_MODELS", ["reasoning-model"]):
             mixin = reasoning_mixin("reasoning-model", ThinkingConfig(1))
-            assert mixin.reasoning == {"effort": "medium"}
+            assert mixin.reasoning.model_dump(exclude_unset=True) == {
+                "effort": "medium"
+            }
 
     def test_reasoning_model_init_with_tools(self, reasoning_mixin):
         """Test initialisation with tools."""
@@ -55,13 +57,15 @@ class TestReasoningModelMixin:
         """Test setting reasoning effort with valid thinking level."""
         with patch.object(ReasoningModelMixin, "REASONING_MODELS", ["reasoning-model"]):
             mixin = reasoning_mixin("reasoning-model", ThinkingConfig(0))
-            assert mixin.reasoning == {"effort": "low"}
+            assert mixin.reasoning.model_dump(exclude_unset=True) == {"effort": "low"}
 
             mixin = reasoning_mixin("reasoning-model", ThinkingConfig(1))
-            assert mixin.reasoning == {"effort": "medium"}
+            assert mixin.reasoning.model_dump(exclude_unset=True) == {
+                "effort": "medium"
+            }
 
             mixin = reasoning_mixin("reasoning-model", ThinkingConfig(2))
-            assert mixin.reasoning == {"effort": "high"}
+            assert mixin.reasoning.model_dump(exclude_unset=True) == {"effort": "high"}
 
     def test_set_reasoning_effort_invalid(self, reasoning_mixin):
         """Test setting reasoning effort with invalid thinking level."""
