@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -21,4 +21,24 @@ jobs:
           pip install mypy
       - name: Type checking with mypy
         run: |
-          mypy assistants/ --show-error-codes --ignore-missing-imports
+          set -e
+          # Generate current mypy output with sorted errors
+          mypy assistants/ --show-error-codes 2>&1 | grep -E "(error|note)" | sort > /tmp/current_mypy.txt || true
+          
+          # Check if baseline file exists
+          if [ ! -f mypy_baseline.txt ]; then
+            echo "::error::mypy_baseline.txt not found. Please create it by running:"
+            echo "mypy assistants/ --show-error-codes | grep -E \"(error|note)\" | sort > mypy_baseline.txt"
+            exit 1
+          fi
+          
+          # Compare with baseline
+          if ! diff -u mypy_baseline.txt /tmp/current_mypy.txt; then
+            echo "::error::Mypy baseline check failed"
+            echo "New or changed type errors detected."
+            echo "To update the baseline, run:"
+            echo "mypy assistants/ --show-error-codes | grep -E \"(error|note)\" | sort > mypy_baseline.txt"
+            exit 1
+          else
+            echo "✅ Mypy output matches baseline"
+          fi

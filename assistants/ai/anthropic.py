@@ -3,10 +3,14 @@ This module defines the Claude class, which encapsulates interactions with the
 Anthropic API
 It includes memory management functionality through the MemoryMixin class.
 
+DEPRECATED: This module is deprecated. Use assistants.ai.universal.UniversalAssistant instead,
+which provides a unified interface for multiple LLM providers through the univllm library.
+
 Classes:
     - Claude: Encapsulates interactions with the Anthropic API.
 """
 
+import warnings
 from typing import AsyncIterator, Optional
 
 from anthropic import AsyncAnthropic
@@ -22,6 +26,13 @@ from assistants.ai.types import (
 )
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
+
+# Issue deprecation warning when module is imported
+warnings.warn(
+    "assistants.ai.anthropic is deprecated. Use assistants.ai.universal.UniversalAssistant instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 INSTRUCTIONS_UNDERSTOOD = "Instructions understood."
 

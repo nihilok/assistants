@@ -1,3 +1,9 @@
+"""
+DEPRECATED: This module is deprecated. Use assistants.ai.universal.UniversalAssistant instead,
+which provides a unified interface for multiple LLM providers through the univllm library.
+"""
+
+import warnings
 from typing import Optional
 
 from mistralai import Mistral
@@ -12,6 +18,13 @@ from assistants.ai.types import (
 )
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
+
+# Issue deprecation warning when module is imported
+warnings.warn(
+    "assistants.ai.mistral is deprecated. Use assistants.ai.universal.UniversalAssistant instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 class MistralAssistant(ConversationHistoryMixin, AssistantInterface):
