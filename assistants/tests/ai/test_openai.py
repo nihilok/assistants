@@ -37,7 +37,9 @@ class TestReasoningModelMixin:
         """Test initialisation with a reasoning model."""
         with patch.object(ReasoningModelMixin, "REASONING_MODELS", ["reasoning-model"]):
             mixin = reasoning_mixin("reasoning-model", ThinkingConfig(1))
-            assert mixin.reasoning == {"effort": "medium"}
+            assert mixin.reasoning.model_dump(exclude_unset=True) == {
+                "effort": "medium"
+            }
 
     def test_reasoning_model_init_with_tools(self, reasoning_mixin):
         """Test initialisation with tools."""
@@ -55,13 +57,15 @@ class TestReasoningModelMixin:
         """Test setting reasoning effort with valid thinking level."""
         with patch.object(ReasoningModelMixin, "REASONING_MODELS", ["reasoning-model"]):
             mixin = reasoning_mixin("reasoning-model", ThinkingConfig(0))
-            assert mixin.reasoning == {"effort": "low"}
+            assert mixin.reasoning.model_dump(exclude_unset=True) == {"effort": "low"}
 
             mixin = reasoning_mixin("reasoning-model", ThinkingConfig(1))
-            assert mixin.reasoning == {"effort": "medium"}
+            assert mixin.reasoning.model_dump(exclude_unset=True) == {
+                "effort": "medium"
+            }
 
             mixin = reasoning_mixin("reasoning-model", ThinkingConfig(2))
-            assert mixin.reasoning == {"effort": "high"}
+            assert mixin.reasoning.model_dump(exclude_unset=True) == {"effort": "high"}
 
     def test_set_reasoning_effort_invalid(self, reasoning_mixin):
         """Test setting reasoning effort with invalid thinking level."""
@@ -117,9 +121,9 @@ class TestAssistant:
     async def test_start(self, assistant):
         """Test starting the assistant."""
         await assistant.start()
-        assert assistant.memory == [
-            {"role": "system", "content": "You are a helpful assistant."}
-        ]
+        # The start method doesn't add system messages to memory
+        # System instructions are handled dynamically in _prepend_instructions()
+        assert assistant.memory == []
         assert assistant.last_message is None
 
     @pytest.mark.asyncio
@@ -161,14 +165,14 @@ class TestAssistant:
     async def test_image_prompt(self, assistant, mock_openai_client):
         """Test sending an image prompt to the assistant."""
         mock_openai_client.images.generate.return_value = MagicMock(
-            data=[MagicMock(url="https://example.com/image.png")]
+            data=[MagicMock(b64_json="base64encodedimagedata")]
         )
 
-        url = await assistant.image_prompt("Generate an image of a cat")
+        result = await assistant.image_prompt("Generate an image of a cat")
 
         assert assistant.last_prompt == "Generate an image of a cat"
         mock_openai_client.images.generate.assert_called_once()
-        assert url == "https://example.com/image.png"
+        assert result == "base64encodedimagedata"
 
     @pytest.mark.asyncio
     async def test_converse(self, assistant, mock_openai_client):

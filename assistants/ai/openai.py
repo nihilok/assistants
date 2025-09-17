@@ -1,12 +1,16 @@
 """
 This module defines classes for interacting with the OpenAI API(s), including memory management functionality through the MemoryMixin class.
 
+DEPRECATED: This module is deprecated. Use assistants.ai.universal.UniversalAssistant instead,
+which provides a unified interface for multiple LLM providers through the univllm library.
+
 Classes:
     - Assistant: Encapsulates interactions with the OpenAI Responses API.
     - Completion: Encapsulates interactions with the OpenAI Chat Completion API.
 """
 
 import hashlib
+import warnings
 from copy import deepcopy
 from typing import (
     Any,
@@ -20,9 +24,9 @@ from typing import (
 
 import openai
 from openai import BadRequestError, NOT_GIVEN, NotGiven
+from openai.types import Reasoning
 from openai.types.chat import ChatCompletionAudioParam, ChatCompletionMessage
 from openai.types.responses import Response
-from openai.types.shared_params import Reasoning
 
 from assistants.ai.constants import REASONING_MODELS
 from assistants.ai.memory import ConversationHistoryMixin
@@ -37,8 +41,16 @@ from assistants.ai.types import (
 from assistants.config import environment
 from assistants.lib.exceptions import ConfigError
 
+# Issue deprecation warning when module is imported
+warnings.warn(
+    "assistants.ai.openai is deprecated. Use assistants.ai.universal.UniversalAssistant instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 ThinkingLevel = Literal[0, 1, 2]
 OpenAIThinkingLevel = Literal["low", "medium", "high"]
+
 
 THINKING_MAP: dict[ThinkingLevel, OpenAIThinkingLevel] = {
     0: "low",
@@ -448,7 +460,7 @@ class OpenAICompletion(
         response = self.client.chat.completions.create(
             model=self.model,
             messages=cast(list, temp_memory),
-            reasoning_effort=self.reasoning["effort"] if self.reasoning else NOT_GIVEN,
+            reasoning_effort=self.reasoning.effort if isinstance(self.reasoning, Reasoning) else NOT_GIVEN,
             max_tokens=self.max_response_tokens or NOT_GIVEN,
         )
         message = response.choices[0].message

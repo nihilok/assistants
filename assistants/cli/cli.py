@@ -154,4 +154,8 @@ class CLI:
             sys.exit(1)
 
         self.handle_conversation_status()
-        self.start_io_loop()
+        try:
+            self.start_io_loop()
+        except ConfigError as e:
+            output.fail(f"Error: {e}")
+            sys.exit(1)

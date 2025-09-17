@@ -16,6 +16,7 @@ from pygments.util import ClassNotFound
 from pygments_tsx.tsx import TypeScriptXLexer, patch_pygments  # type: ignore[import-untyped]
 
 from assistants import version
+from assistants.ai.universal import UniversalAssistant
 from assistants.ai.anthropic import ClaudeAssistant
 from assistants.ai.constants import REASONING_MODELS
 from assistants.ai.dummy_assistant import DummyAssistant
@@ -138,6 +139,22 @@ MODEL_LOOKUP: dict[str, dict[str, Type[AssistantInterface]]] = {
 }
 
 
+def should_use_universal_assistant(model_name: str) -> bool:
+    """
+    Check if a model should use the UniversalAssistant instead of legacy classes.
+
+    :param model_name: The model name to check
+    :return: True if UniversalAssistant should be used
+    """
+    # Models that should always use UniversalAssistant
+    universal_prefixes = [
+        "deepseek",
+        # Add more as needed
+    ]
+
+    return any(model_name.startswith(prefix) for prefix in universal_prefixes)
+
+
 def build_assistant_params(
     args: Namespace, env: Config, model_name: str, model_class: Type[AssistantInterface]
 ) -> Tuple[AssistantParams, Type[AssistantInterface]]:
@@ -227,11 +244,25 @@ async def create_assistant_and_thread(
     model_name = env.CODE_MODEL if args.code else args.model
     model_type = "code" if args.code else "default"
 
-    # Find the right assistant class for this model
-    model_class = get_model_class(model_name, model_type)
+    # Check if we should use UniversalAssistant
+    use_universal = getattr(args, "universal", False) or should_use_universal_assistant(
+        model_name
+    )
 
-    if not model_class:
-        raise ConfigError(f"Invalid {model_type} model: {model_name}")
+    if use_universal:
+        # Use UniversalAssistant for new unified interface
+        model_class = UniversalAssistant
+        output.inform(f"Using UniversalAssistant (univllm) for model '{model_name}'")
+    else:
+        # Find the right assistant class for this model using legacy lookup
+        model_class = get_model_class(model_name, model_type)
+
+        if model_class is None:
+            # Fallback to UniversalAssistant if no legacy class found
+            model_class = UniversalAssistant
+            output.inform(
+                f"No legacy assistant found for '{model_name}', using UniversalAssistant"
+            )
 
     # Build assistant parameters using dataclass
     params, model_class = build_assistant_params(args, env, model_name, model_class)
