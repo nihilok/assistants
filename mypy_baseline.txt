@@ -8,8 +8,8 @@ assistants/ai/openai.py:287: note:     def generate(self, *, prompt: str, stream
 assistants/ai/openai.py:287: note: Possible overload variants:
 assistants/ai/openai.py:354: error: Argument "reasoning" to "create" of "Responses" has incompatible type "openai.types.shared.reasoning.Reasoning | NotGiven | None"; expected "openai.types.shared_params.reasoning.Reasoning | NotGiven | None"  [arg-type]
 assistants/ai/openai.py:463: error: Value of type "Reasoning" is not indexable  [index]
-assistants/ai/universal.py:14: error: Cannot find implementation or library stub for module named "univllm"  [import-not-found]
-assistants/ai/universal.py:15: error: Cannot find implementation or library stub for module named "univllm.models"  [import-not-found]
+assistants/ai/universal.py:14: error: Skipping analyzing "univllm": module is installed, but missing library stubs or py.typed marker  [import-untyped]
+assistants/ai/universal.py:15: error: Skipping analyzing "univllm.models": module is installed, but missing library stubs or py.typed marker  [import-untyped]
 assistants/ai/universal.py:15: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
 assistants/ai/universal.py:200: error: Signature of "remember" incompatible with supertype "assistants.ai.memory.ConversationHistoryMixin"  [override]
 assistants/ai/universal.py:200: note:          def remember(self, message: MessageDict) -> Coroutine[Any, Any, None]
