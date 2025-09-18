@@ -255,6 +255,7 @@ class NewThread(Command):
         """
         environ.thread_id = None
         environ.last_message = None
+        environ.assistant.memory = []
         clear_screen()
 
 

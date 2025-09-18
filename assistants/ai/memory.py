@@ -123,17 +123,12 @@ class ConversationHistoryMixin(ConversationManagementInterface):
             await conversation.save()
 
         messages = await get_messages_table().get_by_conversation_id(conversation_id)
-        if messages:
-            self.memory = []
-            self._load_memory_from_messages(messages)
-
+        self._load_memory_from_messages(messages)
         self.conversation_id = conversation_id
 
     async def _load_latest_conversation(self):
         """Load the most recent conversation or create a new one if none exists."""
         latest = await get_conversations_table().get_last_conversation()
-
-        self.memory = []
 
         if not latest:
             # Create a new conversation if none exists
@@ -147,17 +142,14 @@ class ConversationHistoryMixin(ConversationManagementInterface):
             self.conversation_id = latest.id
 
             messages = await get_messages_table().get_by_conversation_id(latest.id)
-            if messages:
-                self._load_memory_from_messages(messages)
+            self._load_memory_from_messages(messages)
 
     def _load_memory_from_messages(self, messages: list[Message]) -> None:
         """Convert database message objects to memory format."""
-        self.memory.extend(
-            [
-                MessageDict(role=message.role, content=message.content)
-                for message in messages
-            ]
-        )
+        self.memory = [
+            MessageDict(role=message.role, content=message.content)
+            for message in messages
+        ]
         self.truncate_memory()
 
     def _convert_system_messages_to_instructions(
