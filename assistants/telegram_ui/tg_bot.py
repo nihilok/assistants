@@ -49,10 +49,6 @@ def run_polling(application: Application):
     application.run_polling()
 
 
-async def async_setup():
-    await assistant.start()
-
-
 def setup_and_run(token: str):
     application = build_bot(token)
     run_polling(application)
