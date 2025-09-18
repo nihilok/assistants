@@ -17,6 +17,7 @@ Commands:
 /T, /thinking [level]  
                 Update the thinking mode of the assistant
 /l,  /last      Show the last message from the assistant
+/p, /print      Print the current thread to the terminal
 /env            Print the current environment variables
 /clear, C-l     Clear the terminal screen without starting a new thread
 

@@ -34,21 +34,6 @@ fallback_lexers = {
 }
 
 
-def get_lexer_for_language(lang):
-    """Get the appropriate lexer for a given language."""
-    if not lang:
-        return get_lexer_by_name("text", stripall=True)
-
-    lexer_class = fallback_lexers.get(lang)
-    if lexer_class:
-        return lexer_class()
-
-    try:
-        return get_lexer_by_name(lang, stripall=True)
-    except ClassNotFound:
-        return TextLexer()
-
-
 def highlight_code(code, lang=None):
     """Highlight a piece of code with the given language."""
     lexer = get_lexer_for_language(lang)
@@ -429,3 +414,54 @@ class StreamHighlighter:
             )
 
         return f"\033[{wrapped_lines}A\033[J"  # Move up and clear to end of screen
+
+
+async def display_conversation_history(assistant, thread_id=None):
+    """
+    Display the conversation history with proper formatting.
+
+    :param assistant: The assistant instance
+    :param thread_id: Optional thread ID (for validation)
+    :return: True if history was displayed, False otherwise
+    """
+    from assistants.ai.memory import ConversationHistoryMixin
+    from assistants.cli import output
+
+    if not isinstance(assistant, ConversationHistoryMixin):
+        return False
+
+    if thread_id is None and hasattr(assistant, "thread_id"):
+        thread_id = assistant.thread_id
+
+    if not thread_id:
+        return False
+
+    try:
+        history = await assistant.get_whole_thread()
+        if not history:
+            return False
+
+        for message in history:
+            if message["role"] == "user":
+                output.user_input(message["content"])
+            else:
+                output.default(highlight_code_blocks(message["content"]))
+                output.new_line(2)
+        return True
+    except Exception:
+        return False
+
+
+def get_lexer_for_language(lang):
+    """Get the appropriate lexer for a given language."""
+    if not lang:
+        return get_lexer_by_name("text", stripall=True)
+
+    lexer_class = fallback_lexers.get(lang)
+    if lexer_class:
+        return lexer_class()
+
+    try:
+        return get_lexer_by_name(lang, stripall=True)
+    except ClassNotFound:
+        return TextLexer()

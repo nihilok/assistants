@@ -16,7 +16,10 @@ from assistants.ai.types import AssistantInterface, MessageData, ThinkingConfig
 from assistants.cli import output
 from assistants.cli.selector import TerminalSelector, TerminalSelectorOption
 from assistants.cli.terminal import clear_screen
-from assistants.cli.utils import get_text_from_default_editor, highlight_code_blocks
+from assistants.cli.utils import (
+    get_text_from_default_editor,
+    display_conversation_history,
+)
 from assistants.config import environment
 from assistants.config.file_management import DATA_DIR
 from assistants.lib.constants import IO_INSTRUCTIONS
@@ -316,11 +319,10 @@ class SelectThread(Command):
         last_message = await environ.assistant.get_last_message()
         environ.last_message = last_message
 
-        if last_message:
-            output.default(highlight_code_blocks(last_message.text_content))
-            output.new_line(2)
-        else:
-            output.warn("No last message found in thread")
+        # Display the entire conversation history when selecting a thread
+        output.new_line()
+        if not await display_conversation_history(environ.assistant, environ.thread_id):
+            output.warn("No conversation history found in selected thread")
 
 
 select_thread: Command = SelectThread()
@@ -451,6 +453,37 @@ class CopyEntireThread(Command):
 copy_thread = CopyEntireThread()
 
 
+class PrintConversation(Command):
+    """
+    Command to print the entire conversation with formatting.
+    """
+
+    help = "Print the entire conversation with formatting"
+
+    async def __call__(self, environ: IoEnviron, *args) -> None:
+        """
+        Call the command to print the entire conversation with formatting.
+        """
+        if not isinstance(environ.assistant, ConversationHistoryMixin):
+            output.fail(
+                "This assistant does not support printing the entire conversation."
+            )
+            return
+
+        if not environ.thread_id:
+            output.warn("No thread selected.")
+            return
+
+        output.inform("Conversation History:")
+        output.new_line()
+
+        if not await display_conversation_history(environ.assistant, environ.thread_id):
+            output.warn("No conversation history found.")
+
+
+print_conversation = PrintConversation()
+
+
 class UpdateThinkingMode(Command):
     """
     Command to update the thinking mode of the assistant.
@@ -558,6 +591,8 @@ COMMAND_MAP = {
     "/image": generate_image,
     "/last": show_last_message,
     "/l": show_last_message,
+    "/p": print_conversation,
+    "/print": print_conversation,
     "/env": environment_command,
 }
 

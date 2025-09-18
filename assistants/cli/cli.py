@@ -21,6 +21,7 @@ from assistants.cli.utils import (
     create_assistant_and_thread,
     display_welcome_message,
     get_text_from_default_editor,
+    display_conversation_history,
 )
 from assistants.config import (
     environment,
@@ -122,12 +123,16 @@ class CLI:
         """Create assistant and get the last thread if one exists."""
         return await create_assistant_and_thread(self.args, environment)
 
-    def handle_conversation_status(self):
-        """Handle thread status messages."""
+    async def handle_conversation_status(self):
+        """Handle thread status messages and display conversation history when continuing."""
         if self.thread_id is None and self.args.continue_thread:
             output.warn("Warning: could not read last thread id; starting new thread.")
         elif self.args.continue_thread:
             output.inform("Continuing previous thread...")
+            output.new_line()
+
+            # Display the conversation history when continuing a thread using the shared function
+            await display_conversation_history(self.assistant, self.thread_id)
 
     def start_io_loop(self):
         """Start the IO loop."""
@@ -153,7 +158,7 @@ class CLI:
             output.fail(f"Error: {e}")
             sys.exit(1)
 
-        self.handle_conversation_status()
+        asyncio.run(self.handle_conversation_status())
         try:
             self.start_io_loop()
         except ConfigError as e:
