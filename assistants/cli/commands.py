@@ -309,14 +309,11 @@ class SelectThread(Command):
 
         environ.thread_id = thread_id
 
-        if isinstance(environ.assistant, ConversationHistoryMixin):
-            await environ.assistant.load_conversation(thread_id)
-        else:
-            await environ.assistant.start()
+        await environ.assistant.load_conversation(thread_id)
 
         output.inform(f"Selected thread '{thread_id}'")
 
-        last_message = await environ.assistant.get_last_message(thread_id)
+        last_message = await environ.assistant.get_last_message()
         environ.last_message = last_message
 
         if last_message:
@@ -410,7 +407,7 @@ class ShowLastMessage(Command):
         if not environ.thread_id:
             output.warn("No thread selected.")
             return
-        last_message = await environ.assistant.get_last_message(environ.thread_id)
+        last_message = await environ.assistant.get_last_message()
         if last_message:
             output.output(last_message.text_content)
         else:

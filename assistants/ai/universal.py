@@ -204,11 +204,10 @@ class UniversalAssistant(
         # Delegate to the mixin
         await self._remember_message(*args, **kwargs)
 
-    async def get_last_message(self, thread_id: str) -> Optional[MessageData]:
+    async def get_last_message(self) -> Optional[MessageData]:
         """
         Get the last message from the conversation.
 
-        :param thread_id: The thread ID (not used in current implementation).
         :return: MessageData with the last message or None if no messages exist.
         """
         if not self.memory:

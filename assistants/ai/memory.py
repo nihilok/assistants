@@ -184,12 +184,11 @@ class ConversationHistoryMixin(ConversationManagementInterface):
             await self.load_conversation()
         return self.conversation_id
 
-    async def get_last_message(self, thread_id: str) -> Optional[MessageData]:
+    async def get_last_message(self) -> Optional[MessageData]:
         """
         Get the last message from the conversation or None if no message exists.
         Conversation must have already been loaded.
 
-        :param thread_id: Not used; required by protocol
         :return: MessageData with the last message and current conversation_id.
         """
         if not self.memory:

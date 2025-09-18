@@ -252,7 +252,7 @@ class ConversationsTable(Table[Conversation]):
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 """
-                SELECT id, conversation, last_updated FROM conversations ORDER BY last_updated DESC LIMIT 1
+                SELECT id, last_updated FROM conversations ORDER BY last_updated DESC LIMIT 1
                 """
             )
             row = await cursor.fetchone()

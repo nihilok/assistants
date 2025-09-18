@@ -118,7 +118,7 @@ class AssistantIoHandler:
 
         if full_text:
             # Create message object for history
-            message_data = await self.assistant.get_last_message(thread_id_to_use or "")
+            message_data = await self.assistant.get_last_message()
             if message_data:
                 self.last_message = message_data
             else:

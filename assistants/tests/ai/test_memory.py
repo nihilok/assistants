@@ -102,7 +102,7 @@ class TestConversationHistoryMixin:
         ]
         memory_mixin.conversation_id = "test-id"
 
-        result = await memory_mixin.get_last_message("any-thread-id")
+        result = await memory_mixin.get_last_message()
 
         assert result.text_content == "Hi there"
         assert result.thread_id == "test-id"
@@ -112,7 +112,7 @@ class TestConversationHistoryMixin:
         """Test getting the last message from an empty conversation."""
         memory_mixin.memory = []
 
-        result = await memory_mixin.get_last_message("any-thread-id")
+        result = await memory_mixin.get_last_message()
 
         assert result is None
 

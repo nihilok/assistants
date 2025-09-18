@@ -1,7 +1,12 @@
 Changelog
 ---
 
-### 27/06/2025 v0.7.6
+### 18/09/2025 v0.7.7
+
+- simplify get_last_message method and update related calls;
+- update dependencies in pyproject.toml
+
+### 17/09/2025 v0.7.6
 
 - refactor to use new `univllm` package for model interactions
 - deprecate rest of `ai` package in favor of new `UniversalAssistant` class build on top of `univllm`

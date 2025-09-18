@@ -100,7 +100,7 @@ class ConversationManagementInterface(ABC):
     conversation_id: str | None = None
 
     @abstractmethod
-    async def get_last_message(self, thread_id: str) -> Optional[MessageData]:
+    async def get_last_message(self) -> Optional[MessageData]:
         """Get the last message from the conversation."""
 
     @abstractmethod
@@ -188,12 +188,11 @@ class AssistantInterface(ABC):
         return False
 
     @abstractmethod
-    async def get_last_message(self, thread_id: str) -> Optional[MessageData]:
+    async def get_last_message(self) -> Optional[MessageData]:
         """
         Get the last message from the conversation or None if no message exists.
         Conversation must have already been loaded.
 
-        :param thread_id: Not used; required by protocol
         :return: MessageData with the last message and current conversation_id.
         """
 
