@@ -67,9 +67,6 @@ telegram-bot: ## Run Telegram bot in Docker container
 	docker compose run --rm cli ai-tg-bot
 
 # Utility targets
-logs: ## Show recent logs (if any log files exist)
-	@if [ -f "app.log" ]; then tail -f app.log; else echo "No log files found"; fi
-
 config: ## Show configuration info
 	@echo "Python version: $$(python --version)"
 	@echo "Pip version: $$(pip --version)"
