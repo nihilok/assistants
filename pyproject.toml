@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "assistants-framework"
-version = "0.7.7"
+version = "0.7.8"
 authors = [
     { name = "Michael Jarvis", email = "nihilok@jarv.dev" },
 ]
@@ -17,7 +17,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-keywords = ["openai", "gpt3", "gpt3.5", "gpt4", "o1", "chatgpt", "chatbot", "assistant", "assistants", "claude", "anthropic", "cli", "telegram", "llm", "bot", "ui", "tui", "coding-assistant", "coding", "programming"]
+keywords = ["openai", "gpt3", "gpt3.5", "gpt4", "o1", "chatgpt", "chatbot", "assistant", "mistral", "deepseek", "assistants", "claude", "anthropic", "cli", "telegram", "llm", "bot", "ui", "tui", "coding-assistant", "coding", "programming"]
 
 dependencies = [
     "aiosqlite==0.21.0",
