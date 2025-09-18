@@ -204,6 +204,7 @@ class UniversalAssistant(
                 )
         return None
 
+
 # Convenience function for backward compatibility
 def create_universal_assistant(
     model: str, provider: Optional[str] = None, **kwargs
