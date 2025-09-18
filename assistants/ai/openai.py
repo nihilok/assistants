@@ -183,12 +183,6 @@ class OpenAIAssistant(
         if thinking is not None:
             self.reasoning_model_init(thinking)
 
-    async def start(self) -> None:
-        """
-        Initialize the message history with system instructions.
-        """
-        pass
-
     @property
     def assistant_id(self) -> str:
         """
@@ -445,12 +439,6 @@ class OpenAICompletion(
         self.max_response_tokens = max_response_tokens
         self.thinking = thinking or ThinkingConfig.get_thinking_config(level=1)
         self.reasoning_model_init(self.thinking)
-
-    async def start(self) -> None:
-        """
-        Initialise the assistant (no-op for Completion).
-        """
-        pass
 
     async def complete(self, prompt: str) -> ChatCompletionMessage:
         """

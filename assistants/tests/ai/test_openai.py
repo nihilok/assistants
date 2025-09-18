@@ -117,23 +117,6 @@ class TestAssistant:
                     api_key="",
                 )
 
-    @pytest.mark.asyncio
-    async def test_start(self, assistant):
-        """Test starting the assistant."""
-        await assistant.start()
-        # The start method doesn't add system messages to memory
-        # System instructions are handled dynamically in _prepend_instructions()
-        assert assistant.memory == []
-        assert assistant.last_message is None
-
-    @pytest.mark.asyncio
-    async def test_start_with_existing_memory(self, assistant):
-        """Test starting the assistant with existing memory."""
-        assistant.memory = [{"role": "user", "content": "Hello"}]
-        await assistant.start()
-        assert assistant.memory == [{"role": "user", "content": "Hello"}]
-        assert assistant.last_message is None
-
     def test_assistant_id(self, assistant):
         """Test getting the assistant ID."""
         assert assistant.assistant_id == assistant.config_hash
@@ -232,12 +215,6 @@ class TestCompletion:
         with pytest.raises(ConfigError):
             with patch("assistants.ai.openai.environment.OPENAI_API_KEY", ""):
                 OpenAICompletion(model="gpt-4", api_key="")
-
-    @pytest.mark.asyncio
-    async def test_start(self, completion):
-        """Test starting the completion."""
-        await completion.start()
-        # start() is a no-op for Completion
 
     def test_complete(self, completion, mock_openai_client):
         """Test completing a prompt."""

@@ -20,9 +20,6 @@ class TestConversationHistoryMixin:
                     text_content="Response", thread_id=self.conversation_id
                 )
 
-            async def start(self):
-                pass
-
         return ConcreteMemoryMixin(max_tokens=100)
 
     def test_init(self, memory_mixin):

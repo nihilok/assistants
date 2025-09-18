@@ -87,13 +87,6 @@ class UniversalAssistant(
         except Exception as e:
             raise ConfigError(f"Failed to initialize UniversalLLMClient: {e}") from e
 
-    async def start(self) -> None:
-        """
-        Initialize the message history with system instructions if provided.
-        """
-        if self.instructions and not self.memory:
-            self.memory = [{"role": "system", "content": self.instructions}]
-
     async def converse(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[MessageData]:
@@ -177,7 +170,13 @@ class UniversalAssistant(
 
         :return: List of messages in the conversation.
         """
-        return self.memory
+        payload = self.memory
+        if self.instructions:
+            if payload and payload[0].get("role") == "system":
+                payload[0]["content"] = self.instructions
+            else:
+                payload = [{"role": "system", "content": self.instructions}] + payload
+        return payload
 
     async def load_conversation(self, conversation_id: Optional[str] = None) -> None:
         """
@@ -185,24 +184,7 @@ class UniversalAssistant(
 
         :param conversation_id: The ID of the conversation to load.
         """
-        if conversation_id:
-            self.conversation_id = conversation_id
-            # Load conversation from database/storage
-            # This delegates to the ConversationHistoryMixin
-            await self._load_conversation_from_storage(conversation_id)
-        else:
-            # Initialize new conversation
-            self.conversation_id = None
-            self.memory = []
-            if self.instructions:
-                await self.start()
-
-    async def remember(self, *args, **kwargs) -> None:
-        """
-        Store a message in the assistant's memory.
-        """
-        # Delegate to the mixin
-        await self._remember_message(*args, **kwargs)
+        await super().load_conversation(conversation_id)
 
     async def get_last_message(self) -> Optional[MessageData]:
         """
@@ -221,60 +203,6 @@ class UniversalAssistant(
                     thread_id=self.conversation_id,
                 )
         return None
-
-    async def async_get_conversation_id(self) -> str:
-        """
-        Get the conversation ID asynchronously.
-
-        :return: The conversation ID.
-        """
-        if not self.conversation_id:
-            # Generate or load conversation ID
-            self.conversation_id = await self._generate_conversation_id()
-        return self.conversation_id
-
-    async def _load_conversation_from_storage(self, conversation_id: str) -> None:
-        """
-        Load conversation from storage (placeholder for actual implementation).
-
-        :param conversation_id: The ID of the conversation to load.
-        """
-        # This would typically load from database
-        # For now, delegate to parent class if it has the functionality
-        pass
-
-    async def _remember_message(self, message: MessageDict) -> None:
-        """
-        Store a message in memory (placeholder for actual implementation).
-
-        :param message: The message to store.
-        """
-        # Add to memory
-        self.memory.append(message)
-
-        # Optionally persist to storage
-        if self.conversation_id:
-            await self._persist_message_to_storage(message)
-
-    async def _persist_message_to_storage(self, message: MessageDict) -> None:
-        """
-        Persist message to storage (placeholder for actual implementation).
-
-        :param message: The message to persist.
-        """
-        # This would typically save to database
-        pass
-
-    async def _generate_conversation_id(self) -> str:
-        """
-        Generate a new conversation ID.
-
-        :return: A new conversation ID.
-        """
-        import uuid
-
-        return str(uuid.uuid4())
-
 
 # Convenience function for backward compatibility
 def create_universal_assistant(

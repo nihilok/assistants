@@ -70,7 +70,6 @@ The `UniversalAssistant` implements the same interface as the legacy classes:
 
 ```python
 # All these methods work the same way
-await assistant.start()
 response = await assistant.converse("Hello")
 async for chunk in assistant.stream_converse("Hello"):
     print(chunk, end="")

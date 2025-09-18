@@ -204,10 +204,6 @@ class ConversationHistoryMixin(ConversationManagementInterface):
     ) -> Optional[MessageData]:
         raise NotImplementedError
 
-    @abstractmethod
-    async def start(self) -> None:
-        raise NotImplementedError
-
     async def get_whole_thread(self) -> list[MessageInput]:
         """
         Get the whole thread of messages.

@@ -146,10 +146,6 @@ class AssistantInterface(ABC):
         pass
 
     @abstractmethod
-    async def start(self) -> None:
-        """Start the assistant."""
-
-    @abstractmethod
     async def load_conversation(
         self,
         conversation_id: Optional[str] = None,

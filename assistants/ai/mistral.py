@@ -67,9 +67,6 @@ class MistralAssistant(ConversationHistoryMixin, AssistantInterface):
         self.thinking = thinking
         ConversationHistoryMixin.__init__(self, max_history_tokens)
 
-    async def start(self) -> None:
-        pass
-
     async def converse(
         self, user_input: str, thread_id: Optional[str] = None
     ) -> Optional[MessageData]:

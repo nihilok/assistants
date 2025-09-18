@@ -49,12 +49,6 @@ class TestClaude:
                 ClaudeAssistant(model="claude-3-opus-20240229", api_key="")
 
     @pytest.mark.asyncio
-    async def test_start(self, claude):
-        """Test starting the Claude assistant."""
-        await claude.start()
-        # start() is a no-op for Claude
-
-    @pytest.mark.asyncio
     @patch("assistants.ai.memory.ConversationHistoryMixin.load_conversation")
     async def test_load_conversation(self, mock_super_load, claude):
         """Test loading a conversation."""

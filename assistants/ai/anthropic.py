@@ -107,11 +107,6 @@ class ClaudeAssistant(
             )
         return thinking
 
-    async def start(self) -> None:
-        """
-        Do nothing
-        """
-
     async def converse(
         self,
         user_input: str,

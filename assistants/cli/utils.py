@@ -256,7 +256,6 @@ async def create_assistant_and_thread(
 
     # Create and start the assistant
     assistant = create_assistant_from_params(params, model_class)
-    await assistant.start()
 
     # Get thread ID if continuing a conversation
     thread_id = (
