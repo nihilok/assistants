@@ -80,6 +80,8 @@ class Editor(Command):
         :param environ: The environment variables for the input/output loop.
         """
         environ.user_input = get_text_from_default_editor().strip()
+        output.green(environ.user_input)
+        output.new_line(2)
 
 
 editor: Command = Editor()

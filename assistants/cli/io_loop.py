@@ -34,7 +34,8 @@ class AssistantIoHandler:
         :param input_text: The text input from the user
         :return: True if program should exit, False otherwise
         """
-        output.reset()
+        output.reset()  # Shouldn't need this, but just in case
+
         self.user_input = input_text.strip()
 
         if not self.user_input:

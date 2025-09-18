@@ -12,52 +12,52 @@ def new_line(n=1):
 
 def green(text: str):
     print(f"{ANSIEscapeSequence.OKGREEN}{text if text else ''}", end="")
+    reset()
 
 
 def warning(text: str):
     print(f"{ANSIEscapeSequence.WARNING}{text if text else ''}", end="")
+    reset()
 
 
 def info(text: str):
     print(f"{ANSIEscapeSequence.OKBLUE}{text if text else ''}", end="")
+    reset()
 
 
 def error(text: str):
     print(f"{ANSIEscapeSequence.FAIL}{text if text else ''}", end="")
+    reset()
 
 
 def default(text: str):
     print(f"{ANSIEscapeSequence.ENDC}{text if text else ''}", end="")
+    reset()
 
 
 def output(text: str):
     default(text)
     new_line(2)
-    reset()
 
 
 def warn(text: str):
     warning(text)
     new_line(2)
-    reset()
 
 
 def fail(text: str):
     error(text)
     new_line(2)
-    reset()
 
 
 def inform(text: str):
     info(text)
     new_line(2)
-    reset()
 
 
 def user_input(text: str, prompt: str = ">>>"):
     green(f"{prompt} {text}")
     new_line()
-    reset()
 
 
 def update_line(text: str):
