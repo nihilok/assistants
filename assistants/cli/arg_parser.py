@@ -87,11 +87,10 @@ OPENAI_API_KEY environment variable {"must be set to use the OpenAI API (not set
         "to 0, or 1 if passed without an argument.",
     )
     parser.add_argument(
-        "-U",
-        "--universal",
+        "-L",
+        "--legacy",
         action="store_true",
-        help="use the new UniversalAssistant interface (recommended). This provides "
-        "a unified interface for all LLM providers through the univllm library.",
+        help="use the legacy assistant classes instead of the new UniversalAssistant interface. The UniversalAssistant (univllm) interface is now the default.",
     )
     parser.add_argument(
         "--version",

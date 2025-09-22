@@ -14,12 +14,15 @@ from dataclasses import dataclass
 from typing import (
     AsyncIterator,
     Literal,
-    NotRequired,
     Optional,
     TypedDict,
     Union,
     Sequence,
 )
+try:
+    from typing import NotRequired
+except ImportError:
+    from typing_extensions import NotRequired
 
 from anthropic.types import MessageParam
 from openai.types.responses import EasyInputMessageParam

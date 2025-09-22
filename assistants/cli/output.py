@@ -3,7 +3,7 @@ from assistants.cli.terminal import ANSIEscapeSequence
 
 
 def reset():
-    print(ANSIEscapeSequence.ENDC, end="")
+    print(f"{ANSIEscapeSequence.ENDC}", end="")
 
 
 def new_line(n=1):

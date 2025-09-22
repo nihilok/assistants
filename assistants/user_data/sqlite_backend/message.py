@@ -1,4 +1,9 @@
-from typing import List, Optional, Self, Union
+from typing import List, Optional, Union
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 import aiosqlite
 from pydantic import BaseModel
