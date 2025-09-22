@@ -327,6 +327,9 @@ def display_welcome_message(args):
     elif args.model.startswith("claude") and args.thinking:
         mode_info = " (thinking enabled)"
 
+    if args.legacy:
+        mode_info += " (legacy)"
+
     output.output(
         f"Assistant CLI v{version.__VERSION__}; using {model_info} model{mode_info}.\n"
         "Type '/help' (or '/h') for a list of commands."
