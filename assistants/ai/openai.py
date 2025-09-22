@@ -351,7 +351,7 @@ class OpenAIAssistant(
             model=self.model,
             input=self.conversation_payload,  # type: ignore
             reasoning=ReasoningTypedDict(
-                **self.reasoning.model_dump(exclude_unset=True)
+                **self.reasoning.model_dump(exclude_unset=True) # type: ignore
             )
             if self.is_reasoning_model and self.reasoning
             else NOT_GIVEN,
