@@ -229,17 +229,14 @@ async def create_assistant_and_thread(
     model_name = env.CODE_MODEL if args.code else args.model
     model_type = "code" if args.code else "default"
 
-    # Check if we should use UniversalAssistant
-    use_universal = getattr(args, "universal", False) or should_use_universal_assistant(
-        model_name
-    )
+    # Use UniversalAssistant by default, legacy only if explicitly requested
+    use_universal = not getattr(args, "legacy", False)
 
     model_class: Type[AssistantInterface]
 
     if use_universal:
         # Use UniversalAssistant for new unified interface
         model_class = UniversalAssistant
-        output.inform(f"Using UniversalAssistant (univllm) for model '{model_name}'")
     else:
         # Find the right assistant class for this model using legacy lookup
         model_class = get_model_class(model_name, model_type)
