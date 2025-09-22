@@ -3,7 +3,7 @@ import webbrowser
 import base64
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Optional
 
 import aiofiles
@@ -29,6 +29,12 @@ from assistants.user_data.sqlite_backend.conversations import (
     get_conversations_table,
 )
 from assistants.user_data.sqlite_backend.message import get_messages_table
+
+try:
+    from datetime import UTC
+except ImportError:
+    from datetime import timezone
+    UTC = timezone.utc
 
 
 @dataclass
