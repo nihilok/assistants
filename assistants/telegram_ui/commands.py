@@ -1,4 +1,6 @@
-import aiohttp
+import uuid
+
+import base64, io, binascii
 from telegram import ReplyKeyboardRemove
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
@@ -101,7 +103,7 @@ async def toggle_auto_reply(update: StandardUpdate, context: ContextTypes.DEFAUL
 @restricted_access
 async def message_handler(update: StandardUpdate, context: ContextTypes.DEFAULT_TYPE):
     existing_chat = await chat_data.get_chat_data(update.effective_chat.id)
-    chat_thread_id = existing_chat.thread_id or update.effective_chat.id
+    chat_thread_id = existing_chat.thread_id or uuid.uuid4().hex
     message_text = update.message.text
     if not message_text:
         return
@@ -191,14 +193,110 @@ async def generate_image(update: StandardUpdate, context: ContextTypes.DEFAULT_T
     if not update.message.text:
         return
 
-    prompt = update.message.text.replace("/image ", "")
-    image_url = await assistant.image_prompt(prompt)
+    prompt = update.message.text.replace("/image ", "").strip()
+    if not prompt:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Please provide a prompt after /image",
+        )
+        return
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(image_url) as response:
-            image_content = await response.read()
+    try:
+        image_b64 = await assistant.image_prompt(prompt)
+    except Exception as e:  # pragma: no cover - defensive
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"Image generation failed: {e}",
+        )
+        return
 
-    await update.message.reply_photo(image_content)
+    # image_b64 might be:
+    # 1. A raw base64 string
+    # 2. A data URI (data:image/png;base64,....)
+    # 3. A dict with key 'b64_json'
+    # 4. A response object like {'data': [{'b64_json': '...'}]}
+
+    def extract_first_b64(obj):  # type: ignore
+        if obj is None:
+            return None
+        if isinstance(obj, str):
+            return obj
+        if isinstance(obj, dict):
+            # Common OpenAI style: {'data': [{'b64_json': '...'}]}
+            if "b64_json" in obj and isinstance(obj["b64_json"], str):
+                return obj["b64_json"]
+            data = obj.get("data") if hasattr(obj, "get") else None
+            if isinstance(data, list) and data:
+                first = data[0]
+                if isinstance(first, dict):
+                    if "b64_json" in first and isinstance(first["b64_json"], str):
+                        return first["b64_json"]
+                    # Some providers might use 'image' or 'b64'
+                    for k in ("image", "b64", "content"):
+                        if k in first and isinstance(first[k], str):
+                            return first[k]
+        if isinstance(obj, list) and obj:
+            # Maybe list of strings
+            if isinstance(obj[0], str):
+                return obj[0]
+            if isinstance(obj[0], dict):
+                return extract_first_b64(obj[0])
+        return None
+
+    raw_b64 = extract_first_b64(image_b64)
+
+    if not raw_b64:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Did not receive a base64 image payload from the model.",
+        )
+        return
+
+    # Strip data URI header if present
+    if "," in raw_b64 and raw_b64.lower().startswith("data:"):
+        raw_b64 = raw_b64.split(",", 1)[1]
+
+    # Remove whitespace / newlines
+    raw_b64_stripped = "".join(raw_b64.split())
+
+    try:
+        image_bytes = base64.b64decode(raw_b64_stripped, validate=True)
+    except binascii.Error:
+        # Try a more permissive decode (padding issues, etc.)
+        try:
+            padding = (-len(raw_b64_stripped) % 4)
+            image_bytes = base64.b64decode(raw_b64_stripped + "=" * padding)
+        except Exception as e:  # pragma: no cover
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"Failed to decode image data: {e}",
+            )
+            return
+
+    if not image_bytes:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Image data was empty after decoding.",
+        )
+        return
+
+    bio = io.BytesIO(image_bytes)
+    # Telegram looks at filename extension for MIME in some cases; default to png
+    bio.name = "image.png"
+
+    caption = f"Prompt: {prompt}" if prompt else None
+
+    try:
+        await update.message.reply_photo(photo=bio, caption=caption)
+    except Exception as e:  # Fallback: send as document if photo fails
+        bio.seek(0)
+        try:
+            await update.message.reply_document(document=bio, caption=caption)
+        except Exception:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"Failed to send image: {e}",
+            )
 
 
 @restricted_access

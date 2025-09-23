@@ -29,11 +29,12 @@ def restricted_access(f):
 def requires_superuser(f):
     @wraps(f)
     async def wrapper(*args, **kwargs):
-        if args and isinstance(args[0], Update):
+        # Check for Update object in args (must have effective_user attribute)
+        if args and hasattr(args[0], "effective_user"):
             update = args[0]
-        elif args and isinstance(args[1], Update):
+        elif len(args) > 1 and hasattr(args[1], "effective_user"):
             update = args[1]
-        elif "update" in kwargs:
+        elif "update" in kwargs and hasattr(kwargs["update"], "effective_user"):
             update = kwargs["update"]
         else:
             raise ValueError("Update object not found in arguments")

@@ -348,7 +348,7 @@ class ChatDataTable(Table[ChatData]):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """
-                REPLACE INTO chat_data VALUES (?, ?, ?, ?)
+                REPLACE INTO chat_data VALUES (?, ?, ?)
                 """,
                 (
                     record.chat_id,
