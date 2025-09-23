@@ -403,7 +403,7 @@ class GenerateImage(Command):
         environ.last_message = MessageData(
             text_content=image_file_path, thread_id=environ.thread_id
         )
-        if getattr(environment, "OPEN_IMAGES_IN_BROWSER", False):
+        if environment.OPEN_IMAGES_IN_BROWSER:
             try:
                 webbrowser.open(f"file://{image_file_path}")
                 output.inform("Opening image in browser...")
