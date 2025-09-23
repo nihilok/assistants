@@ -1,6 +1,6 @@
 import uuid
 
-import aiohttp
+import base64, io, binascii
 from telegram import ReplyKeyboardRemove
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
@@ -215,7 +215,6 @@ async def generate_image(update: StandardUpdate, context: ContextTypes.DEFAULT_T
     # 2. A data URI (data:image/png;base64,....)
     # 3. A dict with key 'b64_json'
     # 4. A response object like {'data': [{'b64_json': '...'}]}
-    import base64, io, binascii
 
     def extract_first_b64(obj):  # type: ignore
         if obj is None:
