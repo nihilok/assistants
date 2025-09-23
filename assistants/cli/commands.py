@@ -11,7 +11,6 @@ import pyperclip  # type: ignore[import-untyped]
 
 from assistants.ai.anthropic import ClaudeAssistant
 from assistants.ai.memory import ConversationHistoryMixin
-from assistants.ai.openai import OpenAIAssistant
 from assistants.ai.types import AssistantInterface, MessageData, ThinkingConfig
 from assistants.cli import output
 from assistants.cli.selector import TerminalSelector, TerminalSelectorOption
@@ -345,70 +344,71 @@ class GenerateImage(Command):
 
     @staticmethod
     async def save_image_from_b64(image_b64: str, prompt: str) -> str:
-        """
-        Save the base64 image to file.
-
-        :param image_b64: The base64 string of the image.
-        :param prompt: The prompt that was used to create the image.
-        :return: The file path where the image was saved.
-        """
-        # Decode the base64 string
+        """Save base64 image to file and return path."""
         image_content = base64.b64decode(image_b64)
-
-        # Save the image to file
         image_path = DATA_DIR / "images"
         if not image_path.exists():
             image_path.mkdir(parents=True)
-
-        filename = (
-            f"{'_'.join(prompt.split()[:5])}_{datetime.now(UTC).timestamp():.0f}.png"
-        )
+        filename = f"{'_'.join(prompt.split()[:5])}_{datetime.now(UTC).timestamp():.0f}.png"
         full_image_path = image_path / filename
-
         async with aiofiles.open(full_image_path, "wb") as file:
             await file.write(image_content)
-
         return str(full_image_path)
 
     async def __call__(self, environ: IoEnviron, *args) -> None:
         assistant = environ.assistant
-        if not isinstance(assistant, OpenAIAssistant):
+        # Reuse current assistant if it already supports image generation
+        if hasattr(assistant, "image_prompt"):
+            image_assistant = assistant
+        else:
+            # Fallback to UniversalAssistant just for image gen
             try:
-                # Temporary hack: instantiate legacy OpenAI assistant for image generation
-                assistant = OpenAIAssistant(
-                model="gpt-image-1",
-                api_key=environment.OPENAI_API_KEY,
-                instructions="Image generation assistant"
-            )
-            except ConfigError:
-                output.fail(
-                    "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable to generate images."
+                from assistants.ai.universal import UniversalAssistant  # lazy import
+                if not environment.OPENAI_API_KEY:
+                    raise ConfigError(
+                        "OpenAI API key not found. Please set OPENAI_API_KEY to generate images."
+                    )
+                image_assistant = UniversalAssistant(
+                    model="gpt-image-1",
+                    api_key=environment.OPENAI_API_KEY,
+                    instructions="Image generation assistant",
                 )
+            except ConfigError as e:
+                output.fail(str(e))
+                return
+            except Exception as e:  # pragma: no cover
+                output.fail(f"Failed to initialize image generation assistant: {e}")
                 return
 
-        prompt = " ".join(args)
+        prompt = " ".join(args).strip()
+        if not prompt:
+            output.warn("Provide a prompt after /image command.")
+            return
 
-        image_b64 = await assistant.image_prompt(
-            prompt, model="gpt-image-1", quality="low"
-        )
-
-        if image_b64:
-            # Save the image to file by default
-            image_file_path = await self.save_image_from_b64(image_b64, prompt)
-
-            output.default(f"Image generated and saved to: {image_file_path}")
-            output.new_line(2)
-
-            environ.last_message = MessageData(
-                text_content=image_file_path, thread_id=environ.thread_id
+        try:
+            image_b64 = await image_assistant.image_prompt(  # type: ignore[attr-defined]
+                prompt, model="gpt-image-1", quality="low"
             )
+        except Exception as e:  # pragma: no cover
+            output.fail(f"Image generation failed: {e}")
+            return
 
-            if environment.OPEN_IMAGES_IN_BROWSER:
+        if not image_b64:
+            output.warn("No image returned...")
+            return
+
+        image_file_path = await self.save_image_from_b64(image_b64, prompt)
+        output.default(f"Image generated and saved to: {image_file_path}")
+        output.new_line(2)
+        environ.last_message = MessageData(
+            text_content=image_file_path, thread_id=environ.thread_id
+        )
+        if getattr(environment, "OPEN_IMAGES_IN_BROWSER", False):
+            try:
                 webbrowser.open(f"file://{image_file_path}")
                 output.inform("Opening image in browser...")
-
-        else:
-            output.warn("No image returned...")
+            except Exception:  # pragma: no cover
+                output.warn("Failed to open image in browser.")
 
 
 generate_image: Command = GenerateImage()

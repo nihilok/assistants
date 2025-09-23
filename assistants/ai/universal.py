@@ -9,7 +9,7 @@ Classes:
 """
 
 import warnings
-from typing import AsyncIterator, Optional, Sequence
+from typing import AsyncIterator, Optional, Sequence, Literal
 
 from univllm import UniversalLLMClient, is_unsupported_model
 from univllm.models import Message
@@ -34,6 +34,9 @@ class UniversalAssistant(
 
     This class provides a unified interface for multiple LLM providers including
     OpenAI, Anthropic, Deepseek, and Mistral through the univllm package.
+
+    It also supports image generation for providers/models that expose this
+    capability (e.g. OpenAI's gpt-image-1) via the generate_image API in univllm.
 
     Attributes:
         model (str): The model to be used by the assistant.
@@ -150,6 +153,46 @@ class UniversalAssistant(
 
         except Exception as e:
             raise ConfigError(f"Failed to get streaming completion: {e}") from e
+
+    async def image_prompt(
+        self,
+        prompt: str,
+        model: Literal["gpt-image-1"] = "gpt-image-1",
+        quality: Literal[
+            "standard", "hd", "low", "medium", "high", "auto"
+        ] = "standard",
+        size: Literal[
+            "auto",
+            "1024x1024",
+            "1536x1024",
+            "1024x1536",
+            "256x256",
+            "512x512",
+            "1792x1024",
+            "1024x1792",
+        ] = "1024x1024",
+    ) -> Optional[str]:
+        """Generate an image using a vision-capable model via univllm.
+
+        This mirrors the interface of the legacy OpenAIAssistant.image_prompt but
+        routes the request through the universal client. Returns the first
+        image's base64 data (b64_json) if available.
+        """
+        try:
+            response = await self.client.generate_image(
+                prompt=prompt,
+                model=model,
+                size=size,
+                response_format="b64_json",
+                quality=quality,  # passed through extra_params
+            )
+        except Exception as e:
+            raise ConfigError(f"Failed to generate image: {e}") from e
+
+        if not response.images:
+            return None
+        first = response.images[0]
+        return first.b64_json or None
 
     def _convert_memory_to_univllm_format(self) -> list[Message]:
         """
