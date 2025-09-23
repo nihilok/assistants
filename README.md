@@ -98,10 +98,10 @@ Key Telegram commands:
 - `DEFAULT_MODEL` - Default model (default: `gpt-5-mini`)
 - `DEFAULT_CLAUDE_SONNET_MODEL` - Default Claude model (default: `claude-sonnet-4-20250514`)
 - `DEFAULT_CLAUDE_OPUS_MODEL` - Default Claude Opus model (default: `claude-opus-4-1-20250805`)
-- `DEFAULT_CHATGPT_MODEL` - Default ChatGPT model (default: `gpt-4.1-mini`)
+- `DEFAULT_CHATGPT_MODEL` - Default ChatGPT model (default: `gpt-5-mini`)
 - `DEFAULT_GPT_REASONING_MODEL` - Default GPT reasoning model (default: `o4-mini`)
-- `CODE_MODEL` - Reasoning model (default: `o3-mini`)
-- `IMAGE_MODEL` - Image model (default: `dall-e-3`)
+- `CODE_MODEL` - Reasoning model (default: `o4-mini`)
+- `IMAGE_MODEL` - Image model (default: `gpt-image-1`)
 - `ASSISTANTS_DATA_DIR` - Data directory (default: `~/.local/share/assistants`)
 - `ASSISTANTS_CONFIG_DIR` - Config directory (default: `~/.config/assistants`)
 - `TG_BOT_TOKEN` - Telegram bot token
