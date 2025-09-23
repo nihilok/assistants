@@ -17,7 +17,7 @@ SOURCE_DIR="assistants"
 generate_mypy_output() {
     local output_file="$1"
     echo "$(dim "Running mypy on ${SOURCE_DIR}/...")"
-    mypy "${SOURCE_DIR}/" --show-error-codes 2>&1 | grep -E "(error|note):" | sort > "$output_file" || true
+    uv run mypy "${SOURCE_DIR}/" --show-error-codes 2>&1 | grep -E "(error|note):" | sort > "$output_file" || true
 }
 
 # Function to generate baseline
