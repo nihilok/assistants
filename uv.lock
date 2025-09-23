@@ -181,7 +181,7 @@ wheels = [
 
 [[package]]
 name = "assistants-framework"
-version = "0.8.3"
+version = "0.8.4"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -232,7 +232,7 @@ requires-dist = [
     { name = "types-aiofiles", specifier = "~=24.1.0.20250606" },
     { name = "types-pygments", specifier = "~=2.19.0.20250516" },
     { name = "types-pyyaml", specifier = "~=6.0.12.20250516" },
-    { name = "univllm", specifier = "==0.1.9" },
+    { name = "univllm", specifier = "==0.1.10" },
 ]
 
 [package.metadata.requires-dev]
@@ -2249,7 +2249,7 @@ wheels = [
 
 [[package]]
 name = "univllm"
-version = "0.1.9"
+version = "0.1.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anthropic" },
@@ -2260,9 +2260,9 @@ dependencies = [
     { name = "pytest" },
     { name = "python-dotenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/10/ac/f9b5fae7a530089ceffe361012a78a37e7645afe368cdff12021899f8add/univllm-0.1.9.tar.gz", hash = "sha256:fffc9ec262005d963d1b46382bb6716250b74806a313549f2890a9e4eb1c1281", size = 16267, upload-time = "2025-09-23T18:16:57.884Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/e7/67d939ab9c828793cc2a592e1d523a145a03c3a63db4577f64707321ab5f/univllm-0.1.10.tar.gz", hash = "sha256:a2ccc6365e44d1a599dc2f685128da2f259ccf80b56fb8ed660b38a68a68e6ef", size = 16267, upload-time = "2025-09-23T19:43:00.971Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/37/d5/1a0db175837498012b1cd1e58e7c3b868c7fc7a247aaa9ec1af1cb32ce20/univllm-0.1.9-py3-none-any.whl", hash = "sha256:ad8f1df91224af64f421c501e5785c6fcd8a417ff5ef55f072aee88e79c35793", size = 18707, upload-time = "2025-09-23T18:16:56.667Z" },
+    { url = "https://files.pythonhosted.org/packages/9d/64/2af967972a3c1f936ffa94d0c40d5af3160992120018d4cc5cb4705d7353/univllm-0.1.10-py3-none-any.whl", hash = "sha256:0764ac3dd6be375ec59ac2829593bd0b1389a2513f09bb3bfab1c8fa13d70500", size = 18715, upload-time = "2025-09-23T19:42:59.983Z" },
 ]
 
 [[package]]
