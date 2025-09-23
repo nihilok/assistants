@@ -2,7 +2,7 @@ import asyncio
 import os
 import sys
 
-from assistants.cli import cli
+from assistants.cli import run_cli
 from assistants.config import environment
 from assistants.user_data.sqlite_backend import init_db
 
@@ -19,7 +19,7 @@ def main():
     environment.DEFAULT_MODEL = CLAUDE_SONNET_MODEL
     environment.CODE_MODEL = CLAUDE_OPUS_MODEL
     asyncio.run(init_db())
-    cli()
+    run_cli()
 
 
 if __name__ == "__main__":

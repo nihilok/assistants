@@ -4,7 +4,7 @@ import os
 import sys
 from pathlib import Path
 
-from assistants.cli import cli
+from assistants.cli import run_cli
 from assistants.user_data.sqlite_backend import init_db
 
 
@@ -109,7 +109,7 @@ def main():
             return
 
     asyncio.run(init_db())
-    cli()
+    run_cli()
 
 
 if __name__ == "__main__":
