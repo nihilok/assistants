@@ -89,7 +89,7 @@ def test_update_from_config_yaml_error(
 
 @patch("assistants.cli.output.fail")
 @patch("sys.exit")
-@patch("assistants.config.environment")
+@patch("assistants.cli.cli.environment")
 def test_validate_arguments_invalid_thinking(mock_env, mock_exit, mock_fail, cli):
     cli.args = MagicMock()
     cli.args.thinking = 3  # Invalid value
