@@ -159,8 +159,8 @@ class UniversalAssistant(
         prompt: str,
         model: Literal["gpt-image-1"] = "gpt-image-1",
         quality: Literal[
-            "standard", "hd", "low", "medium", "high", "auto"
-        ] = "standard",
+            "low", "medium", "high", "auto"
+        ] = "low",
         size: Literal[
             "auto",
             "1024x1024",

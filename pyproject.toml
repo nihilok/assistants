@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "assistants-framework"
-version = "0.8.2"
+version = "0.8.3"
 authors = [
     { name = "Michael Jarvis", email = "nihilok@jarv.dev" },
 ]
@@ -34,15 +34,13 @@ dependencies = [
     "types-pygments~=2.19.0.20250516",
     "types-aiofiles~=24.1.0.20250606",
     "types-PyYAML~=6.0.12.20250516",
-    "univllm==0.1.7",
-]
-
-[project.optional-dependencies]
-telegram = [
-    "python-telegram-bot==21.1",
+    "univllm==0.1.8",
 ]
 
 [dependency-groups]
+telegram = [
+    "python-telegram-bot==22.4",
+]
 dev = [
     "pytest",
     "pytest-mock",

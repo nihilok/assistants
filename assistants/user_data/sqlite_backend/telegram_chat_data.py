@@ -348,7 +348,7 @@ class ChatDataTable(Table[ChatData]):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """
-                REPLACE INTO chat_data VALUES (?, ?, ?, ?)
+                REPLACE INTO chat_data VALUES (?, ?, ?)
                 """,
                 (
                     record.chat_id,
@@ -530,6 +530,7 @@ class TelegramSqliteUserData(UserData):
         """
         superuser = await self.superusers_table.get(user_id=user_id)
         if superuser:
+            print("Superuser!")
             return True
         raise NotAuthorised(str(user_id))
 
