@@ -378,7 +378,7 @@ class GenerateImage(Command):
                 assistant = OpenAIAssistant(
                 model="gpt-image-1",
                 api_key=environment.OPENAI_API_KEY,
-                instructions=""
+                instructions="Image generation assistant"
             )
             except ConfigError:
                 output.fail(
