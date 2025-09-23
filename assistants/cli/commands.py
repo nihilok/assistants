@@ -376,7 +376,7 @@ class GenerateImage(Command):
             try:
                 # Temporary hack: instantiate legacy OpenAI assistant for image generation
                 assistant = OpenAIAssistant(
-                model="gpt-4",
+                model="gpt-image-1",
                 api_key=environment.OPENAI_API_KEY,
                 instructions=""
             )
