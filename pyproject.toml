@@ -41,11 +41,15 @@ dependencies = [
 telegram = [
     "python-telegram-bot==21.1",
 ]
+
+[dependency-groups]
 dev = [
-    "ruff",
     "pytest",
     "pytest-mock",
-    "pytest-asyncio",
+    "pytest-asyncio>=1.2.0",
+    "build>=1.3.0",
+    "twine>=6.2.0",
+    "ruff",
     "mypy",
     "pylint",
 ]

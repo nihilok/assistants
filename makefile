@@ -7,11 +7,10 @@ help: ## Show this help message
 
 # Installation targets
 install: ## Install package for production
-	pip install -e .
+	uv sync
 
 install-dev: ## Install package with development dependencies
-	pip install -e .[dev]
-	pip install -r dev_requirements.txt
+	uv sync --dev
 
 # Development targets
 dev-setup: install-dev ## Complete development environment setup
@@ -20,13 +19,13 @@ dev-setup: install-dev ## Complete development environment setup
 
 # Testing and quality targets (local)
 test: ## Run pytest tests
-	pytest assistants/tests/ -v
+	uv run pytest assistants/tests/ -v
 
 lint: ## Run ruff linting
-	ruff check assistants/
+	uv run ruff check assistants/
 
 format: ## Format code with ruff
-	ruff format assistants/
+	uv run ruff format assistants/
 
 # Testing and quality targets (Docker)
 mypy: ## Run mypy type checking against baseline in Docker
@@ -47,7 +46,7 @@ clean: ## Clean build artifacts and cache files
 	find . -type f -name "*.pyo" -delete
 
 build: clean ## Build distribution packages
-	python -m build
+	uv build
 
 # Docker targets
 docker-shell: ## Open interactive shell in Docker container
@@ -68,10 +67,10 @@ telegram-bot: ## Run Telegram bot in Docker container
 
 # Utility targets
 config: ## Show configuration info
-	@echo "Python version: $$(python --version)"
-	@echo "Pip version: $$(pip --version)"
+	@echo "Python version: $$(uv run python --version)"
+	@echo "UV version: $$(uv --version)"
 	@echo "Project location: $$(pwd)"
-	@echo "Virtual environment: $${VIRTUAL_ENV:-Not activated}"
+	@echo "Virtual environment: $${VIRTUAL_ENV:-Managed by uv}"
 
 # Development workflow shortcuts
 quick-check: lint mypy ## Quick development check (lint + mypy, no tests)
