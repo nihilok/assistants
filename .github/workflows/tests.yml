@@ -26,7 +26,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --dev
+          uv sync --dev --telegram
 
       - name: Run tests
         run: |

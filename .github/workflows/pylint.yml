@@ -21,7 +21,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --dev
+          uv sync --dev --telegram
 
       - name: Analysing the code with pylint
         run: |
