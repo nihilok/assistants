@@ -6,7 +6,7 @@ from assistants.cli import run_cli
 from assistants.config import environment
 from assistants.user_data.sqlite_backend import init_db
 
-CHATGPT_MODEL = os.getenv("DEFAULT_CHATGPT_MODEL", "gpt-4.1-mini")
+CHATGPT_MODEL = os.getenv("DEFAULT_CHATGPT_MODEL", "gpt-5-mini")
 CHATGPT_REASONING_MODEL = os.getenv("DEFAULT_GPT_REASONING_MODEL", "o4-mini")
 
 
