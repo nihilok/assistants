@@ -530,7 +530,6 @@ class TelegramSqliteUserData(UserData):
         """
         superuser = await self.superusers_table.get(user_id=user_id)
         if superuser:
-            print("Superuser!")
             return True
         raise NotAuthorised(str(user_id))
 
