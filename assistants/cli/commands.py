@@ -373,7 +373,18 @@ class GenerateImage(Command):
     async def __call__(self, environ: IoEnviron, *args) -> None:
         assistant = environ.assistant
         if not isinstance(assistant, OpenAIAssistant):
-            raise NotImplementedError
+            try:
+                # Temporary hack: instantiate legacy OpenAI assistant for image generation
+                assistant = OpenAIAssistant(
+                model="gpt-image-1",
+                api_key=environment.OPENAI_API_KEY,
+                instructions="Image generation assistant"
+            )
+            except ConfigError:
+                output.fail(
+                    "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable to generate images."
+                )
+                return
 
         prompt = " ".join(args)
 
