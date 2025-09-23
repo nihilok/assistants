@@ -95,7 +95,7 @@ Key Telegram commands:
 - `ASSISTANTS_API_KEY_NAME` - API key variable name (default: `OPENAI_API_KEY`)
 - `ANTHROPIC_API_KEY_NAME` - Anthropic API key variable (default: `ANTHROPIC_API_KEY`)
 - `MISTRAL_API_KEY_NAME` - Mistral API key variable (default: `MISTRAL_API_KEY`)
-- `DEFAULT_MODEL` - Default model (default: `gpt-4o-mini`)
+- `DEFAULT_MODEL` - Default model (default: `gpt-5-mini`)
 - `DEFAULT_CLAUDE_SONNET_MODEL` - Default Claude model (default: `claude-sonnet-4-20250514`)
 - `DEFAULT_CLAUDE_OPUS_MODEL` - Default Claude Opus model (default: `claude-opus-4-1-20250805`)
 - `DEFAULT_CHATGPT_MODEL` - Default ChatGPT model (default: `gpt-4.1-mini`)
