@@ -181,7 +181,7 @@ wheels = [
 
 [[package]]
 name = "assistants-framework"
-version = "0.8.4"
+version = "0.8.3"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
