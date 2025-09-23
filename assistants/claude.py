@@ -14,7 +14,7 @@ CLAUDE_OPUS_MODEL = os.getenv("DEFAULT_CLAUDE_OPUS_MODEL", "claude-opus-4-1-2025
 
 def main():
     if not environment.ANTHROPIC_API_KEY:
-        print("ANTHROPIC_API_KEY not set in environment variables.", file=sys.stderr)
+        print("ANTHROPIC_API_KEY environment variable not set.", file=sys.stderr)
         sys.exit(1)
     environment.DEFAULT_MODEL = CLAUDE_SONNET_MODEL
     environment.CODE_MODEL = CLAUDE_OPUS_MODEL
