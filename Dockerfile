@@ -21,7 +21,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 COPY pyproject.toml uv.lock ./
 
 # Install Python dependencies with uv
-RUN uv sync --group dev --frozen
+RUN uv sync --group dev --group telegram --frozen
 
 # Create a non-root user for security first
 RUN useradd --create-home --shell /bin/bash app

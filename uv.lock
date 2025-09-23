@@ -232,7 +232,7 @@ requires-dist = [
     { name = "types-aiofiles", specifier = "~=24.1.0.20250606" },
     { name = "types-pygments", specifier = "~=2.19.0.20250516" },
     { name = "types-pyyaml", specifier = "~=6.0.12.20250516" },
-    { name = "univllm", specifier = "==0.1.8" },
+    { name = "univllm", specifier = "==0.1.9" },
 ]
 
 [package.metadata.requires-dev]
@@ -2249,7 +2249,7 @@ wheels = [
 
 [[package]]
 name = "univllm"
-version = "0.1.8"
+version = "0.1.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anthropic" },
@@ -2260,9 +2260,9 @@ dependencies = [
     { name = "pytest" },
     { name = "python-dotenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/79/bd/482dfddde7ad0ca5c4e3e5ea8399b55bfc6f33ab45d7cbac7dbd63a4ddc7/univllm-0.1.8.tar.gz", hash = "sha256:fa8d0c23ad968691a20e9d690ba323f1271d98e54469fd89f2447227cdaccea9", size = 16270, upload-time = "2025-09-23T13:04:40.361Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/10/ac/f9b5fae7a530089ceffe361012a78a37e7645afe368cdff12021899f8add/univllm-0.1.9.tar.gz", hash = "sha256:fffc9ec262005d963d1b46382bb6716250b74806a313549f2890a9e4eb1c1281", size = 16267, upload-time = "2025-09-23T18:16:57.884Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b7/79/1d3d00f89471bd889aa46538ff30b07e9eb6f1d2c7fd00daf7146d57b92c/univllm-0.1.8-py3-none-any.whl", hash = "sha256:8994bf309691b108018c0d8c3060233571d0adb8114d6c0f2299db82ce242f28", size = 18703, upload-time = "2025-09-23T13:04:39.43Z" },
+    { url = "https://files.pythonhosted.org/packages/37/d5/1a0db175837498012b1cd1e58e7c3b868c7fc7a247aaa9ec1af1cb32ce20/univllm-0.1.9-py3-none-any.whl", hash = "sha256:ad8f1df91224af64f421c501e5785c6fcd8a417ff5ef55f072aee88e79c35793", size = 18707, upload-time = "2025-09-23T18:16:56.667Z" },
 ]
 
 [[package]]
