@@ -17,7 +17,7 @@ def cli():
     return CLI()
 
 
-@patch("setproctitle.setproctitle")
+@patch("assistants.cli.cli.setproctitle")
 def test_set_process_title(mock_setproctitle, cli):
     cli.set_process_title()
     mock_setproctitle.assert_called_once_with("assistant-cli")
