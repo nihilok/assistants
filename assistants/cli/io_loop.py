@@ -3,6 +3,7 @@ This module contains the main input/output loop for interacting with the assista
 """
 
 import asyncio
+import re
 from typing import Optional
 
 from assistants.ai.types import AssistantInterface, StreamingAssistantInterface
@@ -12,6 +13,7 @@ from assistants.cli.prompt import get_user_input
 from assistants.cli.utils import highlight_code_blocks
 from assistants.log import logger
 from assistants.cli.utils import StreamHighlighter
+from assistants.cli.fs import FilesystemService, FilesystemError
 
 
 class AssistantIoHandler:
@@ -26,6 +28,24 @@ class AssistantIoHandler:
         self.last_message = None
         self.user_input: Optional[str] = None
         self.is_streaming = isinstance(assistant, StreamingAssistantInterface)
+
+    def _extract_file_tags_and_context(self, text: str) -> str:
+        """
+        Find all @/path/to/file.txt tags, read their content, and append context to the input.
+        """
+        # Regex: match @/path/to/file.txt (not @foo or @~/foo)
+        tags = re.findall(r"@(/[^\s]+)", text)
+        unique_tags = list(dict.fromkeys(tags))  # preserve order, remove duplicates
+        context_blocks = []
+        for tag in unique_tags:
+            try:
+                content = FilesystemService.read_file(tag)
+            except Exception as e:
+                content = f"[Error reading file: {e}]"
+            context_blocks.append(f"==={tag}===\n{content}\n===EOF===")
+        if context_blocks:
+            return text + "\n\n" + "\n\n".join(context_blocks)
+        return text
 
     async def process_input(self, input_text: str) -> bool:
         """
@@ -47,6 +67,9 @@ class AssistantIoHandler:
         if self.user_input.startswith("/"):
             await self._handle_command()
         else:
+            # Augment user_input with file context if any tags are present
+            self.user_input = self._extract_file_tags_and_context(self.user_input)
+
             await self._handle_conversation()
 
         return False
