@@ -50,6 +50,7 @@ dev = [
     "ruff",
     "mypy",
     "pylint",
+    "pre-commit",
 ]
 
 [project.urls]
