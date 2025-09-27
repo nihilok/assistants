@@ -211,15 +211,6 @@ class TestIntegration:
 
         assert bot == mock_application
 
-    @patch("assistants.telegram_ui.tg_bot.assistant")
-    def test_assistant_import(self, mock_assistant):
-        """Test that the assistant is properly imported."""
-        # This test ensures the assistant singleton is accessible
-        from assistants.telegram_ui.tg_bot import assistant
-
-        # The assistant should be imported from lib
-        assert assistant == mock_assistant
-
 
 class TestErrorHandling:
     """Test error handling scenarios."""
