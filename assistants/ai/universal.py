@@ -57,7 +57,7 @@ class UniversalAssistant(
         **kwargs,
     ) -> None:
         """
-        Initialize the UniversalAssistant instance.
+        Initialise the UniversalAssistant instance.
 
         :param model: The model to be used by the assistant.
         :param api_key: API key for the provider (optional, can use env vars).
@@ -70,7 +70,7 @@ class UniversalAssistant(
         if is_unsupported_model(model):
             raise ConfigError(f"The model '{model}' is not supported by univllm.")
 
-        # Initialize the mixin
+        # Initialise the mixin
         ConversationHistoryMixin.__init__(self, max_history_tokens)
 
         # Store instance variables
@@ -79,7 +79,7 @@ class UniversalAssistant(
         self.max_response_tokens = max_response_tokens
         self.thinking = thinking or ThinkingConfig(level=0, type="enabled")
 
-        # Initialize the universal client
+        # Initialise the universal client
         try:
             if api_key:
                 # Provider will be auto-detected from model name
@@ -88,7 +88,7 @@ class UniversalAssistant(
                 # Use environment variables for API keys
                 self.client = UniversalLLMClient()
         except Exception as e:
-            raise ConfigError(f"Failed to initialize UniversalLLMClient: {e}") from e
+            raise ConfigError(f"Failed to initialise UniversalLLMClient: {e}") from e
 
     async def converse(
         self, user_input: str, thread_id: Optional[str] = None
@@ -223,7 +223,7 @@ class UniversalAssistant(
 
     async def load_conversation(self, conversation_id: Optional[str] = None) -> None:
         """
-        Load a conversation by ID or initialize a new one.
+        Load a conversation by ID or initialise a new one.
 
         :param conversation_id: The ID of the conversation to load.
         """
@@ -253,7 +253,7 @@ def create_universal_assistant(
     model: str, provider: Optional[str] = None, **kwargs
 ) -> UniversalAssistant:
     """
-    Create a UniversalAssistant instance with optional provider specification.
+    Create a UniversalAssistant instance with an optional provider specification.
 
     :param model: The model to use.
     :param provider: Optional provider name (auto-detected from model if not provided).
