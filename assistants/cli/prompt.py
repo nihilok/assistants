@@ -11,7 +11,6 @@ from prompt_toolkit.lexers import Lexer
 from prompt_toolkit.document import Document
 
 from assistants.cli.fs import FilesystemService
-from assistants.cli.terminal import clear_screen, ANSIEscapeSequence
 from assistants.config.file_management import CONFIG_DIR
 
 
@@ -24,7 +23,9 @@ INPUT_CLASSNAME = "input"
 
 
 class AtPathLexer(Lexer):
+    """Lexer to highlight filesystem paths starting with '@'."""
     def lex_document(self, document: Document):
+        """Highlight @-paths in the document."""
         path_pattern = FilesystemService.FILE_TAG_REGEX
 
         def get_line(lineno):
@@ -45,6 +46,7 @@ class AtPathLexer(Lexer):
 
 @dataclass
 class PromptConfig:
+    """Configuration for the interactive prompt."""
     style: Style = Style.from_dict(
         {
             "": PromptStyle.USER_INPUT.value,
