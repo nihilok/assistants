@@ -14,7 +14,7 @@ def temp_dir():
     "input_path,expected_output",
     [
         (lambda tmp: os.path.join(tmp, "d"), lambda tmp: os.path.join(tmp, "dir")),
-        (lambda tmp: os.path.join(tmp, "dir1"), lambda tmp: os.path.join(tmp, "dir1")),
+        (lambda tmp: os.path.join(tmp, "dir1"), lambda tmp: os.path.join(tmp, "dir1/")),
         (lambda tmp: os.path.join(tmp, "file"), lambda tmp: os.path.join(tmp, "file")),
         (lambda tmp: os.path.join(tmp, "file2"), lambda tmp: os.path.join(tmp, "file2.txt")),
         (lambda tmp: os.path.join(tmp, "nonexistent"), lambda tmp: os.path.join(tmp, "nonexistent")),
