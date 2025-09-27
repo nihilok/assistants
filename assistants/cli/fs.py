@@ -1,10 +1,22 @@
 from pathlib import Path
+import re
 
 
 class FilesystemError(Exception):
     pass
 
 class FilesystemService:
+    # Central regex for @-file tags (absolute and relative)
+    FILE_TAG_REGEX = r'@((?:\.?\.?/)?[\w\-.~/]+)'
+
+    @classmethod
+    def find_file_tags(cls, text: str) -> list[str]:
+        """Return all unique file tags (with @ prefix) in the text."""
+        tags = re.findall(cls.FILE_TAG_REGEX, text)
+        # Add back the @ prefix for each match
+        tags = [f"@{tag}" for tag in tags]
+        # Remove duplicates, preserve order
+        return list(dict.fromkeys(tags))
 
     @staticmethod
     def read_file(path: Path | str) -> str:

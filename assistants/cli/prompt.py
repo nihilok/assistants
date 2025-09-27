@@ -25,8 +25,7 @@ INPUT_CLASSNAME = "input"
 
 class AtPathLexer(Lexer):
     def lex_document(self, document: Document):
-        # Updated regex to match @/foo, @./foo, @../foo, @foo, @subdir/foo, etc.
-        path_pattern = r'@((?:\.?\.?/)?[\w\-.~/]+)'
+        path_pattern = FilesystemService.FILE_TAG_REGEX
 
         def get_line(lineno):
             line = document.lines[lineno]

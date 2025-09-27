@@ -31,15 +31,14 @@ class AssistantIoHandler:
 
     def _extract_file_tags_and_context(self, text: str) -> str:
         """
-        Find all @/path/to/file.txt tags, read their content, and append context to the input.
+        Find all @-file tags (absolute or relative), read their content, and append context to the input.
         """
-        # Regex: match @/path/to/file.txt (not @foo or @~/foo)
-        tags = re.findall(r"@(/[^\s]+)", text)
-        unique_tags = list(dict.fromkeys(tags))  # preserve order, remove duplicates
+        tags = FilesystemService.find_file_tags(text)
         context_blocks = []
-        for tag in unique_tags:
+        for tag in tags:
             try:
-                content = FilesystemService.read_file(tag)
+                # Remove the @ for reading the file
+                content = FilesystemService.read_file(tag[1:])
             except Exception as e:
                 content = f"[Error reading file: {e}]"
             context_blocks.append(f"==={tag}===\n{content}\n===EOF===")
