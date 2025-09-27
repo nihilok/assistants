@@ -25,14 +25,14 @@ INPUT_CLASSNAME = "input"
 
 class AtPathLexer(Lexer):
     def lex_document(self, document: Document):
-        text = document.text
-        matches = list(re.finditer(r'@/[\w\-./]+', text))
+        # Updated regex to match @/foo, @./foo, @../foo, @foo, @subdir/foo, etc.
+        path_pattern = r'@((?:\.?\.?/)?[\w\-.~/]+)'
 
         def get_line(lineno):
             line = document.lines[lineno]
             tokens = []
             last = 0
-            for m in re.finditer(r'@/[\w\-./]+', line):
+            for m in re.finditer(path_pattern, line):
                 if m.start() > last:
                     tokens.append(('class:text', line[last:m.start()]))
                 tokens.append(('class:atpath', line[m.start():m.end()]))

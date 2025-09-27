@@ -109,6 +109,29 @@ Key Telegram commands:
 - `DEFAULT_MAX_RESPONSE_TOKENS` - Default max response tokens (default: `4096`)
 - `DEFAULT_MAX_HISTORY_TOKENS` - Default max history tokens (default: `10000`)
 
+## File Tagging in Prompts
+
+You can include the contents of files directly in your prompt by tagging them with an `@` followed by the file path. Both absolute and relative paths are supported. For example:
+
+```
+Hi Claude, can you check my @~/.zshrc and tell me what you think?
+Hi Claude, can you check my @./my_local_config.txt and tell me what you think?
+```
+
+When you use a tag like `@/path/to/file.txt` or `@relative/path/to/file.txt` in your prompt, the assistant will automatically append the contents of that file to the end of your input, like this:
+
+```
+Hi Claude, can you check my @./my_local_config.txt and tell me what you think?
+
+===./my_local_config.txt===
+// file content
+===EOF===
+```
+
+- You can tag multiple files in a single prompt; each will be appended in the same format.
+- If a file cannot be read, an error message will be shown in place of its content.
+- Both absolute (starting with `/`) and relative paths (like `./file.txt` or `subdir/file.txt`) are supported for tagging.
+
 ## Contributing
 
 Contributions welcome! Fork the repository, make changes, and submit a pull request.
