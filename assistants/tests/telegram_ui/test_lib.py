@@ -4,12 +4,10 @@ Unit tests for the telegram_ui.lib module.
 
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
-from telegram import Update, Chat, User, Bot
-from telegram.ext import ContextTypes
+from telegram import Chat, User, Bot
 from telegram._message import Message
 
 from assistants.telegram_ui.lib import (
-    StandardUpdate,
     update_has_effective_chat,
     update_has_message,
     requires_effective_chat,
@@ -18,7 +16,6 @@ from assistants.telegram_ui.lib import (
     build_telegram_specific_instructions,
     build_assistant_params,
     get_telegram_assistant,
-    assistant,
 )
 
 
@@ -99,6 +96,7 @@ class TestDecorators:
     @pytest.mark.asyncio
     async def test_requires_effective_chat_success(self):
         """Test requires_effective_chat with valid chat."""
+
         @requires_effective_chat
         async def dummy_handler(update, context):
             return "success"
@@ -112,6 +110,7 @@ class TestDecorators:
     @pytest.mark.asyncio
     async def test_requires_effective_chat_no_chat(self):
         """Test requires_effective_chat with no chat."""
+
         @requires_effective_chat
         async def dummy_handler(update, context):
             return "success"
@@ -125,6 +124,7 @@ class TestDecorators:
     @pytest.mark.asyncio
     async def test_requires_message_success(self):
         """Test requires_message with valid message."""
+
         @requires_message
         async def dummy_handler(update, context):
             return "success"
@@ -138,6 +138,7 @@ class TestDecorators:
     @pytest.mark.asyncio
     async def test_requires_message_no_message(self):
         """Test requires_message with no message."""
+
         @requires_message
         async def dummy_handler(update, context):
             return "success"
@@ -151,6 +152,7 @@ class TestDecorators:
     @pytest.mark.asyncio
     async def test_requires_reply_to_message_success(self):
         """Test requires_reply_to_message with valid reply."""
+
         @requires_reply_to_message
         async def dummy_handler(update, context):
             return "success"
@@ -164,6 +166,7 @@ class TestDecorators:
     @pytest.mark.asyncio
     async def test_requires_reply_to_message_no_reply(self):
         """Test requires_reply_to_message with no reply."""
+
         @requires_reply_to_message
         async def dummy_handler(update, context):
             return "success"
@@ -176,12 +179,13 @@ class TestDecorators:
         assert result is None
         context.bot.send_message.assert_called_once_with(
             chat_id=12345,
-            text="You must reply to a message from the target user to use this command"
+            text="You must reply to a message from the target user to use this command",
         )
 
     @pytest.mark.asyncio
     async def test_requires_reply_to_message_no_chat(self):
         """Test requires_reply_to_message with no chat."""
+
         @requires_reply_to_message
         async def dummy_handler(update, context):
             return "success"
@@ -195,6 +199,7 @@ class TestDecorators:
     @pytest.mark.asyncio
     async def test_requires_reply_to_message_no_message(self):
         """Test requires_reply_to_message with no message."""
+
         @requires_reply_to_message
         async def dummy_handler(update, context):
             return "success"
@@ -209,7 +214,7 @@ class TestDecorators:
 class TestInstructionBuilding:
     """Test instruction and configuration building functions."""
 
-    @patch('assistants.telegram_ui.lib.environment')
+    @patch("assistants.telegram_ui.lib.environment")
     def test_build_telegram_specific_instructions(self, mock_environment):
         """Test building telegram-specific instructions."""
         mock_environment.ASSISTANT_INSTRUCTIONS = "Base instructions"
@@ -220,8 +225,8 @@ class TestInstructionBuilding:
         assert "All messages are prefixed with the name of the user" in instructions
         assert "you should not prefix your responses with your own name" in instructions
 
-    @patch('assistants.telegram_ui.lib.environment')
-    @patch('assistants.telegram_ui.lib.ThinkingConfig')
+    @patch("assistants.telegram_ui.lib.environment")
+    @patch("assistants.telegram_ui.lib.ThinkingConfig")
     def test_build_assistant_params(self, mock_thinking_config, mock_environment):
         """Test building assistant parameters."""
         mock_environment.DEFAULT_MAX_RESPONSE_TOKENS = 1000
@@ -240,12 +245,10 @@ class TestInstructionBuilding:
         assert "Test instructions" in params.instructions
         assert params.tools == [{"type": "code_interpreter"}, {"type": "web_search"}]
 
-        mock_thinking_config.get_thinking_config.assert_called_once_with(
-            0, 1000
-        )
+        mock_thinking_config.get_thinking_config.assert_called_once_with(0, 1000)
 
-    @patch('assistants.telegram_ui.lib.environment')
-    @patch('assistants.telegram_ui.lib.UniversalAssistant')
+    @patch("assistants.telegram_ui.lib.environment")
+    @patch("assistants.telegram_ui.lib.UniversalAssistant")
     def test_get_telegram_assistant(self, mock_universal_assistant, mock_environment):
         """Test getting telegram assistant instance."""
         mock_environment.DEFAULT_MODEL = "test-model"
@@ -256,7 +259,7 @@ class TestInstructionBuilding:
         mock_assistant_instance = Mock()
         mock_universal_assistant.return_value = mock_assistant_instance
 
-        with patch('assistants.telegram_ui.lib.ThinkingConfig') as mock_thinking_config:
+        with patch("assistants.telegram_ui.lib.ThinkingConfig") as mock_thinking_config:
             mock_thinking = Mock()
             mock_thinking_config.get_thinking_config.return_value = mock_thinking
 
@@ -267,9 +270,9 @@ class TestInstructionBuilding:
 
             # Check that the assistant was created with correct parameters
             call_kwargs = mock_universal_assistant.call_args[1]
-            assert call_kwargs['model'] == "test-model"
-            assert call_kwargs['max_history_tokens'] == 5000
-            assert call_kwargs['max_response_tokens'] == 1000
+            assert call_kwargs["model"] == "test-model"
+            assert call_kwargs["max_history_tokens"] == 5000
+            assert call_kwargs["max_response_tokens"] == 1000
 
 
 class TestEdgeCases:
@@ -278,6 +281,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_decorator_with_extra_args(self):
         """Test decorators with extra positional arguments."""
+
         @requires_effective_chat
         async def handler_with_args(update, context, extra_arg1, extra_arg2):
             return f"success-{extra_arg1}-{extra_arg2}"
@@ -291,6 +295,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_decorator_with_kwargs(self):
         """Test decorators with keyword arguments."""
+
         @requires_message
         async def handler_with_kwargs(update, context, **kwargs):
             return f"success-{kwargs.get('test_arg', 'default')}"
@@ -306,13 +311,13 @@ class TestEdgeCases:
         update = MockUpdate()
 
         # These should work if the mock is set up correctly
-        assert hasattr(update, 'update_id')
-        assert hasattr(update, 'effective_chat')
-        assert hasattr(update, 'message')
-        assert hasattr(update, 'effective_message')
-        assert hasattr(update, 'effective_user')
+        assert hasattr(update, "update_id")
+        assert hasattr(update, "effective_chat")
+        assert hasattr(update, "message")
+        assert hasattr(update, "effective_message")
+        assert hasattr(update, "effective_user")
 
-    @patch('assistants.telegram_ui.lib.environment')
+    @patch("assistants.telegram_ui.lib.environment")
     def test_build_instructions_with_empty_base(self, mock_environment):
         """Test building instructions with empty base instructions."""
         mock_environment.ASSISTANT_INSTRUCTIONS = ""
@@ -325,6 +330,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_multiple_decorators_combination(self):
         """Test combining multiple decorators."""
+
         @requires_effective_chat
         @requires_message
         async def multi_decorated_handler(update, context):

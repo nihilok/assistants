@@ -26,7 +26,6 @@ from assistants.ai.types import AssistantInterface, ThinkingConfig
 from assistants.cli import output
 from assistants.cli.assistant_config import AssistantParams
 from assistants.config import Config, environment
-from assistants.lib.exceptions import ConfigError
 
 fallback_lexers = {
     "tsx": TypeScriptXLexer,

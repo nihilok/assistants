@@ -22,9 +22,7 @@ class TestClaude:
     @pytest.fixture
     def claude(self, mock_anthropic_client):
         """Create a Claude instance for testing."""
-        with patch(
-            "anthropic.AsyncAnthropic", return_value=mock_anthropic_client
-        ) as mock_anthropic:
+        with patch("anthropic.AsyncAnthropic", return_value=mock_anthropic_client):
             # Ensure the mock is used for all instances
             instance = ClaudeAssistant(
                 model="claude-3-opus-20240229",

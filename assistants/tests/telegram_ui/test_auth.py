@@ -4,7 +4,7 @@ Unit tests for the telegram_ui.auth module.
 
 import pytest
 from unittest.mock import AsyncMock, Mock, patch
-from telegram import Update, Chat, User
+from telegram import Chat, User
 
 from assistants.telegram_ui.auth import (
     restricted_access,
@@ -33,7 +33,7 @@ class TestRestrictedAccess:
     """Test the restricted_access decorator."""
 
     @pytest.mark.asyncio
-    @patch('assistants.telegram_ui.auth.chat_data')
+    @patch("assistants.telegram_ui.auth.chat_data")
     async def test_restricted_access_chat_authorized(self, mock_chat_data):
         """Test restricted access with authorized chat."""
         mock_chat_data.check_chat_authorised = AsyncMock()
@@ -49,8 +49,10 @@ class TestRestrictedAccess:
         assert result == "success"
 
     @pytest.mark.asyncio
-    @patch('assistants.telegram_ui.auth.chat_data')
-    async def test_restricted_access_chat_not_authorized_user_authorized(self, mock_chat_data):
+    @patch("assistants.telegram_ui.auth.chat_data")
+    async def test_restricted_access_chat_not_authorized_user_authorized(
+        self, mock_chat_data
+    ):
         """Test restricted access with unauthorized chat but authorized user."""
         mock_chat_data.check_chat_authorised = AsyncMock(side_effect=NotAuthorised())
         mock_chat_data.check_user_authorised = AsyncMock()
@@ -67,7 +69,7 @@ class TestRestrictedAccess:
         assert result == "success"
 
     @pytest.mark.asyncio
-    @patch('assistants.telegram_ui.auth.chat_data')
+    @patch("assistants.telegram_ui.auth.chat_data")
     async def test_restricted_access_chat_not_authorized_no_user(self, mock_chat_data):
         """Test restricted access with unauthorized chat and no effective user."""
         mock_chat_data.check_chat_authorised = AsyncMock(side_effect=NotAuthorised())
@@ -86,7 +88,7 @@ class TestRestrictedAccess:
         mock_chat_data.check_user_authorised.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch('assistants.telegram_ui.auth.chat_data')
+    @patch("assistants.telegram_ui.auth.chat_data")
     async def test_restricted_access_both_not_authorized(self, mock_chat_data):
         """Test restricted access with both chat and user unauthorized."""
         mock_chat_data.check_chat_authorised = AsyncMock(side_effect=NotAuthorised())
@@ -109,7 +111,7 @@ class TestRequiresSuperuser:
     """Test the requires_superuser decorator."""
 
     @pytest.mark.asyncio
-    @patch('assistants.telegram_ui.auth.chat_data')
+    @patch("assistants.telegram_ui.auth.chat_data")
     async def test_requires_superuser_success_first_arg(self, mock_chat_data):
         """Test requires_superuser when Update is first argument."""
         mock_chat_data.check_superuser = AsyncMock()
@@ -125,7 +127,7 @@ class TestRequiresSuperuser:
         assert result == "success"
 
     @pytest.mark.asyncio
-    @patch('assistants.telegram_ui.auth.chat_data')
+    @patch("assistants.telegram_ui.auth.chat_data")
     async def test_requires_superuser_success_second_arg(self, mock_chat_data):
         """Test requires_superuser when Update is second argument."""
         mock_chat_data.check_superuser = AsyncMock()
@@ -141,7 +143,7 @@ class TestRequiresSuperuser:
         assert result == "success"
 
     @pytest.mark.asyncio
-    @patch('assistants.telegram_ui.auth.chat_data')
+    @patch("assistants.telegram_ui.auth.chat_data")
     async def test_requires_superuser_success_kwarg(self, mock_chat_data):
         """Test requires_superuser when Update is a keyword argument."""
         mock_chat_data.check_superuser = AsyncMock()
@@ -157,9 +159,10 @@ class TestRequiresSuperuser:
         assert result == "success"
 
     @pytest.mark.asyncio
-    @patch('assistants.telegram_ui.auth.chat_data')
+    @patch("assistants.telegram_ui.auth.chat_data")
     async def test_requires_superuser_no_update_found(self, mock_chat_data):
         """Test requires_superuser when no Update object is found."""
+
         @requires_superuser
         async def dummy_handler(context):
             return "success"
@@ -168,7 +171,7 @@ class TestRequiresSuperuser:
             await dummy_handler("context")
 
     @pytest.mark.asyncio
-    @patch('assistants.telegram_ui.auth.chat_data')
+    @patch("assistants.telegram_ui.auth.chat_data")
     async def test_requires_superuser_not_authorized(self, mock_chat_data):
         """Test requires_superuser when user is not a superuser."""
         mock_chat_data.check_superuser = AsyncMock(side_effect=NotAuthorised())
@@ -190,13 +193,14 @@ class TestChatDataIntegration:
 
     def test_chat_data_singleton(self):
         """Test that chat_data is properly initialized."""
-        from assistants.telegram_ui.auth import chat_data
-        from assistants.user_data.sqlite_backend.telegram_chat_data import TelegramSqliteUserData
+        from assistants.user_data.sqlite_backend.telegram_chat_data import (
+            TelegramSqliteUserData,
+        )
 
         assert isinstance(chat_data, TelegramSqliteUserData)
 
     @pytest.mark.asyncio
-    @patch('assistants.telegram_ui.auth.chat_data')
+    @patch("assistants.telegram_ui.auth.chat_data")
     async def test_chat_data_methods_called(self, mock_chat_data):
         """Test that chat_data methods are called correctly in decorators."""
         mock_chat_data.check_chat_authorised = AsyncMock()

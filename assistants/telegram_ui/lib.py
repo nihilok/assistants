@@ -43,6 +43,7 @@ def requires_effective_chat(func):
         if update_has_effective_chat(update):
             return await func(update, context, *args, **kwargs)
         return None
+
     return wrapped
 
 
@@ -55,6 +56,7 @@ def requires_message(func):
             return None
         assert update.message is not None
         return await func(update, context, *args, **kwargs)
+
     return wrapped
 
 
@@ -72,6 +74,7 @@ def requires_reply_to_message(f):
             )
             return None
         return await f(update, context)
+
     return wrapper
 
 
@@ -83,6 +86,7 @@ and you should not prefix your responses with your own name. You may use the use
 if/when there are multiple users involved.
 """
     return instructions
+
 
 def build_assistant_params(model_name: str) -> AssistantParams:
     thinking_config = ThinkingConfig.get_thinking_config(

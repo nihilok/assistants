@@ -37,4 +37,3 @@ async def test_universal_image_prompt_no_images():
         assistant = UniversalAssistant(model="gpt-image-1", api_key="dummy")
         result = await assistant.image_prompt("A landscape")
         assert result is None
-

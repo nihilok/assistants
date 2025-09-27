@@ -1,6 +1,5 @@
 from functools import wraps
 
-from telegram import Update
 
 from assistants.telegram_ui.lib import StandardUpdate
 from assistants.user_data.interfaces.telegram_chat_data import NotAuthorised

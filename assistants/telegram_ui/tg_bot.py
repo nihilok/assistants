@@ -21,7 +21,6 @@ from assistants.telegram_ui.commands import (
     generate_image,
     respond_voice,
 )
-from assistants.telegram_ui.lib import assistant
 
 
 def build_bot(token: str) -> Application:

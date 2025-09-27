@@ -5,9 +5,9 @@ Unit tests for the telegram_ui.bot_conversation_bot module.
 import asyncio
 import time
 import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from telegram import Update, Chat, User, Message, Bot
-from telegram.ext import ContextTypes, Application
+from unittest.mock import Mock, AsyncMock, patch
+from telegram import Bot
+from telegram.ext import Application
 
 from assistants.telegram_ui.bot_conversation_bot import (
     MessageRecord,
@@ -78,7 +78,9 @@ class TestBotConversationManager:
     @pytest.fixture
     def manager(self):
         """Fixture providing a mocked BotConversationManager."""
-        with patch('assistants.telegram_ui.bot_conversation_bot.get_telegram_data') as mock_get_data:
+        with patch(
+            "assistants.telegram_ui.bot_conversation_bot.get_telegram_data"
+        ) as mock_get_data:
             mock_get_data.return_value.db_path = ":memory:"
             manager = BotConversationManager()
             manager.bot_conversations_table = AsyncMock()
@@ -87,7 +89,10 @@ class TestBotConversationManager:
     @pytest.mark.asyncio
     async def test_initialize(self, manager):
         """Test manager initialization."""
-        with patch('assistants.telegram_ui.bot_conversation_bot.init_db') as mock_init_db:
+        with patch(
+            "assistants.telegram_ui.bot_conversation_bot.init_db"
+        ) as mock_init_db:
+
             async def mock_init():
                 return None
 
@@ -109,7 +114,9 @@ class TestBotConversationManager:
         mock_db_msg.text = "Hello"
         mock_db_msg.timestamp = 1234567890.0
 
-        manager.bot_conversations_table.get_chat_messages = AsyncMock(return_value=[mock_db_msg])
+        manager.bot_conversations_table.get_chat_messages = AsyncMock(
+            return_value=[mock_db_msg]
+        )
 
         result = await manager.get_chat_data(12345)
 
@@ -137,8 +144,8 @@ class TestBotConversationManager:
         mock_db_msg2.text = "Another user message"
         mock_db_msg2.timestamp = 1234567900.0
 
-        manager.bot_conversations_table.get_messages_since_last_bot_response = AsyncMock(
-            return_value=[mock_db_msg1, mock_db_msg2]
+        manager.bot_conversations_table.get_messages_since_last_bot_response = (
+            AsyncMock(return_value=[mock_db_msg1, mock_db_msg2])
         )
 
         result = await manager.get_messages_since_last_bot_response(12345, "bot_1")
@@ -154,7 +161,7 @@ class TestBotConversationManager:
     @pytest.mark.asyncio
     async def test_add_message(self, manager):
         """Test adding a message."""
-        with patch('assistants.telegram_ui.bot_conversation_bot.logger') as mock_logger:
+        with patch("assistants.telegram_ui.bot_conversation_bot.logger") as mock_logger:
             manager.bot_conversations_table.insert = AsyncMock()
 
             message = MessageRecord("bot_1", 12345, "Test message", 1234567890.0)
@@ -182,7 +189,9 @@ class TestBotConversationManager:
         mock_db_msg.text = "Last message"
         mock_db_msg.timestamp = 1234567890.0
 
-        manager.bot_conversations_table.get_last_message = AsyncMock(return_value=mock_db_msg)
+        manager.bot_conversations_table.get_last_message = AsyncMock(
+            return_value=mock_db_msg
+        )
 
         result = await manager.get_last_message(12345)
 
@@ -224,7 +233,9 @@ class TestConversationBot:
     @pytest.fixture
     def conversation_bot(self, mock_manager, mock_assistant):
         """Fixture providing a ConversationBot instance."""
-        with patch('assistants.telegram_ui.bot_conversation_bot.Application') as mock_app_class:
+        with patch(
+            "assistants.telegram_ui.bot_conversation_bot.Application"
+        ) as mock_app_class:
             mock_builder = Mock()
             mock_app_class.builder.return_value = mock_builder
             mock_builder.token.return_value = mock_builder
@@ -245,7 +256,9 @@ class TestConversationBot:
             )
             return bot
 
-    def test_conversation_bot_initialization(self, conversation_bot, mock_manager, mock_assistant):
+    def test_conversation_bot_initialization(
+        self, conversation_bot, mock_manager, mock_assistant
+    ):
         """Test ConversationBot initialization."""
         assert conversation_bot.token == "test_token"
         assert conversation_bot.manager == mock_manager
@@ -257,7 +270,8 @@ class TestConversationBot:
     @pytest.mark.asyncio
     async def test_start_responding(self, conversation_bot):
         """Test starting response loop for a chat."""
-        with patch.object(conversation_bot, '_response_loop') as mock_response_loop:
+        with patch.object(conversation_bot, "_response_loop") as mock_response_loop:
+
             async def mock_loop():
                 return None
 
@@ -272,7 +286,7 @@ class TestConversationBot:
         """Test starting response loop for already active chat."""
         conversation_bot.active_chats.add(12345)
 
-        with patch.object(conversation_bot, '_response_loop') as mock_response_loop:
+        with patch.object(conversation_bot, "_response_loop") as mock_response_loop:
             await conversation_bot.start_responding(12345)
 
             mock_response_loop.assert_not_called()
@@ -301,7 +315,7 @@ class TestConversationBot:
         last_message = MessageRecord("test_bot", 12345, "Bot message", time.time())
         mock_manager.get_last_message = AsyncMock(return_value=last_message)
 
-        with patch.object(conversation_bot, '_generate_response') as mock_generate:
+        with patch.object(conversation_bot, "_generate_response") as mock_generate:
             await conversation_bot._maybe_respond(12345)
 
             mock_generate.assert_not_called()
@@ -313,12 +327,12 @@ class TestConversationBot:
         mock_manager.get_last_message = AsyncMock(return_value=last_message)
         mock_manager.add_message = AsyncMock()
 
-        with patch.object(conversation_bot, '_generate_response') as mock_generate:
+        with patch.object(conversation_bot, "_generate_response") as mock_generate:
             # Mock _generate_response to return a string directly when awaited
             mock_generate.return_value = "Bot response"
             conversation_bot.bot.send_message = AsyncMock()
 
-            with patch('time.strftime') as mock_strftime:
+            with patch("time.strftime") as mock_strftime:
                 mock_strftime.return_value = "2023-01-01 12:00:00"
 
                 await conversation_bot._maybe_respond(12345)
@@ -332,10 +346,15 @@ class TestConversationBot:
                 recorded_message = mock_manager.add_message.call_args[0][1]
                 assert recorded_message.bot_id == "test_bot"
                 assert recorded_message.user_id == 98765
-                assert '{"user": "test_bot", "time": "2023-01-01 12:00:00"} Bot response' in recorded_message.text
+                assert (
+                    '{"user": "test_bot", "time": "2023-01-01 12:00:00"} Bot response'
+                    in recorded_message.text
+                )
 
     @pytest.mark.asyncio
-    async def test_generate_response_no_recent_messages(self, conversation_bot, mock_manager):
+    async def test_generate_response_no_recent_messages(
+        self, conversation_bot, mock_manager
+    ):
         """Test _generate_response with no recent messages."""
         mock_manager.get_messages_since_last_bot_response = AsyncMock(return_value=[])
 
@@ -345,13 +364,17 @@ class TestConversationBot:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_generate_response_with_memory(self, conversation_bot, mock_manager, mock_assistant):
+    async def test_generate_response_with_memory(
+        self, conversation_bot, mock_manager, mock_assistant
+    ):
         """Test _generate_response with assistant memory."""
         recent_messages = [
             MessageRecord("user", 12345, "Message 1", time.time()),
             MessageRecord("user", 67890, "Message 2", time.time()),
         ]
-        mock_manager.get_messages_since_last_bot_response = AsyncMock(return_value=recent_messages)
+        mock_manager.get_messages_since_last_bot_response = AsyncMock(
+            return_value=recent_messages
+        )
 
         mock_response = Mock()
         mock_response.text_content = "Generated response"
@@ -362,17 +385,21 @@ class TestConversationBot:
 
         assert result == "Generated response"
         mock_assistant.memory.extend.assert_called_once()
-        mock_assistant.converse.assert_called_once_with("Latest message", "12345-test_bot")
+        mock_assistant.converse.assert_called_once_with(
+            "Latest message", "12345-test_bot"
+        )
 
     @pytest.mark.asyncio
     async def test_generate_response_no_memory(self, conversation_bot, mock_manager):
         """Test _generate_response without assistant memory."""
         # Remove memory attribute
-        if hasattr(conversation_bot.assistant, 'memory'):
-            delattr(conversation_bot.assistant, 'memory')
+        if hasattr(conversation_bot.assistant, "memory"):
+            delattr(conversation_bot.assistant, "memory")
 
         recent_messages = [MessageRecord("user", 12345, "Message", time.time())]
-        mock_manager.get_messages_since_last_bot_response = AsyncMock(return_value=recent_messages)
+        mock_manager.get_messages_since_last_bot_response = AsyncMock(
+            return_value=recent_messages
+        )
 
         mock_response = Mock()
         mock_response.text_content = "Response without memory"
@@ -382,7 +409,9 @@ class TestConversationBot:
         result = await conversation_bot._generate_response(12345, last_message)
 
         assert result == "Response without memory"
-        conversation_bot.assistant.converse.assert_called_once_with("Latest message", "12345-test_bot")
+        conversation_bot.assistant.converse.assert_called_once_with(
+            "Latest message", "12345-test_bot"
+        )
 
     @pytest.mark.asyncio
     async def test_start_and_stop(self, conversation_bot):
@@ -414,7 +443,9 @@ class TestMainConversationBot:
     @pytest.fixture
     def main_bot(self):
         """Fixture providing a MainConversationBot instance."""
-        with patch('assistants.telegram_ui.bot_conversation_bot.Application') as mock_app_class:
+        with patch(
+            "assistants.telegram_ui.bot_conversation_bot.Application"
+        ) as mock_app_class:
             mock_builder = Mock()
             mock_app_class.builder.return_value = mock_builder
             mock_builder.token.return_value = mock_builder
@@ -444,19 +475,27 @@ class TestMainConversationBot:
         assert main_bot.application.add_handler.call_count == 3
 
         # Get the handlers
-        handlers = [call[0][0] for call in main_bot.application.add_handler.call_args_list]
+        handlers = [
+            call[0][0] for call in main_bot.application.add_handler.call_args_list
+        ]
 
         # Check that we have the expected number of handlers
         assert len(handlers) == 3
 
         # All handlers should have a commands attribute (for CommandHandler) or filters (for MessageHandler)
         # CommandHandlers have commands list, MessageHandlers have filters
-        command_handlers = [h for h in handlers if hasattr(h, 'commands') and h.commands]
-        message_handlers = [h for h in handlers if hasattr(h, 'filters') and h.filters and not hasattr(h, 'commands')]
+        command_handlers = [
+            h for h in handlers if hasattr(h, "commands") and h.commands
+        ]
+        message_handlers = [
+            h
+            for h in handlers
+            if hasattr(h, "filters") and h.filters and not hasattr(h, "commands")
+        ]
 
         # Should have 2 command handlers (start, stop) and 1 message handler
         assert len(command_handlers) == 2  # start and stop commands
-        assert len(message_handlers) == 1   # message handler
+        assert len(message_handlers) == 1  # message handler
 
     @pytest.mark.asyncio
     async def test_start_command(self, main_bot):
@@ -474,10 +513,10 @@ class TestMainConversationBot:
         mock_context.bot = Mock()
         mock_context.bot.username = "test_main_bot"
 
-        with patch('assistants.telegram_ui.auth.chat_data') as mock_chat_data:
+        with patch("assistants.telegram_ui.auth.chat_data") as mock_chat_data:
             mock_chat_data.check_superuser = AsyncMock()
 
-            with patch.object(main_bot, 'start_responding') as mock_start_responding:
+            with patch.object(main_bot, "start_responding") as mock_start_responding:
                 mock_start_responding.return_value = AsyncMock(return_value=None)()
 
                 await main_bot._start_command(mock_update, mock_context)
@@ -497,13 +536,17 @@ class TestMainConversationBot:
         mock_update.effective_user.id = 67890
         mock_context = Mock()
 
-        with patch('assistants.telegram_ui.auth.chat_data') as mock_chat_data:
+        with patch("assistants.telegram_ui.auth.chat_data") as mock_chat_data:
             mock_chat_data.check_superuser = AsyncMock()
 
-            with patch('assistants.telegram_ui.bot_conversation_bot.logger') as mock_logger:
+            with patch(
+                "assistants.telegram_ui.bot_conversation_bot.logger"
+            ) as mock_logger:
                 await main_bot._start_command(mock_update, mock_context)
 
-                mock_logger.warning.assert_called_once_with("Received a command without a chat.")
+                mock_logger.warning.assert_called_once_with(
+                    "Received a command without a chat."
+                )
 
     @pytest.mark.asyncio
     async def test_stop_command(self, main_bot):
@@ -516,7 +559,8 @@ class TestMainConversationBot:
 
         mock_context = Mock()
 
-        with patch.object(main_bot, 'stop_responding') as mock_stop_responding:
+        with patch.object(main_bot, "stop_responding") as mock_stop_responding:
+
             async def mock_stop():
                 return None
 
@@ -541,13 +585,14 @@ class TestMainConversationBot:
         mock_update.message = Mock()
         mock_update.message.text = "Hello world"
 
-        with patch.object(main_bot, 'start_responding') as mock_start_responding:
+        with patch.object(main_bot, "start_responding") as mock_start_responding:
+
             async def mock_start():
                 return None
 
             mock_start_responding.return_value = mock_start()
 
-            with patch('time.strftime') as mock_strftime:
+            with patch("time.strftime") as mock_strftime:
                 mock_strftime.return_value = "2023-01-01 12:00:00"
 
                 await main_bot._message_handler(mock_update, Mock())
@@ -559,7 +604,10 @@ class TestMainConversationBot:
                 assert chat_id == 12345
                 assert message.bot_id == "user"
                 assert message.user_id == 67890
-                assert '{"user": "testuser", "time": "2023-01-01 12:00:00"} Hello world' in message.text
+                assert (
+                    '{"user": "testuser", "time": "2023-01-01 12:00:00"} Hello world'
+                    in message.text
+                )
 
                 mock_start_responding.assert_called_once_with(12345)
 
@@ -570,7 +618,9 @@ class TestSecondaryConversationBot:
     @pytest.fixture
     def secondary_bot(self):
         """Fixture providing a SecondaryConversationBot instance."""
-        with patch('assistants.telegram_ui.bot_conversation_bot.Application') as mock_app_class:
+        with patch(
+            "assistants.telegram_ui.bot_conversation_bot.Application"
+        ) as mock_app_class:
             mock_builder = Mock()
             mock_app_class.builder.return_value = mock_builder
             mock_builder.token.return_value = mock_builder
@@ -599,10 +649,14 @@ class TestSecondaryConversationBot:
         assert secondary_bot.application.add_handler.call_count == 2
 
         # Get the handlers
-        handlers = [call[0][0] for call in secondary_bot.application.add_handler.call_args_list]
+        handlers = [
+            call[0][0] for call in secondary_bot.application.add_handler.call_args_list
+        ]
 
         # Check that all are command handlers
-        command_handlers = [h for h in handlers if hasattr(h, 'commands') and h.commands]
+        command_handlers = [
+            h for h in handlers if hasattr(h, "commands") and h.commands
+        ]
         assert len(command_handlers) == 2  # start and stop commands only
 
     @pytest.mark.asyncio
@@ -621,13 +675,17 @@ class TestSecondaryConversationBot:
         mock_context.bot.username = "test_secondary_bot"
 
         # Patch the correct chat_data import path as used in the code
-        with patch('assistants.telegram_ui.auth.chat_data') as mock_chat_data:
+        with patch("assistants.telegram_ui.auth.chat_data") as mock_chat_data:
             mock_chat_data.check_superuser = AsyncMock()
 
-            with patch.object(secondary_bot, 'start_responding') as mock_start_responding:
+            with patch.object(
+                secondary_bot, "start_responding"
+            ) as mock_start_responding:
                 mock_start_responding.return_value = AsyncMock(return_value=None)()
 
-                with patch('assistants.telegram_ui.bot_conversation_bot.logger') as mock_logger:
+                with patch(
+                    "assistants.telegram_ui.bot_conversation_bot.logger"
+                ) as mock_logger:
                     await secondary_bot._start_command(mock_update, mock_context)
 
                     assert secondary_bot.bot_id == "test_secondary_bot"
@@ -655,20 +713,29 @@ class TestIntegration:
     """Test integration scenarios."""
 
     @pytest.mark.asyncio
-    @patch('assistants.telegram_ui.bot_conversation_bot.os.environ.get')
-    @patch('assistants.telegram_ui.bot_conversation_bot.sys.argv')
+    @patch("assistants.telegram_ui.bot_conversation_bot.os.environ.get")
+    @patch("assistants.telegram_ui.bot_conversation_bot.sys.argv")
     async def test_main_function_setup(self, mock_argv, mock_env_get):
         """Test the main function setup."""
         mock_argv.__getitem__.return_value = ["bot_a", "bot_b"]
-        mock_env_get.side_effect = lambda key: {"MAIN_BOT_TOKEN": "main_token", "SECONDARY_BOT_TOKEN": "secondary_token"}.get(key)
+        mock_env_get.side_effect = lambda key: {
+            "MAIN_BOT_TOKEN": "main_token",
+            "SECONDARY_BOT_TOKEN": "secondary_token",
+        }.get(key)
 
-        with patch('assistants.telegram_ui.bot_conversation_bot.BotConversationManager') as mock_manager_class:
+        with patch(
+            "assistants.telegram_ui.bot_conversation_bot.BotConversationManager"
+        ) as mock_manager_class:
             mock_manager = Mock()
             mock_manager.initialize = AsyncMock()
             mock_manager_class.return_value = mock_manager
 
-            with patch('assistants.telegram_ui.bot_conversation_bot.MainConversationBot') as mock_main_bot_class:
-                with patch('assistants.telegram_ui.bot_conversation_bot.SecondaryConversationBot') as mock_secondary_bot_class:
+            with patch(
+                "assistants.telegram_ui.bot_conversation_bot.MainConversationBot"
+            ) as mock_main_bot_class:
+                with patch(
+                    "assistants.telegram_ui.bot_conversation_bot.SecondaryConversationBot"
+                ) as mock_secondary_bot_class:
                     mock_main_bot = Mock()
                     mock_main_bot.start = AsyncMock()
                     mock_main_bot.stop = AsyncMock()

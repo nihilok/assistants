@@ -33,6 +33,7 @@ try:
     from datetime import UTC
 except ImportError:
     from datetime import timezone
+
     UTC = timezone.utc
 
 
@@ -349,7 +350,9 @@ class GenerateImage(Command):
         image_path = DATA_DIR / "images"
         if not image_path.exists():
             image_path.mkdir(parents=True)
-        filename = f"{'_'.join(prompt.split()[:5])}_{datetime.now(UTC).timestamp():.0f}.png"
+        filename = (
+            f"{'_'.join(prompt.split()[:5])}_{datetime.now(UTC).timestamp():.0f}.png"
+        )
         full_image_path = image_path / filename
         async with aiofiles.open(full_image_path, "wb") as file:
             await file.write(image_content)
@@ -364,6 +367,7 @@ class GenerateImage(Command):
             # Fallback to UniversalAssistant just for image gen
             try:
                 from assistants.ai.universal import UniversalAssistant  # lazy import
+
                 if not environment.OPENAI_API_KEY:
                     raise ConfigError(
                         "OpenAI API key not found. Please set OPENAI_API_KEY to generate images."

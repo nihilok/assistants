@@ -19,6 +19,7 @@ from typing import (
     Union,
     Sequence,
 )
+
 try:
     from typing import NotRequired
 except ImportError:

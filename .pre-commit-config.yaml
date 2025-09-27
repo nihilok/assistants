@@ -1,0 +1,21 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format assistants
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check assistants --fix --unsafe-fixes
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: mypy
+        name: mypy baseline check
+        entry: ./scripts/check_mypy.sh
+        language: system
+        types: [python]
+        pass_filenames: false

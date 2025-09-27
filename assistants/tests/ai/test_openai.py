@@ -251,7 +251,7 @@ class TestCompletion:
         """Test completing an audio prompt."""
         with (
             patch("base64.b64decode") as mock_b64decode,
-            patch.object(completion, "remember", return_value=None) as mock_remember,
+            patch.object(completion, "remember", return_value=None),
         ):
             mock_b64decode.return_value = b"audio data"
 

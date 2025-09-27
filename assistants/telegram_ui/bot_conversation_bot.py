@@ -4,7 +4,7 @@ import os
 import random
 import sys
 import time
-from typing import List, Optional, Set, Dict, Any, Union
+from typing import List, Optional, Set
 
 from telegram import Update
 from telegram.ext import (

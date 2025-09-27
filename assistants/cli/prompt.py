@@ -4,6 +4,7 @@ from enum import Enum
 import re
 
 from prompt_toolkit import prompt
+from prompt_toolkit.formatted_text import StyleAndTextTuples
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from prompt_toolkit.styles import Style
@@ -24,6 +25,7 @@ INPUT_CLASSNAME = "input"
 
 class AtPathLexer(Lexer):
     """Lexer to highlight filesystem paths starting with '@'."""
+
     def lex_document(self, document: Document):
         """Highlight @-paths in the document."""
         path_pattern = FilesystemService.FILE_TAG_REGEX
@@ -34,11 +36,11 @@ class AtPathLexer(Lexer):
             last = 0
             for m in re.finditer(path_pattern, line):
                 if m.start() > last:
-                    tokens.append(('class:text', line[last:m.start()]))
-                tokens.append(('class:atpath', line[m.start():m.end()]))
+                    tokens.append(("class:text", line[last : m.start()]))
+                tokens.append(("class:atpath", line[m.start() : m.end()]))
                 last = m.end()
             if last < len(line):
-                tokens.append(('class:text', line[last:]))
+                tokens.append(("class:text", line[last:]))
             return tokens
 
         return get_line
@@ -47,6 +49,7 @@ class AtPathLexer(Lexer):
 @dataclass
 class PromptConfig:
     """Configuration for the interactive prompt."""
+
     style: Style = Style.from_dict(
         {
             "": PromptStyle.USER_INPUT.value,
@@ -62,7 +65,7 @@ class PromptConfig:
 bindings = KeyBindings()
 config = PromptConfig()
 history = FileHistory(config.history_file)
-PROMPT = [(f"class:{INPUT_CLASSNAME}", f"{config.prompt_symbol} ")]
+PROMPT: StyleAndTextTuples = [(f"class:{INPUT_CLASSNAME}", f"{config.prompt_symbol} ")]
 
 
 @bindings.add("tab")
@@ -89,5 +92,5 @@ def get_user_input() -> str:
         history=history,
         key_bindings=bindings,
         lexer=AtPathLexer(),
-        in_thread=True
+        in_thread=True,
     )

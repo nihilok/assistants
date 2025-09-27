@@ -2,13 +2,16 @@ import os
 import pytest
 from assistants.cli.fs import FilesystemService
 
+
 @pytest.fixture
 def temp_dir():
     tmp_dir = "/tmp/test_fs_service"
     os.makedirs(tmp_dir, exist_ok=True)
     yield tmp_dir
     import shutil
+
     shutil.rmtree(tmp_dir)
+
 
 @pytest.mark.parametrize(
     "input_path,expected_output",
@@ -16,9 +19,15 @@ def temp_dir():
         (lambda tmp: os.path.join(tmp, "d"), lambda tmp: os.path.join(tmp, "dir")),
         (lambda tmp: os.path.join(tmp, "dir1"), lambda tmp: os.path.join(tmp, "dir1/")),
         (lambda tmp: os.path.join(tmp, "file"), lambda tmp: os.path.join(tmp, "file")),
-        (lambda tmp: os.path.join(tmp, "file2"), lambda tmp: os.path.join(tmp, "file2.txt")),
-        (lambda tmp: os.path.join(tmp, "nonexistent"), lambda tmp: os.path.join(tmp, "nonexistent")),
-    ]
+        (
+            lambda tmp: os.path.join(tmp, "file2"),
+            lambda tmp: os.path.join(tmp, "file2.txt"),
+        ),
+        (
+            lambda tmp: os.path.join(tmp, "nonexistent"),
+            lambda tmp: os.path.join(tmp, "nonexistent"),
+        ),
+    ],
 )
 def test_filesystem_service_auto_complete_path(temp_dir, input_path, expected_output):
     # Create some test files and directories

@@ -3,7 +3,6 @@ This module contains the main input/output loop for interacting with the assista
 """
 
 import asyncio
-import re
 from typing import Optional
 
 from assistants.ai.types import AssistantInterface, StreamingAssistantInterface
@@ -13,7 +12,7 @@ from assistants.cli.prompt import get_user_input
 from assistants.cli.utils import highlight_code_blocks
 from assistants.log import logger
 from assistants.cli.utils import StreamHighlighter
-from assistants.cli.fs import FilesystemService, FilesystemError
+from assistants.cli.fs import FilesystemService
 
 
 class AssistantIoHandler:

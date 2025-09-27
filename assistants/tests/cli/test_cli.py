@@ -1,10 +1,9 @@
 import asyncio
-import io
 import sys
 from unittest import mock
 
 import pytest
-from unittest.mock import MagicMock, patch, mock_open, Mock, AsyncMock
+from unittest.mock import MagicMock, patch, mock_open
 
 import yaml
 
@@ -224,7 +223,9 @@ def test_handle_conversation_status_no_thread_with_continue(mock_warn, cli):
 @patch("assistants.cli.output.inform")
 @patch("assistants.cli.output.new_line")
 @patch("assistants.cli.cli.display_conversation_history")
-def test_handle_conversation_status_with_thread_and_continue(mock_display, mock_new_line, mock_inform, cli):
+def test_handle_conversation_status_with_thread_and_continue(
+    mock_display, mock_new_line, mock_inform, cli
+):
     cli.thread_id = "thread-id"
     cli.assistant = MagicMock()
     cli.args = MagicMock()

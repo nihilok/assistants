@@ -1,4 +1,4 @@
-name: Mypy
+name: Linting
 
 on: [ push ]
 
@@ -23,7 +23,7 @@ jobs:
         run: |
           uv sync --group dev --group telegram
 
-      - name: Type checking with mypy
+      - name: Run pre-commit hooks
         run: |
-          chmod +x ./scripts/check_mypy.sh
-          ./scripts/check_mypy.sh
+          uv run pre-commit run --all-files
+            

@@ -3,8 +3,8 @@ Unit tests for the telegram_ui.tg_bot module.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from telegram.ext import Application, ApplicationBuilder, CommandHandler, MessageHandler
+from unittest.mock import Mock, patch
+from telegram.ext import Application, CommandHandler, MessageHandler
 
 from assistants.telegram_ui.tg_bot import build_bot, run_polling
 
@@ -12,8 +12,8 @@ from assistants.telegram_ui.tg_bot import build_bot, run_polling
 class TestBuildBot:
     """Test the build_bot function."""
 
-    @patch('assistants.telegram_ui.tg_bot.ApplicationBuilder')
-    @patch('assistants.telegram_ui.tg_bot.logger')
+    @patch("assistants.telegram_ui.tg_bot.ApplicationBuilder")
+    @patch("assistants.telegram_ui.tg_bot.logger")
     def test_build_bot_success(self, mock_logger, mock_app_builder):
         """Test successful bot building with all handlers."""
         # Mock the application builder chain
@@ -44,7 +44,7 @@ class TestBuildBot:
             "auto_reply",
             "image",
             "voice",
-            "unfinished_business"
+            "unfinished_business",
         ]
 
         # Check that add_handler was called for each command + message handler
@@ -67,7 +67,7 @@ class TestBuildBot:
 
         assert result == mock_application
 
-    @patch('assistants.telegram_ui.tg_bot.ApplicationBuilder')
+    @patch("assistants.telegram_ui.tg_bot.ApplicationBuilder")
     def test_build_bot_with_different_token(self, mock_app_builder):
         """Test build_bot with different token values."""
         mock_builder = Mock()
@@ -82,7 +82,7 @@ class TestBuildBot:
             build_bot(token)
             mock_builder.token.assert_called_with(token)
 
-    @patch('assistants.telegram_ui.tg_bot.ApplicationBuilder')
+    @patch("assistants.telegram_ui.tg_bot.ApplicationBuilder")
     def test_build_bot_handler_functions_imported(self, mock_app_builder):
         """Test that all handler functions are properly imported and used."""
         mock_builder = Mock()
@@ -119,7 +119,7 @@ class TestBuildBot:
 
         # Verify we have the expected number of handlers
         assert len(command_handlers) == 11  # 11 command handlers
-        assert len(message_handlers) == 1   # 1 message handler
+        assert len(message_handlers) == 1  # 1 message handler
 
         # Verify the command handlers have the correct callbacks
         expected_handlers = {
@@ -149,7 +149,7 @@ class TestBuildBot:
 class TestRunPolling:
     """Test the run_polling function."""
 
-    @patch('assistants.telegram_ui.tg_bot.logger')
+    @patch("assistants.telegram_ui.tg_bot.logger")
     def test_run_polling_success(self, mock_logger):
         """Test successful polling run."""
         mock_application = Mock(spec=Application)
@@ -160,7 +160,7 @@ class TestRunPolling:
         mock_logger.info.assert_called_once_with("Telegram bot is running...")
         mock_application.run_polling.assert_called_once()
 
-    @patch('assistants.telegram_ui.tg_bot.logger')
+    @patch("assistants.telegram_ui.tg_bot.logger")
     def test_run_polling_with_exception(self, mock_logger):
         """Test polling run with exception."""
         mock_application = Mock(spec=Application)
@@ -176,8 +176,8 @@ class TestRunPolling:
 class TestIntegration:
     """Test integration scenarios."""
 
-    @patch('assistants.telegram_ui.tg_bot.ApplicationBuilder')
-    @patch('assistants.telegram_ui.tg_bot.logger')
+    @patch("assistants.telegram_ui.tg_bot.ApplicationBuilder")
+    @patch("assistants.telegram_ui.tg_bot.logger")
     def test_full_bot_setup_and_run(self, mock_logger, mock_app_builder):
         """Test full bot setup and run scenario."""
         # Setup mocks
@@ -211,7 +211,7 @@ class TestIntegration:
 
         assert bot == mock_application
 
-    @patch('assistants.telegram_ui.tg_bot.assistant')
+    @patch("assistants.telegram_ui.tg_bot.assistant")
     def test_assistant_import(self, mock_assistant):
         """Test that the assistant is properly imported."""
         # This test ensures the assistant singleton is accessible
@@ -224,7 +224,7 @@ class TestIntegration:
 class TestErrorHandling:
     """Test error handling scenarios."""
 
-    @patch('assistants.telegram_ui.tg_bot.ApplicationBuilder')
+    @patch("assistants.telegram_ui.tg_bot.ApplicationBuilder")
     def test_build_bot_builder_exception(self, mock_app_builder):
         """Test build_bot when ApplicationBuilder raises exception."""
         mock_app_builder.side_effect = Exception("Builder failed")
@@ -232,7 +232,7 @@ class TestErrorHandling:
         with pytest.raises(Exception, match="Builder failed"):
             build_bot("test_token")
 
-    @patch('assistants.telegram_ui.tg_bot.ApplicationBuilder')
+    @patch("assistants.telegram_ui.tg_bot.ApplicationBuilder")
     def test_build_bot_token_exception(self, mock_app_builder):
         """Test build_bot when token() raises exception."""
         mock_builder = Mock()
@@ -242,7 +242,7 @@ class TestErrorHandling:
         with pytest.raises(Exception, match="Invalid token"):
             build_bot("invalid_token")
 
-    @patch('assistants.telegram_ui.tg_bot.ApplicationBuilder')
+    @patch("assistants.telegram_ui.tg_bot.ApplicationBuilder")
     def test_build_bot_build_exception(self, mock_app_builder):
         """Test build_bot when build() raises exception."""
         mock_builder = Mock()
@@ -253,7 +253,7 @@ class TestErrorHandling:
         with pytest.raises(Exception, match="Build failed"):
             build_bot("test_token")
 
-    @patch('assistants.telegram_ui.tg_bot.ApplicationBuilder')
+    @patch("assistants.telegram_ui.tg_bot.ApplicationBuilder")
     def test_build_bot_add_handler_exception(self, mock_app_builder):
         """Test build_bot when add_handler raises exception."""
         mock_builder = Mock()

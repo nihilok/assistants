@@ -1,6 +1,8 @@
 import uuid
 
-import base64, io, binascii
+import base64
+import io
+import binascii
 from telegram import ReplyKeyboardRemove
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
@@ -264,7 +266,7 @@ async def generate_image(update: StandardUpdate, context: ContextTypes.DEFAULT_T
     except binascii.Error:
         # Try a more permissive decode (padding issues, etc.)
         try:
-            padding = (-len(raw_b64_stripped) % 4)
+            padding = -len(raw_b64_stripped) % 4
             image_bytes = base64.b64decode(raw_b64_stripped + "=" * padding)
         except Exception as e:  # pragma: no cover
             await context.bot.send_message(

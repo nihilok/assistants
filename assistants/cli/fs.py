@@ -5,9 +5,10 @@ import re
 class FilesystemError(Exception):
     pass
 
+
 class FilesystemService:
     # Central regex for @-file tags (absolute and relative)
-    FILE_TAG_REGEX = r'@((?:\.?\.?/)?[\w\-.~/]+)'
+    FILE_TAG_REGEX = r"@((?:\.?\.?/)?[\w\-.~/]+)"
 
     @classmethod
     def find_file_tags(cls, text: str) -> list[str]:
@@ -29,10 +30,10 @@ class FilesystemService:
         with open(path, "r") as f:
             return f.read()
 
-
     @staticmethod
     def auto_complete_path(partial_path: str) -> str:
         import os
+
         # Remember if input was relative
         is_relative = not Path(partial_path).is_absolute()
         # Expand ~ and environment variables
@@ -54,15 +55,17 @@ class FilesystemService:
             if len(matches) == 1:
                 result = parent / matches[0]
             else:
+
                 def common_prefix(strs):
                     if not strs:
-                        return ''
+                        return ""
                     s1 = min(strs)
                     s2 = max(strs)
                     for i, c in enumerate(s1):
                         if i >= len(s2) or c != s2[i]:
                             return s1[:i]
                     return s1
+
                 lcp = common_prefix(matches)
                 if lcp:
                     result = parent / lcp
