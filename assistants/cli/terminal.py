@@ -1,12 +1,6 @@
 import sys
 
-try:
-    from enum import StrEnum
-except ImportError:
-    from enum import Enum
-
-    class StrEnum(str, Enum):
-        pass
+from enum import StrEnum
 
 
 class ANSIEscapeSequence(StrEnum):

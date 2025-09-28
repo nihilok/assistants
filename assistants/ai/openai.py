@@ -23,9 +23,8 @@ from typing import (
 )
 
 import openai
-from openai import BadRequestError, NOT_GIVEN, NotGiven
-from openai.types import Reasoning
-from openai.types.shared_params.reasoning import Reasoning as ReasoningTypedDict
+from openai import BadRequestError, NOT_GIVEN, NotGiven, Omit
+from openai.types.shared_params.reasoning import Reasoning
 from openai.types.chat import ChatCompletionAudioParam, ChatCompletionMessage
 from openai.types.responses import Response
 
@@ -229,13 +228,13 @@ class OpenAIAssistant(
         response = self.client.responses.create(
             model=self.model,
             input=self._prepend_instructions(),  # type: ignore
-            reasoning=ReasoningTypedDict(
-                **self.reasoning.model_dump(exclude_unset=True)
-            )
-            if self.is_reasoning_model and self.reasoning
-            else NOT_GIVEN,
+            reasoning=self.reasoning
+            if (self.is_reasoning_model and self.reasoning is not None)
+            else Omit(),
             store=True,
-            max_output_tokens=self.max_response_tokens or None,
+            max_output_tokens=self.max_response_tokens
+            if self.max_response_tokens is not None
+            else Omit,
         )
 
         await self.remember({"role": "assistant", "content": response.output_text})
@@ -279,11 +278,10 @@ class OpenAIAssistant(
             "quality": quality,
             "size": size,
         }
-
         if model == "dall-e-3":
             image_kwargs["response_format"] = "b64_json"
 
-        response = self.client.images.generate(**image_kwargs)
+        response = self.client.images.generate(**image_kwargs)  # type: ignore
         if not response.data or not response.data[0].b64_json:
             return None
 
@@ -350,9 +348,7 @@ class OpenAIAssistant(
         stream = self.client.responses.create(
             model=self.model,
             input=self.conversation_payload,  # type: ignore
-            reasoning=ReasoningTypedDict(
-                **self.reasoning.model_dump(exclude_unset=True)  # type: ignore
-            )
+            reasoning=self.reasoning.model_dump(exclude_unset=True)  # type: ignore
             if self.is_reasoning_model and self.reasoning
             else NOT_GIVEN,
             stream=True,
@@ -424,7 +420,7 @@ class OpenAICompletion(
         Initialize the Completion instance.
 
         :param model: The model to be used for completions.
-        :param max_tokens: Maximum number of messages to retain in memory.
+        :param max_history_tokens: Maximum number of messages to retain in memory.
         :param api_key: API key for OpenAI.
         :param thinking: Level of reasoning effort (0=low, 1=medium, 2=high).
         """
@@ -457,10 +453,8 @@ class OpenAICompletion(
         response = self.client.chat.completions.create(
             model=self.model,
             messages=cast(list, temp_memory),
-            reasoning_effort=self.reasoning.effort
-            if isinstance(self.reasoning, Reasoning)
-            else NOT_GIVEN,
-            max_tokens=self.max_response_tokens or NOT_GIVEN,
+            reasoning_effort=self.reasoning.get("effort") if self.reasoning else Omit(),
+            max_tokens=self.max_response_tokens if self.max_response_tokens else Omit(),
         )
         message = response.choices[0].message
         await self.remember({"role": "assistant", "content": message.content or ""})

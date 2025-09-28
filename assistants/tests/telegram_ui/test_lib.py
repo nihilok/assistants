@@ -36,7 +36,7 @@ class MockUpdate:
             self.effective_chat = Mock(spec=Chat)
             self.effective_chat.id = chat_id
         else:
-            self.effective_chat = None
+            self.effective_chat = None  # type: ignore
 
         if has_message:
             self.message = Mock(spec=Message)
@@ -50,7 +50,7 @@ class MockUpdate:
             else:
                 self.message.reply_to_message = None
         else:
-            self.message = None
+            self.message = None  # type: ignore
 
         self.effective_message = self.message
 
@@ -72,22 +72,22 @@ class TestProtocolAndTypeGuards:
     def test_update_has_effective_chat_true(self):
         """Test update_has_effective_chat with valid chat."""
         update = MockUpdate(has_chat=True)
-        assert update_has_effective_chat(update) is True
+        assert update_has_effective_chat(update) is True  # type: ignore
 
     def test_update_has_effective_chat_false(self):
         """Test update_has_effective_chat with no chat."""
         update = MockUpdate(has_chat=False)
-        assert update_has_effective_chat(update) is False
+        assert update_has_effective_chat(update) is False  # type: ignore
 
     def test_update_has_message_true(self):
         """Test update_has_message with valid message."""
         update = MockUpdate(has_message=True)
-        assert update_has_message(update) is True
+        assert update_has_message(update) is True  # type: ignore
 
     def test_update_has_message_false(self):
         """Test update_has_message with no message."""
         update = MockUpdate(has_message=False)
-        assert update_has_message(update) is False
+        assert update_has_message(update) is False  # type: ignore
 
 
 class TestDecorators:

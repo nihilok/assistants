@@ -11,8 +11,8 @@ Classes:
 import warnings
 from typing import AsyncIterator, Optional, Sequence, Literal
 
-from univllm import UniversalLLMClient, is_unsupported_model
-from univllm.models import Message
+from univllm import UniversalLLMClient, is_unsupported_model  # type: ignore
+from univllm.models import Message, MessageRole  # type: ignore
 
 from assistants.ai.memory import ConversationHistoryMixin
 from assistants.ai.types import (
@@ -200,7 +200,13 @@ class UniversalAssistant(
         """
         messages = []
         for msg in self.memory:
-            if isinstance(msg, dict) and "role" in msg and "content" in msg:
+            if (
+                isinstance(msg, dict)
+                and "role" in msg
+                and "content" in msg
+                and isinstance(msg["role"], str)
+                and isinstance(msg["content"], str)
+            ):
                 messages.append(Message(role=msg["role"], content=msg["content"]))
         return messages
 
@@ -216,7 +222,9 @@ class UniversalAssistant(
             if payload and payload[0].get("role") == "system":
                 payload[0]["content"] = self.instructions
             else:
-                payload = [{"role": "system", "content": self.instructions}] + payload
+                payload = [
+                    Message(role=MessageRole.SYSTEM, content=self.instructions)
+                ] + payload
         return payload
 
     async def load_conversation(self, conversation_id: Optional[str] = None) -> None:
@@ -239,8 +247,11 @@ class UniversalAssistant(
         # Find the last assistant message
         for msg in reversed(self.memory):
             if isinstance(msg, dict) and msg.get("role") == "assistant":
+                content = msg.get("content", "")
+                if not isinstance(content, str):
+                    content = str(content)
                 return MessageData(
-                    text_content=msg.get("content", ""),
+                    text_content=content,
                     thread_id=self.conversation_id,
                 )
         return None
