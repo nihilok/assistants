@@ -181,10 +181,15 @@ async def io_loop_async(assistant, initial_input, thread_id):
         await handler.process_input(initial_input)
 
     while True:
-        user_input = get_user_input()
-        should_exit = await handler.process_input(user_input)
-        if should_exit:
-            break
+        try:
+            user_input = get_user_input()
+            should_exit = await handler.process_input(user_input)
+            if should_exit:
+                break
+        except KeyboardInterrupt:
+            # Handle ctrl+C gracefully
+            output.new_line()
+            continue
 
 
 def io_loop(

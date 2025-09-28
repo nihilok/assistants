@@ -138,8 +138,8 @@ class CLI:
         """Start the IO loop."""
         try:
             io_loop(self.assistant, self.initial_input, thread_id=self.thread_id)
-        except (EOFError, KeyboardInterrupt):
-            # Exit gracefully if ctrl+C or ctrl+D are pressed
+        except EOFError:
+            # Exit gracefully if ctrl+D is pressed
             sys.exit(0)
 
     def run(self):
