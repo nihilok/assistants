@@ -25,13 +25,13 @@ class KeyNames:
 
 def get_keynames():
     return KeyNames(
-        ASSISTANTS_API_KEY_NAME=os.environ.get(
+        ASSISTANTS_API_KEY_NAME=os.getenv(
             CustomKeyNames.ASSISTANTS_API_KEY_NAME, "OPENAI_API_KEY"
         ),
-        ANTHROPIC_API_KEY_NAME=os.environ.get(
+        ANTHROPIC_API_KEY_NAME=os.getenv(
             CustomKeyNames.ANTHROPIC_API_KEY_NAME, "ANTHROPIC_API_KEY"
         ),
-        MISTRAL_API_KEY_NAME=os.environ.get(
+        MISTRAL_API_KEY_NAME=os.getenv(
             CustomKeyNames.MISTRAL_API_KEY_NAME, "MISTRAL_API_KEY"
         ),
     )
@@ -76,24 +76,24 @@ def get_config() -> Config:
     """
     custom_keys = get_keynames()
     return Config(
-        OPENAI_API_KEY=os.environ.get(custom_keys.ASSISTANTS_API_KEY_NAME, ""),
-        ANTHROPIC_API_KEY=os.environ.get(custom_keys.ANTHROPIC_API_KEY_NAME, ""),
-        MISTRAL_API_KEY=os.environ.get(custom_keys.MISTRAL_API_KEY_NAME, ""),
-        DEFAULT_MODEL=os.environ.get("DEFAULT_MODEL", "gpt-4.1-mini"),
-        CODE_MODEL=os.environ.get("CODE_MODEL", "gpt-4.1"),
-        IMAGE_MODEL=os.environ.get("IMAGE_MODEL", "dall-e-3"),
-        ASSISTANT_INSTRUCTIONS=os.environ.get(
+        OPENAI_API_KEY=os.getenv(custom_keys.ASSISTANTS_API_KEY_NAME, ""),
+        ANTHROPIC_API_KEY=os.getenv(custom_keys.ANTHROPIC_API_KEY_NAME, ""),
+        MISTRAL_API_KEY=os.getenv(custom_keys.MISTRAL_API_KEY_NAME, ""),
+        DEFAULT_MODEL=os.getenv("DEFAULT_MODEL", "gpt-4.1-mini"),
+        CODE_MODEL=os.getenv("CODE_MODEL", "gpt-4.1"),
+        IMAGE_MODEL=os.getenv("IMAGE_MODEL", "dall-e-3"),
+        ASSISTANT_INSTRUCTIONS=os.getenv(
             "ASSISTANT_INSTRUCTIONS", "You are a helpful assistant."
         ),
-        TELEGRAM_BOT_TOKEN=os.environ.get("TG_BOT_TOKEN", ""),
+        TELEGRAM_BOT_TOKEN=os.getenv("TG_BOT_TOKEN", ""),
         DEFAULT_MAX_HISTORY_TOKENS=int(
-            os.environ.get("DEFAULT_MAX_TOKENS", DEFAULT_MAX_HISTORY_TOKENS)
+            os.getenv("DEFAULT_MAX_HISTORY_TOKENS", DEFAULT_MAX_HISTORY_TOKENS)
         ),
         DEFAULT_MAX_RESPONSE_TOKENS=int(
-            os.environ.get("DEFAULT_MAX_RESPONSE_TOKENS", DEFAULT_MAX_RESPONSE_TOKENS)
+            os.getenv("DEFAULT_MAX_RESPONSE_TOKENS", DEFAULT_MAX_RESPONSE_TOKENS)
         ),
         OPEN_IMAGES_IN_BROWSER=bool(
-            json.loads(os.environ.get("OPEN_IMAGES_IN_BROWSER", "true"))
+            json.loads(os.getenv("OPEN_IMAGES_IN_BROWSER", "true"))
         ),
     )
 
