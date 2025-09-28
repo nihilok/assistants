@@ -4,7 +4,7 @@ import subprocess
 import sys
 import tempfile
 from argparse import Namespace
-from typing import Optional, Tuple, Type
+from typing import Optional, Type
 
 import yaml
 from pygments import highlight
@@ -16,11 +16,7 @@ from pygments_tsx.tsx import TypeScriptXLexer  # type: ignore[import-untyped]
 
 from assistants import version
 from assistants.ai.universal import UniversalAssistant
-from assistants.ai.anthropic import ClaudeAssistant
 from assistants.ai.constants import REASONING_MODELS
-from assistants.ai.dummy_assistant import DummyAssistant
-from assistants.ai.mistral import MistralAssistant
-from assistants.ai.openai import OpenAIAssistant, OpenAICompletion
 from assistants.ai.types import AssistantInterface, ThinkingConfig
 from assistants.cli import output
 from assistants.cli.assistant_config import AssistantParams
@@ -95,53 +91,15 @@ def get_text_from_default_editor(initial_text=None):
     return text
 
 
-MODEL_LOOKUP: dict[str, dict[str, Type[AssistantInterface]]] = {
-    "code": {
-        "o1": OpenAICompletion,
-        "o3": OpenAICompletion,
-        "claude-": ClaudeAssistant,
-        "o4": OpenAICompletion,
-    },
-    "default": {
-        "claude-": ClaudeAssistant,
-        "dummy-model": DummyAssistant,
-        "gpt-4": OpenAIAssistant,
-        "o1": OpenAIAssistant,
-        "o3": OpenAIAssistant,
-        "o4": OpenAIAssistant,
-        "mistral": MistralAssistant,
-        "codestral": MistralAssistant,
-        "devstral": MistralAssistant,
-    },
-}
-
-
-def should_use_universal_assistant(model_name: str) -> bool:
-    """
-    Check if a model should use the UniversalAssistant instead of legacy classes.
-
-    :param model_name: The model name to check
-    :return: True if UniversalAssistant should be used
-    """
-    # Models that should always use UniversalAssistant
-    universal_prefixes = [
-        "deepseek",
-        # Add more as needed
-    ]
-
-    return any(model_name.startswith(prefix) for prefix in universal_prefixes)
-
-
 def build_assistant_params(
-    args: Namespace, env: Config, model_name: str, model_class: Type[AssistantInterface]
-) -> Tuple[AssistantParams, Type[AssistantInterface]]:
+    args: Namespace, env: Config, model_name: str
+) -> AssistantParams:
     """
     Build assistant parameters using a dataclass.
 
     :param args: Command line arguments.
     :param env: Environment configuration.
     :param model_name: The name of the model to use.
-    :param model_class: The assistant class to use.
     :return: A tuple of (assistant_params, model_class).
     """
     # Get instructions if specified
@@ -149,15 +107,9 @@ def build_assistant_params(
     if args.instructions:
         with open(args.instructions, "r", encoding="utf-8") as file:
             instructions = file.read()
-    elif not args.code:  # Only use default instructions in non-code mode
-        instructions = env.ASSISTANT_INSTRUCTIONS
 
-    # Set thinking level - default to 1 for Claude code mode
-    thinking_level = (
-        1 if args.code and model_class == ClaudeAssistant else args.thinking
-    )
     thinking_config = ThinkingConfig.get_thinking_config(
-        thinking_level,  # type: ignore
+        args.thinking,  # type: ignore
         env.DEFAULT_MAX_RESPONSE_TOKENS,
     )
 
@@ -170,11 +122,7 @@ def build_assistant_params(
         instructions=instructions if not args.code and instructions else None,
     )
 
-    # Add tools for OpenAI assistant
-    if model_class == OpenAIAssistant:
-        params.tools = [{"type": "code_interpreter"}]
-
-    return params, model_class
+    return params
 
 
 def create_assistant_from_params(
@@ -190,23 +138,6 @@ def create_assistant_from_params(
     return model_class(**params.to_dict())
 
 
-def get_model_class(
-    model_name: str, model_type: str
-) -> Optional[Type[AssistantInterface]]:
-    """
-    Get the assistant class for a given model name and type.
-
-    :param model_name: The name of the model.
-    :param model_type: The type of the model (e.g., "code" or "default").
-    :return: The assistant class corresponding to the model.
-    :raises ConfigError: If no matching model class is found.
-    """
-    for key, assistant_type in MODEL_LOOKUP[model_type].items():
-        if model_name.startswith(key):
-            return assistant_type
-    return None
-
-
 async def create_assistant_and_thread(
     args: Namespace, env: Config
 ) -> tuple[AssistantInterface, Optional[str]]:
@@ -217,36 +148,12 @@ async def create_assistant_and_thread(
     :param env: Environment configuration.
     :return: A tuple of (assistant, thread_id).
     """
-    # Determine model name and type
     model_name = env.CODE_MODEL if args.code else args.model
-    model_type = "code" if args.code else "default"
 
-    # Use UniversalAssistant by default, legacy only if explicitly requested
-    use_universal = not getattr(args, "legacy", False)
+    params = build_assistant_params(args, env, model_name)
 
-    model_class: Type[AssistantInterface] | None
+    assistant = create_assistant_from_params(params, UniversalAssistant)
 
-    if use_universal:
-        # Use UniversalAssistant for new unified interface
-        model_class = UniversalAssistant
-    else:
-        # Find the right assistant class for this model using legacy lookup
-        model_class = get_model_class(model_name, model_type)
-
-        if model_class is None:
-            # Fallback to UniversalAssistant if no legacy class found
-            model_class = UniversalAssistant
-            output.inform(
-                f"No legacy assistant found for '{model_name}', using UniversalAssistant"
-            )
-
-    # Build assistant parameters using dataclass
-    params, model_class = build_assistant_params(args, env, model_name, model_class)
-
-    # Create and start the assistant
-    assistant = create_assistant_from_params(params, model_class)
-
-    # Get thread ID if continuing a conversation
     thread_id = (
         await assistant.async_get_conversation_id() if args.continue_thread else None
     )
@@ -319,9 +226,6 @@ def display_welcome_message(args):
     elif args.model.startswith("claude") and args.thinking:
         mode_info = " (thinking enabled)"
 
-    if args.legacy:
-        mode_info += " (legacy)"
-
     output.output(
         f"Assistant CLI v{version.__VERSION__}; using {model_info} model{mode_info}.\n"
         "Type '/help' (or '/h') for a list of commands."
@@ -340,7 +244,8 @@ class StreamHighlighter:
         self.full_text = ""
         self.terminal_width = self._get_terminal_width()
 
-    def _get_terminal_width(self):
+    @staticmethod
+    def _get_terminal_width():
         try:
             import shutil
 
