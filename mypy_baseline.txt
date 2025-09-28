@@ -13,6 +13,5 @@ assistants/ai/universal.py:15: note: See https://mypy.readthedocs.io/en/stable/r
 assistants/ai/universal.py:219: error: Incompatible types in assignment (expression has type "list[MessageDict | EasyInputMessageParam | MessageParam | dict[str, str]]", variable has type "list[MessageDict | EasyInputMessageParam | MessageParam]")  [assignment]
 assistants/ai/universal.py:243: error: Argument "text_content" to "MessageData" has incompatible type "str | list[ResponseInputTextParam | ResponseInputImageParam | ResponseInputFileParam | ResponseInputAudioParam] | Iterable[TextBlockParam | ImageBlockParam | DocumentBlockParam | SearchResultBlockParam | ThinkingBlockParam | <6 more items>] | None"; expected "str"  [arg-type]
 assistants/cli/terminal.py:8: error: Name "StrEnum" already defined (possibly by an import)  [no-redef]
-assistants/cli/utils.py:263: error: Incompatible types in assignment (expression has type "type[AssistantInterface] | None", variable has type "type[AssistantInterface]")  [assignment]
 assistants/tests/telegram_ui/test_lib.py:39: error: Incompatible types in assignment (expression has type "None", variable has type "Mock")  [assignment]
 assistants/tests/telegram_ui/test_lib.py:53: error: Incompatible types in assignment (expression has type "None", variable has type "Mock")  [assignment]

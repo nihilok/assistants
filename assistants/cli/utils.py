@@ -1,5 +1,4 @@
 import os
-import re
 import select
 import subprocess
 import sys
@@ -13,7 +12,7 @@ from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
 from pygments.lexers import TextLexer, MarkdownLexer
 from pygments.util import ClassNotFound
-from pygments_tsx.tsx import TypeScriptXLexer, patch_pygments  # type: ignore[import-untyped]
+from pygments_tsx.tsx import TypeScriptXLexer  # type: ignore[import-untyped]
 
 from assistants import version
 from assistants.ai.universal import UniversalAssistant
@@ -64,38 +63,10 @@ def highlight_line(line, lang=None):
 
 def highlight_code_blocks(markdown_text):
     """
-    Highlight code blocks in markdown text using Pygments, and highlight the rest as Markdown.
-    Code blocks are highlighted with their language, the rest (including inline code) as Markdown.
+    Highlight code blocks in markdown text using StreamHighlighter for consistent highlighting.
     """
-    patch_pygments()
-
-    code_block_pattern = re.compile(r"```(\w+)?\n(.*?)```", re.DOTALL)
-
-    code_blocks = []
-    placeholders = []
-
-    # Extract and highlight code blocks, replace with placeholders
-    def code_block_replacer(match):
-        lang = match.group(1)
-        code = match.group(2)
-        highlighted_code = highlight_code(code, lang)
-        placeholder = f"__CODE_BLOCK_{len(code_blocks)}__"
-        code_blocks.append(highlighted_code)
-        placeholders.append(placeholder)
-        return placeholder
-
-    text_with_placeholders = code_block_pattern.sub(code_block_replacer, markdown_text)
-
-    # Highlight the rest as Markdown (including inline code)
-    highlighted_markdown = highlight(
-        text_with_placeholders, MarkdownLexer(), TerminalFormatter(style=DEFAULT_STYLE)
-    )
-
-    # Replace placeholders with highlighted code blocks
-    for placeholder, code in zip(placeholders, code_blocks):
-        highlighted_markdown = highlighted_markdown.replace(placeholder, code)
-
-    return highlighted_markdown
+    highlighter = StreamHighlighter()
+    return highlighter.process_chunk(markdown_text)
 
 
 def get_text_from_default_editor(initial_text=None):
@@ -253,7 +224,7 @@ async def create_assistant_and_thread(
     # Use UniversalAssistant by default, legacy only if explicitly requested
     use_universal = not getattr(args, "legacy", False)
 
-    model_class: Type[AssistantInterface]
+    model_class: Type[AssistantInterface] | None
 
     if use_universal:
         # Use UniversalAssistant for new unified interface
@@ -392,6 +363,12 @@ class StreamHighlighter:
                 result += processed_line + "\n"
                 self.line_buffer = ""
 
+        # If there is any remaining text in the buffer (no trailing newline), process it
+        if self.line_buffer:
+            processed_line = self._process_line(self.line_buffer)
+            result += processed_line
+            self.line_buffer = ""
+
         return result
 
     def _process_line(self, line):
@@ -401,16 +378,22 @@ class StreamHighlighter:
             self.inside_code_block = True
             self.current_language = None
             return line
-        elif line.startswith("```") and not self.inside_code_block:
+        elif line.strip().startswith("```") and not self.inside_code_block:
             self.inside_code_block = True
             self.current_language = line[3:].strip()
             return line
-        elif line.strip() == "```" and self.inside_code_block:
+        elif line.strip().endswith("```") and self.inside_code_block:
             self.inside_code_block = False
             return line
 
         # Apply syntax highlighting if inside a code block
         if self.inside_code_block and line.strip():  # Only highlight non-empty lines
+            if line.strip().endswith("```"):
+                # Handle case where code block ends on the same line
+                code_line = line[: line.rfind("```")].rstrip()
+                highlighted_code = highlight_line(code_line, self.current_language)
+                return highlighted_code + "```"
+
             return highlight_line(line, self.current_language)
 
         # Outside code block: highlight as Markdown
