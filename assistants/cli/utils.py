@@ -11,7 +11,7 @@ import yaml
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_by_name
-from pygments.lexers.special import TextLexer
+from pygments.lexers import TextLexer, MarkdownLexer
 from pygments.util import ClassNotFound
 from pygments_tsx.tsx import TypeScriptXLexer, patch_pygments  # type: ignore[import-untyped]
 
@@ -62,18 +62,38 @@ def highlight_line(line, lang=None):
 
 def highlight_code_blocks(markdown_text):
     """
-    Highlight code blocks in markdown text using Pygments.
+    Highlight code blocks in markdown text using Pygments, and highlight the rest as Markdown.
+    Code blocks are highlighted with their language, the rest (including inline code) as Markdown.
     """
     patch_pygments()
+
     code_block_pattern = re.compile(r"```(\w+)?\n(.*?)```", re.DOTALL)
 
-    def replacer(match):
+    code_blocks = []
+    placeholders = []
+
+    # Extract and highlight code blocks, replace with placeholders
+    def code_block_replacer(match):
         lang = match.group(1)
         code = match.group(2)
         highlighted_code = highlight_code(code, lang)
-        return f"```{lang if lang else ''}\n{highlighted_code}```"
+        placeholder = f"__CODE_BLOCK_{len(code_blocks)}__"
+        code_blocks.append(highlighted_code)
+        placeholders.append(placeholder)
+        return placeholder
 
-    return code_block_pattern.sub(replacer, markdown_text)
+    text_with_placeholders = code_block_pattern.sub(code_block_replacer, markdown_text)
+
+    # Highlight the rest as Markdown (including inline code)
+    highlighted_markdown = highlight(
+        text_with_placeholders, MarkdownLexer(), TerminalFormatter()
+    )
+
+    # Replace placeholders with highlighted code blocks
+    for placeholder, code in zip(placeholders, code_blocks):
+        highlighted_markdown = highlighted_markdown.replace(placeholder, code)
+
+    return highlighted_markdown
 
 
 def get_text_from_default_editor(initial_text=None):
