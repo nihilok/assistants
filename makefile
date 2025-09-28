@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint mypy mypy-generate clean build docker-shell format check-all dev-setup pre-commit
+.PHONY: help install install-dev test lint mypy mypy-generate clean format dev-setup
 
 # Default target
 help: ## Show this help message
@@ -15,24 +15,22 @@ install-dev: ## Install package with development dependencies
 # Development targets
 dev-setup: install-dev ## Complete development environment setup
 	@echo "Development environment setup complete!"
-	@echo "You can now run: make mypy, make test, make lint"
+	@echo "You can now run: make lint & make test"
 
 # Testing and quality targets (local)
 test: ## Run pytest tests
 	uv run pytest assistants/tests/ -v
 
-lint: ## Run ruff linting
-	uv run ruff check assistants/ --fix
-
-format: ## Format code with ruff
-	uv run ruff format assistants/
+mypy:
+	./scripts/check_mypy.sh
 
 mypy-generate: ## Generate new mypy baseline in Docker
 	./scripts/check_mypy.sh --generate
 
-check-all: lint mypy test ## Run all quality checks (lint, mypy, test)
+format:
+	uv run ruff format assistants
 
-pre-commit:
+lint:
 	uv run pre-commit run --all-files
 
 # Build targets
@@ -50,4 +48,3 @@ build: clean ## Build distribution packages
 # Release helpers
 version: ## Show current version
 	@python -c "from assistants.version import __VERSION__; print(__VERSION__)"
-

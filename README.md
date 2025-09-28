@@ -136,6 +136,21 @@ Hi Claude, can you check my @./my_local_config.txt and tell me what you think?
 
 Contributions welcome! Fork the repository, make changes, and submit a pull request.
 
+### Useful Make Commands
+
+- `make help`            – Show all available make commands
+- `make install`         – Install package for production
+- `make install-dev`     – Install package with development dependencies
+- `make dev-setup`       – Complete development environment setup
+- `make lint`            – Run all pre-commit hooks on all files
+- `make format`          – Format code with ruff
+- `make mypy`            – Run mypy type checks (baseline)
+- `make mypy-generate`   – Generate a new mypy baseline
+- `make test`            – Run all tests with pytest
+- `make clean`           – Remove build artifacts and cache files
+- `make build`           – Build distribution packages
+- `make version`         – Show current version
+
 #### TODOs:
 
 - Improved conversation handling/truncation for token limits - currently uses tiktoken for all models
