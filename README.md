@@ -48,6 +48,31 @@ Key CLI commands (prefixed with `/`):
 - `/thinking <level>` - Toggle thinking mode (for reasoning models)
 - `/last` - Retrieve last message
 
+#### File Tagging in Prompts
+
+You can include the contents of files directly in your prompt by tagging them with an `@` followed by the file path. Both absolute and relative paths are supported. For example:
+
+```
+Hi Claude, can you check my @~/.zshrc and tell me what you think?
+Hi Claude, can you check my @./my_local_config.txt and tell me what you think?
+```
+
+When you use a tag like `@/path/to/file.txt` or `@relative/path/to/file.txt` in your prompt, the assistant will automatically append the contents of that file to the end of your input, like this:
+
+```
+Hi Claude, can you check my @./my_local_config.txt and tell me what you think?
+
+===./my_local_config.txt===
+// file content
+===EOF===
+```
+
+- You can tag multiple files in a single prompt; each will be appended in the same format.
+- If a file cannot be read, an error message will be shown in place of its content.
+- Both absolute (starting with `/`) and relative paths (like `./file.txt` or `subdir/file.txt`) are supported for tagging.
+
+#### Model-Specific Commands
+
 Use the `claude` command for Anthropic models (Now defaults to Claude 4):
 
 ```bash
@@ -59,6 +84,8 @@ There's also a `chatgpt` command that uses the default ChatGPT model:
 ```bash
 chatgpt -t  # Continue the last thread with ChatGPT (`gpt-4.1-mini`)
 ```
+
+#### Database Management
 
 Run migrations in case of breaking changes:
 
@@ -108,29 +135,6 @@ Key Telegram commands:
 - `OPEN_IMAGES_IN_BROWSER` - Open images automatically (default: `true`)
 - `DEFAULT_MAX_RESPONSE_TOKENS` - Default max response tokens (default: `4096`)
 - `DEFAULT_MAX_HISTORY_TOKENS` - Default max history tokens (default: `10000`)
-
-## File Tagging in Prompts
-
-You can include the contents of files directly in your prompt by tagging them with an `@` followed by the file path. Both absolute and relative paths are supported. For example:
-
-```
-Hi Claude, can you check my @~/.zshrc and tell me what you think?
-Hi Claude, can you check my @./my_local_config.txt and tell me what you think?
-```
-
-When you use a tag like `@/path/to/file.txt` or `@relative/path/to/file.txt` in your prompt, the assistant will automatically append the contents of that file to the end of your input, like this:
-
-```
-Hi Claude, can you check my @./my_local_config.txt and tell me what you think?
-
-===./my_local_config.txt===
-// file content
-===EOF===
-```
-
-- You can tag multiple files in a single prompt; each will be appended in the same format.
-- If a file cannot be read, an error message will be shown in place of its content.
-- Both absolute (starting with `/`) and relative paths (like `./file.txt` or `subdir/file.txt`) are supported for tagging.
 
 ## Contributing
 
