@@ -32,11 +32,13 @@ fallback_lexers = {
     "plaintext": TextLexer,
 }
 
+DEFAULT_STYLE = "monokai"
+
 
 def highlight_code(code, lang=None):
     """Highlight a piece of code with the given language."""
     lexer = get_lexer_for_language(lang)
-    return highlight(code, lexer, TerminalFormatter())
+    return highlight(code, lexer, TerminalFormatter(style=DEFAULT_STYLE))
 
 
 def highlight_line(line, lang=None):
@@ -86,7 +88,7 @@ def highlight_code_blocks(markdown_text):
 
     # Highlight the rest as Markdown (including inline code)
     highlighted_markdown = highlight(
-        text_with_placeholders, MarkdownLexer(), TerminalFormatter()
+        text_with_placeholders, MarkdownLexer(), TerminalFormatter(style=DEFAULT_STYLE)
     )
 
     # Replace placeholders with highlighted code blocks
@@ -411,7 +413,10 @@ class StreamHighlighter:
         if self.inside_code_block and line.strip():  # Only highlight non-empty lines
             return highlight_line(line, self.current_language)
 
-        return line
+        # Outside code block: highlight as Markdown
+        return highlight(
+            line, MarkdownLexer(), TerminalFormatter(style=DEFAULT_STYLE)
+        ).strip("\n")
 
     def finalise(self):
         """Process any remaining text in the buffer."""

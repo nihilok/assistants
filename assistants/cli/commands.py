@@ -18,6 +18,7 @@ from assistants.cli.terminal import clear_screen
 from assistants.cli.utils import (
     get_text_from_default_editor,
     display_conversation_history,
+    highlight_code_blocks,
 )
 from assistants.config import environment
 from assistants.config.file_management import DATA_DIR
@@ -434,7 +435,7 @@ class ShowLastMessage(Command):
             return
         last_message = await environ.assistant.get_last_message()
         if last_message:
-            output.output(last_message.text_content)
+            output.output(highlight_code_blocks(last_message.text_content))
         else:
             output.warn("No last message found.")
 
