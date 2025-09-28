@@ -257,9 +257,9 @@ def test_start_io_loop(mock_io_loop, cli):
     )
 
 
-@patch("assistants.cli.cli.io_loop", side_effect=KeyboardInterrupt)
+@patch("assistants.cli.cli.io_loop", side_effect=EOFError)
 @patch("sys.exit")
-def test_start_io_loop_keyboard_interrupt(mock_exit, mock_io_loop, cli):
+def test_start_io_loop_ctrl_d_exits(mock_exit, mock_io_loop, cli):
     cli.assistant = MagicMock()
 
     cli.start_io_loop()
