@@ -64,7 +64,6 @@ ai-tg-bot = "assistants.main_tg:main"
 claude = "assistants.claude:main"
 
 [tool.hatch.metadata]
-# Exclude test packages from build
 allow-direct-references = true
 
 [tool.hatch.build.targets.sdist]
