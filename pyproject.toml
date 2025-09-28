@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "assistants-framework"
-version = "0.8.4"
+version = "0.8.6"
 authors = [
     { name = "Michael Jarvis", email = "nihilok@jarv.dev" },
 ]
@@ -34,7 +34,7 @@ dependencies = [
     "types-pygments~=2.19.0.20250516",
     "types-aiofiles~=24.1.0.20250606",
     "types-PyYAML~=6.0.12.20250516",
-    "univllm==0.1.10",
+    "univllm==0.1.11",
 ]
 
 [dependency-groups]
@@ -63,8 +63,16 @@ chatgpt = "assistants.chatgpt:main"
 ai-tg-bot = "assistants.main_tg:main"
 claude = "assistants.claude:main"
 
-[tool.setuptools]
-packages = { find = { exclude = ["assistants.tests*"] } }
+[tool.hatch.metadata]
+# Exclude test packages from build
+allow-direct-references = true
+
+[tool.hatch.build.targets.sdist]
+exclude = ["assistants/tests*"]
+
+[tool.hatch.build.targets.wheel]
+exclude = ["assistants/tests*"]
+packages = ["assistants"]
 
 [tool.pylint]
 max-line-length = 100

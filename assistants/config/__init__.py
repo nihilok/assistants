@@ -79,8 +79,8 @@ def get_config() -> Config:
         OPENAI_API_KEY=os.environ.get(custom_keys.ASSISTANTS_API_KEY_NAME, ""),
         ANTHROPIC_API_KEY=os.environ.get(custom_keys.ANTHROPIC_API_KEY_NAME, ""),
         MISTRAL_API_KEY=os.environ.get(custom_keys.MISTRAL_API_KEY_NAME, ""),
-        DEFAULT_MODEL=os.environ.get("DEFAULT_MODEL", "gpt-5-mini"),
-        CODE_MODEL=os.environ.get("CODE_MODEL", "o4-mini"),
+        DEFAULT_MODEL=os.environ.get("DEFAULT_MODEL", "gpt-4.1-mini"),
+        CODE_MODEL=os.environ.get("CODE_MODEL", "gpt-4.1"),
         IMAGE_MODEL=os.environ.get("IMAGE_MODEL", "dall-e-3"),
         ASSISTANT_INSTRUCTIONS=os.environ.get(
             "ASSISTANT_INSTRUCTIONS", "You are a helpful assistant."
