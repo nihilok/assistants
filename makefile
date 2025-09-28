@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint mypy mypy-generate clean build docker-shell format check-all dev-setup
+.PHONY: help install install-dev test lint mypy mypy-generate clean build docker-shell format check-all dev-setup pre-commit
 
 # Default target
 help: ## Show this help message
@@ -22,19 +22,18 @@ test: ## Run pytest tests
 	uv run pytest assistants/tests/ -v
 
 lint: ## Run ruff linting
-	uv run ruff check assistants/
+	uv run ruff check assistants/ --fix
 
 format: ## Format code with ruff
 	uv run ruff format assistants/
 
-# Testing and quality targets (Docker)
-mypy: ## Run mypy type checking against baseline in Docker
-	./scripts/docker_wrapper.sh
-
 mypy-generate: ## Generate new mypy baseline in Docker
-	./scripts/docker_wrapper.sh --generate
+	./scripts/check_mypy.sh --generate
 
 check-all: lint mypy test ## Run all quality checks (lint, mypy, test)
+
+pre-commit:
+	uv run pre-commit run --all-files
 
 # Build targets
 clean: ## Clean build artifacts and cache files
@@ -48,39 +47,7 @@ clean: ## Clean build artifacts and cache files
 build: clean ## Build distribution packages
 	uv build
 
-# Docker targets
-docker-shell: ## Open interactive shell in Docker container
-	./scripts/docker_wrapper.sh --shell
-
-# CLI shortcuts (run in Docker containers)
-ai-cli: ## Run ai-cli in Docker container (use: make ai-cli ARGS="--help")
-	./scripts/docker_wrapper.sh --cli $(ARGS)
-
-chatgpt: ## Run chatgpt CLI in Docker container
-	./scripts/docker_wrapper.sh --cli --provider openai
-
-claude: ## Run claude CLI in Docker container
-	./scripts/docker_wrapper.sh --cli --provider anthropic
-
-telegram-bot: ## Run Telegram bot in Docker container
-	docker compose run --rm cli ai-tg-bot
-
-# Utility targets
-config: ## Show configuration info
-	@echo "Python version: $$(uv run python --version)"
-	@echo "UV version: $$(uv --version)"
-	@echo "Project location: $$(pwd)"
-	@echo "Virtual environment: $${VIRTUAL_ENV:-Managed by uv}"
-
-# Development workflow shortcuts
-quick-check: lint mypy ## Quick development check (lint + mypy, no tests)
-
-full-check: check-all ## Alias for check-all
-
 # Release helpers
 version: ## Show current version
 	@python -c "from assistants.version import __VERSION__; print(__VERSION__)"
 
-# Examples and demos
-example: ## Run the universal assistant demo in Docker
-	docker compose run --rm cli python examples/universal_assistant_demo.py
