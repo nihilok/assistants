@@ -22,7 +22,6 @@ from assistants.cli.utils import (
 )
 from assistants.config import environment
 from assistants.config.file_management import DATA_DIR
-from assistants.lib.constants import IO_INSTRUCTIONS
 from assistants.lib.exceptions import ConfigError
 from assistants.user_data.sqlite_backend.conversations import (
     Conversation,
@@ -54,6 +53,8 @@ class Command(ABC):
     """
     Command protocol for the input/output loop.
     """
+
+    ARG_STRING: str | None = None
 
     @abstractmethod
     async def __call__(self, environ: IoEnviron, *args) -> None:
@@ -165,6 +166,8 @@ class CopyCodeBlocks(CopyResponse):
     Command to copy the code blocks from the response to the clipboard.
     """
 
+    ARG_STRING = "[index]"
+
     help = (
         "Copy code blocks from the last response to the clipboard; optionally specify an index "
         "to copy a specific code block"
@@ -235,13 +238,24 @@ class PrintUsage(Command):
 
     help = "Print the usage instructions"
 
+    def __init__(self):
+        self._instructions = None
+
+    @property
+    def instructions(self) -> str:
+        if self._instructions is None:
+            from assistants.cli.help import generate_help_text
+
+            self._instructions = generate_help_text()
+        return self._instructions
+
     async def __call__(self, environ: IoEnviron, *args) -> None:
         """
         Call the command to print the usage instructions.
 
         :param environ: The environment variables for the input/output loop.
         """
-        output.inform(IO_INSTRUCTIONS)
+        output.inform(self.instructions)
 
 
 print_usage: Command = PrintUsage()
@@ -342,7 +356,11 @@ class GenerateImage(Command):
     Command to generate an image from a prompt.
     """
 
-    help = "Generate an image from a prompt"
+    ARG_STRING = "<prompt>"
+
+    help = (
+        "Generate an image from a prompt; the words after /image are used as the prompt"
+    )
 
     @staticmethod
     async def save_image_from_b64(image_b64: str, prompt: str) -> str:
@@ -628,35 +646,3 @@ EXIT_COMMANDS = {
     "/quit",
     "/exit",
 }
-
-
-def generate_help_text() -> str:
-    """
-    Generate the help text for the commands.
-
-    :return: The help text for the commands with commands sharing the same help grouped together.
-    """
-    # Group commands by their help text
-    help_to_commands: dict[str, list[str]] = {}
-    for command, cmd in COMMAND_MAP.items():
-        if cmd.help in help_to_commands:
-            help_to_commands[cmd.help].append(command)
-        else:
-            help_to_commands[cmd.help] = [command]
-
-    # Format each entry with grouped commands
-    formatted_lines = []
-    for help_text, commands in help_to_commands.items():
-        # Sort commands to group aliases together
-        commands.sort(key=len)  # Sort by length to put short commands first
-        command_group = ", ".join(commands)
-        formatted_lines.append(f"{command_group}: {help_text}")
-
-    return (
-        "\n".join(formatted_lines)
-        + "\nCTRL+L to clear the screen\nCTRL+C or CTRL+D to exit"
-    )
-
-
-if __name__ == "__main__":
-    print(generate_help_text())
