@@ -8,6 +8,7 @@ A flexible framework for creating AI assistants with multiple frontend interface
 - **CLI Features**: Code highlighting, thread management, editor integration, file input, image generation
 - **Multiple LLM Support**: OpenAI (`gpt-*`, `o*`), Anthropic (`claude-*`), MistralAI (`mistral-*`, `codestral-*`), and image generation (DALL-E)
 - **New Universal Assistant Interface**: See MIGRATION_GUIDE.md for details
+- **MCP (Model Context Protocol) Support**: Connect to MCP servers and use their tools in conversations
 
 ## Installation
 
@@ -47,6 +48,7 @@ Key CLI commands (prefixed with `/`):
 - `/threads` - List and select threads
 - `/thinking <level>` - Toggle thinking mode (for reasoning models)
 - `/last` - Retrieve last message
+- `/mcp` - List available MCP servers and tools
 
 #### File Tagging in Prompts
 
@@ -97,6 +99,65 @@ Rebuild the database:
 
 ```bash
 ai-cli rebuild
+```
+
+#### MCP (Model Context Protocol) Server Support
+
+The framework supports connecting to MCP servers to extend the assistant's capabilities with external tools. MCP servers are configured via a JSON file at `~/.config/assistants/mcp.json` (or wherever `$ASSISTANTS_CONFIG_DIR` points to).
+
+**Configuration Example:**
+
+Create `~/.config/assistants/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+**Using MCP Tools:**
+
+1. List available MCP servers and their tools:
+   ```bash
+   ai-cli  # Start the CLI
+   /mcp    # List servers and tools
+   ```
+
+2. Enable MCP tools when creating an assistant:
+   ```python
+   from assistants.ai.universal import UniversalAssistant
+
+   assistant = UniversalAssistant(
+       model="gpt-4o",
+       enable_mcp_tools=True
+   )
+   ```
+
+3. The assistant will automatically use MCP tools when appropriate during conversations.
+
+**Available MCP Servers:**
+
+You can find MCP servers at:
+- [@modelcontextprotocol organization on npm](https://www.npmjs.com/org/modelcontextprotocol)
+- [MCP Servers GitHub](https://github.com/modelcontextprotocol/servers)
+
+**Requirements:**
+
+Install MCP support:
+```bash
+pip install "mcp[cli]"
 ```
 
 ### Telegram Interface
