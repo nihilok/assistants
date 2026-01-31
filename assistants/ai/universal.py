@@ -166,9 +166,7 @@ class UniversalAssistant(
                     result = await mcp_handler.execute_tool(
                         tool_call.name, tool_call.arguments
                     )
-                    tool_results.append(
-                        f"[Tool: {tool_call.name}]\nResult: {result}"
-                    )
+                    tool_results.append(f"[Tool: {tool_call.name}]\nResult: {result}")
 
                 # Store the assistant's response including tool call info
                 tool_call_summary = "\n".join(

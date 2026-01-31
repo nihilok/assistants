@@ -5,7 +5,6 @@ This module provides functionality to convert MCP tools to univllm format
 and handle tool calls from the assistant.
 """
 
-import json
 import logging
 from typing import Any, Dict, List, Optional
 

@@ -62,13 +62,9 @@ class MCPConfig:
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in MCP configuration file: {e}") from e
         except KeyError as e:
-            raise ValueError(
-                f"Missing required field in MCP configuration: {e}"
-            ) from e
+            raise ValueError(f"Missing required field in MCP configuration: {e}") from e
         except TypeError as e:
-            raise ValueError(
-                f"Invalid data type in MCP configuration: {e}"
-            ) from e
+            raise ValueError(f"Invalid data type in MCP configuration: {e}") from e
 
     def get_server(self, name: str) -> Optional[MCPServerConfig]:
         """Get a server configuration by name."""

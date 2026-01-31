@@ -5,9 +5,9 @@ This module provides functionality to connect to MCP servers via stdio
 and manage their tools for use in AI assistant conversations.
 """
 
-import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from contextlib import AbstractAsyncContextManager
+from typing import Any, Dict, List, Optional, Tuple
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -29,7 +29,9 @@ class MCPServerConnection:
         """
         self.config = config
         self.session: Optional[ClientSession] = None
-        self._stdio_transport = None
+        self._stdio_transport: Optional[
+            AbstractAsyncContextManager[Tuple[Any, Any]]
+        ] = None
         self._tools: List[Tool] = []
 
     async def connect(self) -> None:
@@ -42,9 +44,9 @@ class MCPServerConnection:
                 env=self.config.env,
             )
 
-            # Create stdio transport
-            self._stdio_transport = await stdio_client(params)
-            read_stream, write_stream = self._stdio_transport
+            # Create stdio transport (context manager)
+            self._stdio_transport = stdio_client(params)
+            read_stream, write_stream = await self._stdio_transport.__aenter__()
 
             # Create session
             self.session = ClientSession(read_stream, write_stream)
@@ -99,7 +101,9 @@ class MCPServerConnection:
             result = await self.session.call_tool(tool_name, arguments)
             return result
         except Exception as e:
-            logger.error(f"Error calling tool '{tool_name}' on '{self.config.name}': {e}")
+            logger.error(
+                f"Error calling tool '{tool_name}' on '{self.config.name}': {e}"
+            )
             raise
 
     def get_tools(self) -> List[Tool]:

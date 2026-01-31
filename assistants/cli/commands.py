@@ -632,7 +632,9 @@ class ListMCPServers(Command):
             # List configured servers
             servers = manager.list_servers()
             if not servers:
-                output.warn("No MCP servers configured in ~/.config/assistants/mcp.json")
+                output.warn(
+                    "No MCP servers configured in ~/.config/assistants/mcp.json"
+                )
                 return
 
             output.inform(f"Configured MCP Servers ({len(servers)}):")
@@ -663,7 +665,9 @@ class ListMCPServers(Command):
                 await manager.disconnect_all()
 
         except ImportError:
-            output.fail("MCP support not available. Install with: pip install 'mcp[cli]'")
+            output.fail(
+                "MCP support not available. Install with: pip install 'mcp[cli]'"
+            )
         except Exception as e:
             output.fail(f"Error listing MCP servers: {e}")
 
