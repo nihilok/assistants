@@ -610,6 +610,70 @@ class EnvironmentCommand(Command):
 
 environment_command = EnvironmentCommand()
 
+
+class ListMCPServers(Command):
+    """
+    Command to list available MCP servers and their tools.
+    """
+
+    help = "List available MCP servers and their tools"
+
+    async def __call__(self, environ: IoEnviron, *args) -> None:
+        """
+        Call the command to list MCP servers and tools.
+
+        :param environ: The environment variables for the input/output loop.
+        """
+        try:
+            from assistants.mcp import MCPManager
+
+            manager = MCPManager()
+
+            # List configured servers
+            servers = manager.list_servers()
+            if not servers:
+                output.warn(
+                    "No MCP servers configured in ~/.config/assistants/mcp.json"
+                )
+                return
+
+            output.inform(f"Configured MCP Servers ({len(servers)}):")
+            for server_name in servers:
+                output.output(f"  - {server_name}")
+
+            output.new_line()
+
+            # Connect and list tools
+            try:
+                await manager.connect_all()
+
+                all_tools = manager.get_all_tools()
+                if not all_tools:
+                    output.warn("No tools available from connected servers")
+                    return
+
+                output.inform("Available Tools:")
+                for server_name, tools in all_tools.items():
+                    output.output(f"\n  Server: {server_name}")
+                    if not tools:
+                        output.output("    (no tools)")
+                    else:
+                        for tool in tools:
+                            output.output(f"    - {tool.name}: {tool.description}")
+
+            finally:
+                await manager.disconnect_all()
+
+        except ImportError:
+            output.fail(
+                "MCP support not available. Install with: pip install 'mcp[cli]'"
+            )
+        except Exception as e:
+            output.fail(f"Error listing MCP servers: {e}")
+
+
+list_mcp_servers = ListMCPServers()
+
 COMMAND_MAP = {
     "/e": editor,
     "/edit": editor,
@@ -636,6 +700,8 @@ COMMAND_MAP = {
     "/p": print_conversation,
     "/print": print_conversation,
     "/env": environment_command,
+    "/mcp": list_mcp_servers,
+    "/mcp-tools": list_mcp_servers,
 }
 
 EXIT_COMMANDS = {
