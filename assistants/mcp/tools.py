@@ -110,8 +110,6 @@ class MCPToolHandler:
             logger.error(f"Error executing tool {tool_name}: {e}")
             return f"Error executing tool: {e}"
 
-    def __del__(self):
-        """Cleanup on deletion."""
-        if self._connected:
-            # Note: This is not ideal for async cleanup, but serves as a safety net
-            logger.warning("MCPToolHandler deleted while still connected")
+    async def close(self) -> None:
+        """Explicitly close and cleanup resources."""
+        await self.disconnect()

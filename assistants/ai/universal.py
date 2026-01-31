@@ -166,16 +166,34 @@ class UniversalAssistant(
                     result = await mcp_handler.execute_tool(
                         tool_call.name, tool_call.arguments
                     )
-                    tool_results.append(f"Tool {tool_call.name} result: {result}")
+                    tool_results.append(
+                        f"[Tool: {tool_call.name}]\nResult: {result}"
+                    )
 
-                # Store the assistant's tool call request
+                # Store the assistant's response including tool call info
+                tool_call_summary = "\n".join(
+                    [
+                        f"[Called tool: {tc.name} with args: {tc.arguments}]"
+                        for tc in response.tool_calls
+                    ]
+                )
+                assistant_content = (
+                    f"{response.content}\n{tool_call_summary}"
+                    if response.content
+                    else tool_call_summary
+                )
                 await self.remember(
-                    MessageDict(role="assistant", content=response.content or "")
+                    MessageDict(role="assistant", content=assistant_content)
                 )
 
-                # Add tool results to memory and get final response
+                # Add tool results as a separate assistant message with results
                 tool_results_text = "\n\n".join(tool_results)
-                await self.remember(MessageDict(role="user", content=tool_results_text))
+                await self.remember(
+                    MessageDict(
+                        role="assistant",
+                        content=f"[Tool Results]\n{tool_results_text}",
+                    )
+                )
 
                 # Get final response after tool execution
                 messages = self._convert_memory_to_univllm_format()
