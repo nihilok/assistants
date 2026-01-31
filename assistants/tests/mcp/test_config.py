@@ -102,7 +102,24 @@ def test_mcp_config_invalid_json():
         with open(config_path, "w", encoding="utf-8") as f:
             f.write("invalid json")
 
-        with pytest.raises(ValueError, match="Invalid MCP configuration file"):
+        with pytest.raises(ValueError, match="Invalid JSON in MCP configuration file"):
+            MCPConfig(config_path)
+
+
+def test_mcp_config_missing_command():
+    """Test loading configuration with missing required field."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        config_path = Path(tmpdir) / "mcp.json"
+        config_data = {
+            "mcpServers": {
+                "server1": {"args": []},  # Missing 'command' field
+            }
+        }
+
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump(config_data, f)
+
+        with pytest.raises(ValueError, match="Missing required field"):
             MCPConfig(config_path)
 
 
