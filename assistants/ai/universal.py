@@ -9,7 +9,7 @@ Classes:
 """
 
 import warnings
-from typing import AsyncIterator, Optional, Sequence, Literal
+from typing import TYPE_CHECKING, AsyncIterator, Optional, Sequence, Literal
 
 from univllm import UniversalLLMClient, is_unsupported_model  # type: ignore
 from univllm.models import Message, MessageRole  # type: ignore
@@ -24,6 +24,9 @@ from assistants.ai.types import (
     ThinkingConfig,
 )
 from assistants.lib.exceptions import ConfigError
+
+if TYPE_CHECKING:
+    from assistants.mcp.tools import MCPToolHandler
 
 
 class UniversalAssistant(
@@ -54,6 +57,7 @@ class UniversalAssistant(
         max_history_tokens: int = 0,
         max_response_tokens: int = 0,
         thinking: Optional[ThinkingConfig] = None,
+        enable_mcp_tools: bool = False,
         **kwargs,
     ) -> None:
         """
@@ -65,6 +69,7 @@ class UniversalAssistant(
         :param max_history_tokens: Maximum number of tokens to retain in memory.
         :param max_response_tokens: Maximum number of tokens for the response.
         :param thinking: Configuration for thinking capabilities.
+        :param enable_mcp_tools: Whether to enable MCP tool calling.
         :param kwargs: Additional parameters.
         """
         if is_unsupported_model(model):
@@ -78,6 +83,8 @@ class UniversalAssistant(
         self.instructions = instructions
         self.max_response_tokens = max_response_tokens
         self.thinking = thinking or ThinkingConfig(level=0, type="enabled")
+        self.enable_mcp_tools = enable_mcp_tools
+        self._mcp_tool_handler: Optional["MCPToolHandler"] = None
 
         # Initialise the universal client
         try:
@@ -89,6 +96,32 @@ class UniversalAssistant(
                 self.client = UniversalLLMClient()
         except Exception as e:
             raise ConfigError(f"Failed to initialise UniversalLLMClient: {e}") from e
+
+    async def _get_mcp_tool_handler(self) -> Optional["MCPToolHandler"]:
+        """
+        Get or initialize the MCP tool handler.
+
+        :return: MCPToolHandler instance if MCP tools are enabled, None otherwise.
+        """
+        if not self.enable_mcp_tools:
+            return None
+
+        if self._mcp_tool_handler is None:
+            try:
+                from assistants.mcp.tools import MCPToolHandler
+
+                self._mcp_tool_handler = MCPToolHandler()
+                await self._mcp_tool_handler.connect()
+            except ImportError:
+                warnings.warn(
+                    "MCP support not available. Install with: pip install 'mcp[cli]'"
+                )
+                return None
+            except Exception as e:
+                warnings.warn(f"Failed to initialize MCP tools: {e}")
+                return None
+
+        return self._mcp_tool_handler
 
     async def converse(
         self, user_input: str, thread_id: Optional[str] = None
@@ -109,15 +142,50 @@ class UniversalAssistant(
         # Convert memory to univllm format
         messages = self._convert_memory_to_univllm_format()
 
+        # Get MCP tools if enabled
+        mcp_handler = await self._get_mcp_tool_handler()
+        tools = mcp_handler.get_tools_for_assistant() if mcp_handler else None
+
         try:
-            # Get response from universal client using correct method signature
+            # Get response from universal client
             response = await self.client.complete(
                 messages=messages,
                 model=self.model,
                 max_tokens=self.max_response_tokens
                 if self.max_response_tokens > 0
                 else None,
+                tools=tools,
+                tool_choice="auto" if tools else None,
             )
+
+            # Handle tool calls if present
+            if response.tool_calls and mcp_handler:
+                # Process each tool call
+                tool_results = []
+                for tool_call in response.tool_calls:
+                    result = await mcp_handler.execute_tool(
+                        tool_call.name, tool_call.arguments
+                    )
+                    tool_results.append(f"Tool {tool_call.name} result: {result}")
+
+                # Store the assistant's tool call request
+                await self.remember(
+                    MessageDict(role="assistant", content=response.content or "")
+                )
+
+                # Add tool results to memory and get final response
+                tool_results_text = "\n\n".join(tool_results)
+                await self.remember(MessageDict(role="user", content=tool_results_text))
+
+                # Get final response after tool execution
+                messages = self._convert_memory_to_univllm_format()
+                response = await self.client.complete(
+                    messages=messages,
+                    model=self.model,
+                    max_tokens=self.max_response_tokens
+                    if self.max_response_tokens > 0
+                    else None,
+                )
 
             # Store assistant's response in memory
             await self.remember(MessageDict(role="assistant", content=response.content))

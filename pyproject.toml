@@ -34,7 +34,8 @@ dependencies = [
     "types-pygments~=2.19.0.20250516",
     "types-aiofiles~=24.1.0.20250606",
     "types-PyYAML~=6.0.12.20250516",
-    "univllm==0.1.11",
+    "univllm==0.1.12",
+    "mcp>=1.3.0",
 ]
 
 [dependency-groups]
