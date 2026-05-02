@@ -6,7 +6,7 @@ which provides a unified interface for multiple LLM providers through the univll
 import warnings
 from typing import Optional
 
-from mistralai import Mistral
+from mistralai.client import Mistral
 
 from assistants.ai.memory import ConversationHistoryMixin
 from assistants.ai.types import (
