@@ -188,12 +188,12 @@ class TestUserManagementCommands:
         update.message.reply_to_message = mock_reply_to_message
         context = MockContext()
 
-        mock_chat_data.authorise_chat = AsyncMock()
+        mock_chat_data.authorise_user = AsyncMock()
         mock_auth_chat_data.check_superuser = AsyncMock()
 
         await authorise_user(update, context)
 
-        mock_chat_data.authorise_chat.assert_called_once_with(99999)
+        mock_chat_data.authorise_user.assert_called_once_with(99999)
         context.bot.send_message.assert_called_once_with(
             chat_id=12345, text="User authorised"
         )

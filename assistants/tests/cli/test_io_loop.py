@@ -283,16 +283,3 @@ async def test_assistant_io_handler_with_code_blocks(
 
     # Verify formatted output was displayed
     mock_output.default.assert_called_once_with("formatted response")
-
-
-@patch("assistants.cli.io_loop.io_loop")
-@patch("asyncio.run")
-def test_io_loop(mock_asyncio_run, mock_io_loop, setup_assistant):
-    # Call the function
-    io_loop(setup_assistant, "initial input", "thread-id")
-
-    # Verify asyncio.run was called with io_loop
-    mock_asyncio_run.assert_called_once()
-
-    # Verify io_loop was called with correct parameters
-    mock_io_loop.assert_called_once_with(setup_assistant, "initial input", "thread-id")

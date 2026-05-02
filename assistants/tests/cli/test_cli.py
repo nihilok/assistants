@@ -245,12 +245,13 @@ def test_handle_conversation_status_with_thread_and_continue(
 
 
 @patch("assistants.cli.cli.io_loop")
-def test_start_io_loop(mock_io_loop, cli):
+@pytest.mark.asyncio
+async def test_start_io_loop(mock_io_loop, cli):
     cli.assistant = MagicMock()
     cli.initial_input = "initial input"
     cli.thread_id = "thread-id"
 
-    cli.start_io_loop()
+    await cli.start_io_loop()
 
     mock_io_loop.assert_called_once_with(
         cli.assistant, "initial input", thread_id="thread-id"
@@ -276,9 +277,10 @@ async def test_start_io_loop_ctrl_d_exits(mock_exit, mock_io_loop, cli):
 @patch.object(CLI, "show_welcome_message")
 @patch.object(CLI, "handle_conversation_status")
 @patch.object(CLI, "start_io_loop")
-@patch("asyncio.run")
-def test_run_success(
-    mock_asyncio_run,
+@patch.object(CLI, "create_assistant")
+@pytest.mark.asyncio
+async def test_run_success(
+    mock_create_assistant,
     mock_start_io,
     mock_handle_conv,
     mock_welcome,
@@ -291,9 +293,11 @@ def test_run_success(
 ):
     mock_assistant = MagicMock()
     mock_thread_id = "thread-id"
-    mock_asyncio_run.return_value = (mock_assistant, mock_thread_id)
+    mock_create_assistant.return_value = (mock_assistant, mock_thread_id)
+    mock_handle_conv.return_value = None
+    mock_start_io.return_value = None
 
-    cli.run()
+    await cli.run_async()
 
     mock_set_title.assert_called_once()
     mock_parse.assert_called_once()
