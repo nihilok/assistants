@@ -16,6 +16,7 @@ from assistants.telegram_ui.lib import (
     build_telegram_specific_instructions,
     build_assistant_params,
     get_telegram_assistant,
+    AssistantRegistry,
 )
 
 
@@ -226,6 +227,16 @@ class TestInstructionBuilding:
         assert "you should not prefix your responses with your own name" in instructions
 
     @patch("assistants.telegram_ui.lib.environment")
+    def test_build_telegram_specific_instructions_with_bot_info(self, mock_environment):
+        """Test that bot username/name are included when provided."""
+        mock_environment.ASSISTANT_INSTRUCTIONS = "Base instructions"
+
+        instructions = build_telegram_specific_instructions("@jeeves", "Jeeves")
+
+        assert "@jeeves" in instructions
+        assert "Jeeves" in instructions
+
+    @patch("assistants.telegram_ui.lib.environment")
     @patch("assistants.telegram_ui.lib.ThinkingConfig")
     def test_build_assistant_params(self, mock_thinking_config, mock_environment):
         """Test building assistant parameters."""
@@ -351,3 +362,63 @@ class TestEdgeCases:
         update = MockUpdate(has_chat=True, has_message=False)
         result = await multi_decorated_handler(update, context)
         assert result is None
+
+
+class TestAssistantRegistry:
+    """Test the per-chat AssistantRegistry."""
+
+    @patch("assistants.telegram_ui.lib.get_telegram_assistant")
+    def test_get_creates_instance_on_first_call(self, mock_factory):
+        """registry.get creates a new assistant for an unseen chat_id."""
+        mock_factory.return_value = Mock()
+        reg = AssistantRegistry()
+
+        assistant = reg.get(111, "@bot", "Bot")
+
+        mock_factory.assert_called_once_with("@bot", "Bot")
+        assert assistant is mock_factory.return_value
+
+    @patch("assistants.telegram_ui.lib.get_telegram_assistant")
+    def test_get_returns_cached_instance(self, mock_factory):
+        """registry.get returns the same instance on subsequent calls."""
+        mock_factory.return_value = Mock()
+        reg = AssistantRegistry()
+
+        a1 = reg.get(111, "@bot", "Bot")
+        a2 = reg.get(111, "@bot", "Bot")
+
+        assert a1 is a2
+        mock_factory.assert_called_once()  # only created once
+
+    @patch("assistants.telegram_ui.lib.get_telegram_assistant")
+    def test_get_creates_separate_instances_per_chat(self, mock_factory):
+        """Different chat_ids get separate assistant instances."""
+        mock_factory.side_effect = [Mock(), Mock()]
+        reg = AssistantRegistry()
+
+        a1 = reg.get(111)
+        a2 = reg.get(222)
+
+        assert a1 is not a2
+        assert mock_factory.call_count == 2
+
+    @patch("assistants.telegram_ui.lib.get_telegram_assistant")
+    def test_reset_removes_instance(self, mock_factory):
+        """reset evicts the cached instance so the next get creates a fresh one."""
+        first = Mock()
+        second = Mock()
+        mock_factory.side_effect = [first, second]
+        reg = AssistantRegistry()
+
+        a1 = reg.get(111)
+        reg.reset(111)
+        a2 = reg.get(111)
+
+        assert a1 is first
+        assert a2 is second
+        assert mock_factory.call_count == 2
+
+    def test_reset_nonexistent_chat_is_safe(self):
+        """reset on an unknown chat_id does not raise."""
+        reg = AssistantRegistry()
+        reg.reset(999)  # should not raise

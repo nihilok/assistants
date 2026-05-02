@@ -15,7 +15,7 @@ from assistants.telegram_ui.auth import (
 )
 from assistants.telegram_ui.lib import (
     StandardUpdate,
-    assistant,
+    registry,
     requires_reply_to_message,
     requires_message,
     requires_effective_chat,
@@ -80,12 +80,11 @@ async def deauthorise_user(update: StandardUpdate, context: ContextTypes.DEFAULT
 @restricted_access
 @requires_effective_chat
 async def new_thread(update: StandardUpdate, context: ContextTypes.DEFAULT_TYPE):
-    await chat_data.clear_last_thread_id(update.effective_chat.id)
-    await get_conversations_table().delete(id=update.effective_chat.id)
-    assistant.last_message = None
-    await context.bot.send_message(
-        update.effective_chat.id, "Conversation history cleared."
-    )
+    chat_id = update.effective_chat.id
+    await chat_data.clear_last_thread_id(chat_id)
+    await get_conversations_table().delete(id=chat_id)
+    registry.reset(chat_id)
+    await context.bot.send_message(chat_id, "Conversation history cleared.")
 
 
 @restricted_access
@@ -118,13 +117,18 @@ async def message_handler(update: StandardUpdate, context: ContextTypes.DEFAULT_
 
     message_text = f"{update.message.from_user.first_name}: {message_text}"  # type: ignore
 
+    chat_id = update.effective_chat.id
+    chat_assistant = registry.get(chat_id, bot_username, bot_name)
+
     if not existing_chat.auto_reply:
         bot_id = context.bot.id
         if not bot_tagged and (
             not update.message.reply_to_message
             or update.message.reply_to_message.from_user.id != bot_id  # type: ignore
         ):
-            await assistant.remember(
+            if not chat_assistant.memory:
+                await chat_assistant.load_conversation(str(chat_thread_id))
+            await chat_assistant.remember(
                 MessageDict(
                     role="user",
                     content=message_text,
@@ -132,28 +136,22 @@ async def message_handler(update: StandardUpdate, context: ContextTypes.DEFAULT_
             )
             return
 
-    await assistant.load_conversation(str(chat_thread_id))
-
-    if bot_username not in (assistant.instructions or ""):
-        assistant.instructions = (
-            f"{assistant.instructions}\n"
-            f"Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'."
-        )
-
-    response_message = await assistant.converse(message_text, existing_chat.thread_id)
+    response_message = await chat_assistant.converse(
+        message_text, existing_chat.thread_id
+    )
 
     if not existing_chat.thread_id:
         await chat_data.save_chat_data(
             ChatData(
-                chat_id=update.effective_chat.id,
-                thread_id=str(assistant.conversation_id),
+                chat_id=chat_id,
+                thread_id=str(chat_assistant.conversation_id),
                 auto_reply=existing_chat.auto_reply,
             )
         )
 
     if not response_message:
         await context.bot.send_message(
-            chat_id=update.effective_chat.id,
+            chat_id=chat_id,
             text="No response.",
         )
         return
@@ -165,7 +163,7 @@ async def message_handler(update: StandardUpdate, context: ContextTypes.DEFAULT_
     if len(response_parts) % 2 == 0:
         # Should be an odd number of parts if codeblocks
         await context.bot.send_message(
-            chat_id=update.effective_chat.id,
+            chat_id=chat_id,
             text=response,
         )
         return
@@ -175,22 +173,27 @@ async def message_handler(update: StandardUpdate, context: ContextTypes.DEFAULT_
             continue
         if i % 2:
             await context.bot.send_message(
-                chat_id=update.effective_chat.id,
+                chat_id=chat_id,
                 text=f"```{part}```",
                 parse_mode=ParseMode.MARKDOWN_V2,
             )
         else:
             await context.bot.send_message(
-                chat_id=update.effective_chat.id,
+                chat_id=chat_id,
                 text=part,
             )
 
 
 @restricted_access
 async def generate_image(update: StandardUpdate, context: ContextTypes.DEFAULT_TYPE):
-    if not hasattr(assistant, "image_prompt"):
+    chat_id = update.effective_chat.id
+    bot_username = f"@{context.bot.username}"
+    bot_name = context.bot.first_name or context.bot.username
+    chat_assistant = registry.get(chat_id, bot_username, bot_name)
+
+    if not hasattr(chat_assistant, "image_prompt"):
         await context.bot.send_message(
-            chat_id=update.effective_chat.id,
+            chat_id=chat_id,
             text="This assistant does not support image generation.",
         )
         return
@@ -201,16 +204,16 @@ async def generate_image(update: StandardUpdate, context: ContextTypes.DEFAULT_T
     prompt = update.message.text.replace("/image ", "").strip()
     if not prompt:
         await context.bot.send_message(
-            chat_id=update.effective_chat.id,
+            chat_id=chat_id,
             text="Please provide a prompt after /image",
         )
         return
 
     try:
-        image_b64 = await assistant.image_prompt(prompt)
+        image_b64 = await chat_assistant.image_prompt(prompt)
     except Exception as e:  # pragma: no cover - defensive
         await context.bot.send_message(
-            chat_id=update.effective_chat.id,
+            chat_id=chat_id,
             text=f"Image generation failed: {e}",
         )
         return
@@ -252,7 +255,7 @@ async def generate_image(update: StandardUpdate, context: ContextTypes.DEFAULT_T
 
     if not raw_b64:
         await context.bot.send_message(
-            chat_id=update.effective_chat.id,
+            chat_id=chat_id,
             text="Did not receive a base64 image payload from the model.",
         )
         return
@@ -273,14 +276,14 @@ async def generate_image(update: StandardUpdate, context: ContextTypes.DEFAULT_T
             image_bytes = base64.b64decode(raw_b64_stripped + "=" * padding)
         except Exception as e:  # pragma: no cover
             await context.bot.send_message(
-                chat_id=update.effective_chat.id,
+                chat_id=chat_id,
                 text=f"Failed to decode image data: {e}",
             )
             return
 
     if not image_bytes:
         await context.bot.send_message(
-            chat_id=update.effective_chat.id,
+            chat_id=chat_id,
             text="Image data was empty after decoding.",
         )
         return
@@ -299,58 +302,54 @@ async def generate_image(update: StandardUpdate, context: ContextTypes.DEFAULT_T
             await update.message.reply_document(document=bio, caption=caption)
         except Exception:
             await context.bot.send_message(
-                chat_id=update.effective_chat.id,
+                chat_id=chat_id,
                 text=f"Failed to send image: {e}",
             )
 
 
 @restricted_access
 async def respond_voice(update: StandardUpdate, context: ContextTypes.DEFAULT_TYPE):
-    if not hasattr(assistant, "audio_response"):
+    chat_id = update.effective_chat.id
+    bot_username = f"@{context.bot.username}"
+    bot_name = context.bot.first_name or context.bot.username
+    chat_assistant = registry.get(chat_id, bot_username, bot_name)
+
+    if not hasattr(chat_assistant, "audio_response"):
         await context.bot.send_message(
-            chat_id=update.effective_chat.id,
+            chat_id=chat_id,
             text="This assistant does not support voice responses.",
         )
         return
 
-    existing_chat = await chat_data.get_chat_data(update.effective_chat.id)
+    existing_chat = await chat_data.get_chat_data(chat_id)
 
-    thread_id = existing_chat.thread_id or str(update.effective_chat.id)
-
-    bot_username = f"@{context.bot.username}"
-    bot_name = context.bot.first_name or context.bot.username
-
-    if bot_username not in (assistant.instructions or ""):
-        assistant.instructions = (
-            f"{assistant.instructions}\n"
-            f"Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'."
-        )
+    thread_id = existing_chat.thread_id or str(chat_id)
 
     if not update.message.text:
         return
 
     input_text = update.message.text.replace("/voice ", "")
 
-    response = await assistant.audio_response(input_text, thread_id=thread_id)
+    response = await chat_assistant.audio_response(input_text, thread_id=thread_id)
 
     if not existing_chat.thread_id:
         await chat_data.save_chat_data(
             ChatData(
-                chat_id=update.effective_chat.id,
-                thread_id=str(assistant.conversation_id),
+                chat_id=chat_id,
+                thread_id=str(chat_assistant.conversation_id),
                 auto_reply=existing_chat.auto_reply,
             )
         )
 
     if isinstance(response, bytes):
         await context.bot.send_voice(
-            chat_id=update.effective_chat.id,
+            chat_id=chat_id,
             voice=response,
             caption="Response",
         )
     else:
         await context.bot.send_message(
-            chat_id=update.effective_chat.id,
+            chat_id=chat_id,
             text=response,
         )
 

@@ -37,6 +37,31 @@ def mock_auth_system():
         yield mock_chat_data
 
 
+def make_mock_assistant():
+    """Return a fresh mock assistant."""
+    mock = Mock()
+    mock.memory = []
+    mock.conversation_id = "test_conversation_id"
+    mock.instructions = "base instructions"
+    mock.load_conversation = AsyncMock()
+    mock.converse = AsyncMock()
+    mock.remember = AsyncMock()
+    return mock
+
+
+@pytest.fixture
+def mock_assistant():
+    return make_mock_assistant()
+
+
+@pytest.fixture
+def mock_registry(mock_assistant):
+    """Patch the registry so registry.get() returns mock_assistant."""
+    with patch("assistants.telegram_ui.commands.registry") as reg:
+        reg.get.return_value = mock_assistant
+        yield reg, mock_assistant
+
+
 class MockUpdate:
     """Mock Update object for testing."""
 
@@ -246,9 +271,9 @@ class TestThreadManagement:
     @pytest.mark.asyncio
     @patch("assistants.telegram_ui.commands.get_conversations_table")
     @patch("assistants.telegram_ui.commands.chat_data")
-    @patch("assistants.telegram_ui.commands.assistant")
+    @patch("assistants.telegram_ui.commands.registry")
     async def test_new_thread_success(
-        self, mock_assistant, mock_chat_data, mock_conversations_table
+        self, mock_registry, mock_chat_data, mock_conversations_table
     ):
         """Test successful new thread creation."""
         update = MockUpdate()
@@ -263,7 +288,7 @@ class TestThreadManagement:
 
         mock_chat_data.clear_last_thread_id.assert_called_once_with(12345)
         mock_table.delete.assert_called_once_with(id=12345)
-        assert mock_assistant.last_message is None
+        mock_registry.reset.assert_called_once_with(12345)
         context.bot.send_message.assert_called_once_with(
             12345, "Conversation history cleared."
         )
@@ -316,8 +341,8 @@ class TestMessageHandler:
 
     @pytest.mark.asyncio
     @patch("assistants.telegram_ui.commands.chat_data", new_callable=AsyncMock)
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_message_handler_no_text(self, mock_assistant, mock_chat_data):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_message_handler_no_text(self, mock_reg, mock_chat_data):
         """Test message handler with no text."""
         update = MockUpdate(message_text=None)
         context = MockContext()
@@ -331,29 +356,26 @@ class TestMessageHandler:
 
     @pytest.mark.asyncio
     @patch("assistants.telegram_ui.commands.chat_data")
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_message_handler_auto_reply_enabled(
-        self, mock_assistant, mock_chat_data
-    ):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_message_handler_auto_reply_enabled(self, mock_reg, mock_chat_data):
         """Test message handler with auto-reply enabled."""
         update = MockUpdate(message_text="Hello @test_bot")
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
+        mock_reg.get.return_value = mock_assistant
         mock_chat_data.get_chat_data = AsyncMock(
             return_value=ChatData(
                 chat_id=12345, thread_id="existing_thread", auto_reply=True
             )
         )
         mock_chat_data.save_chat_data = AsyncMock()
-        mock_assistant.load_conversation = AsyncMock()
         mock_assistant.converse = AsyncMock(
             return_value=Mock(text_content="Hello back!")
         )
-        mock_assistant.conversation_id = "test_conversation_id"
 
         await message_handler(update, context)
 
-        mock_assistant.load_conversation.assert_called_once_with("existing_thread")
         mock_assistant.converse.assert_called_once_with(
             "TestUser: Hello TestBot", "existing_thread"
         )
@@ -363,26 +385,26 @@ class TestMessageHandler:
 
     @pytest.mark.asyncio
     @patch("assistants.telegram_ui.commands.chat_data")
-    @patch("assistants.telegram_ui.commands.assistant")
+    @patch("assistants.telegram_ui.commands.registry")
     async def test_message_handler_auto_reply_disabled_not_tagged(
-        self, mock_assistant, mock_chat_data
+        self, mock_reg, mock_chat_data
     ):
         """Test message handler with auto-reply disabled and bot not tagged."""
         update = MockUpdate(message_text="Hello there")
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
+        mock_reg.get.return_value = mock_assistant
         mock_chat_data.get_chat_data = AsyncMock(
             return_value=ChatData(
                 chat_id=12345, thread_id="existing_thread", auto_reply=False
             )
         )
-        mock_assistant.remember = AsyncMock()
 
         await message_handler(update, context)
 
         mock_assistant.remember.assert_called_once()
         call_args = mock_assistant.remember.call_args[0][0]
-        # Ensure call_args is a dict with 'role' and 'content' keys
         assert isinstance(call_args, dict)
         assert call_args["role"] == "user"
         assert call_args["content"] == "TestUser: Hello there"
@@ -390,10 +412,9 @@ class TestMessageHandler:
 
     @pytest.mark.asyncio
     @patch("assistants.telegram_ui.commands.chat_data")
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_message_handler_reply_to_bot(self, mock_assistant, mock_chat_data):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_message_handler_reply_to_bot(self, mock_reg, mock_chat_data):
         """Test message handler replying to bot message."""
-        # Create a reply to message from the bot
         reply_msg = Mock(spec=Message)
         reply_msg.from_user = Mock(spec=User)
         reply_msg.from_user.id = 98765  # Bot's ID
@@ -402,17 +423,17 @@ class TestMessageHandler:
         update.message.reply_to_message = reply_msg
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
+        mock_reg.get.return_value = mock_assistant
         mock_chat_data.get_chat_data = AsyncMock(
             return_value=ChatData(
                 chat_id=12345, thread_id="existing_thread", auto_reply=False
             )
         )
         mock_chat_data.save_chat_data = AsyncMock()
-        mock_assistant.load_conversation = AsyncMock()
         mock_assistant.converse = AsyncMock(
             return_value=Mock(text_content="Bot response")
         )
-        mock_assistant.conversation_id = "test_conversation_id"
 
         await message_handler(update, context)
 
@@ -423,18 +444,19 @@ class TestMessageHandler:
 
     @pytest.mark.asyncio
     @patch("assistants.telegram_ui.commands.chat_data")
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_message_handler_no_response(self, mock_assistant, mock_chat_data):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_message_handler_no_response(self, mock_reg, mock_chat_data):
         """Test message handler when assistant returns no response."""
         update = MockUpdate(message_text="Hello @test_bot")
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
+        mock_reg.get.return_value = mock_assistant
         mock_chat_data.get_chat_data = AsyncMock(
             return_value=ChatData(
                 chat_id=12345, thread_id="existing_thread", auto_reply=True
             )
         )
-        mock_assistant.load_conversation = AsyncMock()
         mock_assistant.converse = AsyncMock(return_value=None)
 
         await message_handler(update, context)
@@ -445,18 +467,19 @@ class TestMessageHandler:
 
     @pytest.mark.asyncio
     @patch("assistants.telegram_ui.commands.chat_data")
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_message_handler_code_blocks(self, mock_assistant, mock_chat_data):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_message_handler_code_blocks(self, mock_reg, mock_chat_data):
         """Test message handler with code blocks in response."""
         update = MockUpdate(message_text="Show me code")
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
+        mock_reg.get.return_value = mock_assistant
         mock_chat_data.get_chat_data = AsyncMock(
             return_value=ChatData(
                 chat_id=12345, thread_id="existing_thread", auto_reply=True
             )
         )
-        mock_assistant.load_conversation = AsyncMock()
         mock_assistant.converse = AsyncMock(
             return_value=Mock(
                 text_content="Here's some code:\n```python\nprint('hello')\n```\nThat's it!"
@@ -481,46 +504,93 @@ class TestMessageHandler:
 
     @pytest.mark.asyncio
     @patch("assistants.telegram_ui.commands.chat_data")
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_message_handler_new_thread_creation(
-        self, mock_assistant, mock_chat_data
-    ):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_message_handler_new_thread_creation(self, mock_reg, mock_chat_data):
         """Test message handler creating new thread when none exists."""
         update = MockUpdate(message_text="Hello")
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
+        mock_assistant.conversation_id = "new_conversation_id"
+        mock_reg.get.return_value = mock_assistant
         mock_chat_data.get_chat_data = AsyncMock(
             return_value=ChatData(chat_id=12345, thread_id=None, auto_reply=True)
         )
         mock_chat_data.save_chat_data = AsyncMock()
-        mock_assistant.load_conversation = AsyncMock()
         mock_assistant.converse = AsyncMock(return_value=Mock(text_content="Response"))
-        mock_assistant.conversation_id = "new_conversation_id"
 
         with patch("uuid.uuid4") as mock_uuid:
             mock_uuid.return_value.hex = "new_thread_id"
 
             await message_handler(update, context)
 
-            mock_assistant.load_conversation.assert_called_once_with("new_thread_id")
+            mock_assistant.converse.assert_called_once_with("TestUser: Hello", None)
             mock_chat_data.save_chat_data.assert_called_once()
             saved_data = mock_chat_data.save_chat_data.call_args[0][0]
             assert saved_data.thread_id == "new_conversation_id"
+
+    @pytest.mark.asyncio
+    @patch("assistants.telegram_ui.commands.chat_data")
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_passive_message_loads_conversation_when_memory_empty(
+        self, mock_reg, mock_chat_data
+    ):
+        """Passive group chat messages load conversation before remembering."""
+        update = MockUpdate(message_text="Just chatting")
+        context = MockContext()
+
+        mock_assistant = make_mock_assistant()
+        mock_assistant.memory = []  # empty — triggers load
+        mock_reg.get.return_value = mock_assistant
+        mock_chat_data.get_chat_data = AsyncMock(
+            return_value=ChatData(
+                chat_id=12345, thread_id="group_thread", auto_reply=False
+            )
+        )
+
+        await message_handler(update, context)
+
+        mock_assistant.load_conversation.assert_called_once_with("group_thread")
+        mock_assistant.remember.assert_called_once()
+        mock_assistant.converse.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch("assistants.telegram_ui.commands.chat_data")
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_passive_message_skips_load_when_memory_populated(
+        self, mock_reg, mock_chat_data
+    ):
+        """Passive messages don't reload conversation if memory already loaded."""
+        update = MockUpdate(message_text="Another message")
+        context = MockContext()
+
+        mock_assistant = make_mock_assistant()
+        mock_assistant.memory = [{"role": "user", "content": "previous"}]
+        mock_reg.get.return_value = mock_assistant
+        mock_chat_data.get_chat_data = AsyncMock(
+            return_value=ChatData(
+                chat_id=12345, thread_id="group_thread", auto_reply=False
+            )
+        )
+
+        await message_handler(update, context)
+
+        mock_assistant.load_conversation.assert_not_called()
+        mock_assistant.remember.assert_called_once()
 
 
 class TestImageGeneration:
     """Test image generation functionality."""
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_generate_image_not_supported(self, mock_assistant):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_generate_image_not_supported(self, mock_reg):
         """Test image generation when not supported by assistant."""
         update = MockUpdate(message_text="/image test prompt")
         context = MockContext()
 
-        # Remove image_prompt attribute to simulate unsupported feature
-        if hasattr(mock_assistant, "image_prompt"):
-            delattr(mock_assistant, "image_prompt")
+        mock_assistant = Mock(spec=[])  # no attributes
+        mock_reg.get.return_value = mock_assistant
 
         await generate_image(update, context)
 
@@ -529,13 +599,15 @@ class TestImageGeneration:
         )
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_generate_image_no_text(self, mock_assistant):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_generate_image_no_text(self, mock_reg):
         """Test image generation with no message text."""
         update = MockUpdate(message_text=None)
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
         mock_assistant.image_prompt = AsyncMock()
+        mock_reg.get.return_value = mock_assistant
 
         result = await generate_image(update, context)
 
@@ -543,13 +615,15 @@ class TestImageGeneration:
         mock_assistant.image_prompt.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_generate_image_empty_prompt(self, mock_assistant):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_generate_image_empty_prompt(self, mock_reg):
         """Test image generation with empty prompt."""
         update = MockUpdate(message_text="/image ")
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
         mock_assistant.image_prompt = AsyncMock()
+        mock_reg.get.return_value = mock_assistant
 
         await generate_image(update, context)
 
@@ -559,29 +633,29 @@ class TestImageGeneration:
         mock_assistant.image_prompt.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_generate_image_success_string(self, mock_assistant):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_generate_image_success_string(self, mock_reg):
         """Test successful image generation with base64 string."""
         update = MockUpdate(message_text="/image sunset landscape")
         update.message.reply_photo = AsyncMock()
         context = MockContext()
 
-        # Create a simple base64 encoded image (1x1 pixel PNG)
         test_image_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAFBAixnwgAAAABJRU5ErkJggg=="
+        mock_assistant = make_mock_assistant()
         mock_assistant.image_prompt = AsyncMock(return_value=test_image_b64)
+        mock_reg.get.return_value = mock_assistant
 
         await generate_image(update, context)
 
         mock_assistant.image_prompt.assert_called_once_with("sunset landscape")
         update.message.reply_photo.assert_called_once()
 
-        # Check that photo was sent with correct caption
         call_args = update.message.reply_photo.call_args
         assert call_args[1]["caption"] == "Prompt: sunset landscape"
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_generate_image_success_data_uri(self, mock_assistant):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_generate_image_success_data_uri(self, mock_reg):
         """Test successful image generation with data URI."""
         update = MockUpdate(message_text="/image test")
         update.message.reply_photo = AsyncMock()
@@ -589,15 +663,17 @@ class TestImageGeneration:
 
         test_image_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAFBAixnwgAAAABJRU5ErkJggg=="
         data_uri = f"data:image/png;base64,{test_image_b64}"
+        mock_assistant = make_mock_assistant()
         mock_assistant.image_prompt = AsyncMock(return_value=data_uri)
+        mock_reg.get.return_value = mock_assistant
 
         await generate_image(update, context)
 
         update.message.reply_photo.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_generate_image_success_openai_format(self, mock_assistant):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_generate_image_success_openai_format(self, mock_reg):
         """Test successful image generation with OpenAI response format."""
         update = MockUpdate(message_text="/image test")
         update.message.reply_photo = AsyncMock()
@@ -605,20 +681,24 @@ class TestImageGeneration:
 
         test_image_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAFBAixnwgAAAABJRU5ErkJggg=="
         openai_response = {"data": [{"b64_json": test_image_b64}]}
+        mock_assistant = make_mock_assistant()
         mock_assistant.image_prompt = AsyncMock(return_value=openai_response)
+        mock_reg.get.return_value = mock_assistant
 
         await generate_image(update, context)
 
         update.message.reply_photo.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_generate_image_generation_failed(self, mock_assistant):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_generate_image_generation_failed(self, mock_reg):
         """Test image generation failure."""
         update = MockUpdate(message_text="/image test")
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
         mock_assistant.image_prompt = AsyncMock(side_effect=Exception("API Error"))
+        mock_reg.get.return_value = mock_assistant
 
         await generate_image(update, context)
 
@@ -627,13 +707,15 @@ class TestImageGeneration:
         )
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_generate_image_invalid_base64(self, mock_assistant):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_generate_image_invalid_base64(self, mock_reg):
         """Test image generation with invalid base64."""
         update = MockUpdate(message_text="/image test")
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
         mock_assistant.image_prompt = AsyncMock(return_value="invalid_base64!")
+        mock_reg.get.return_value = mock_assistant
 
         await generate_image(update, context)
 
@@ -644,8 +726,8 @@ class TestImageGeneration:
         )
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
-    async def test_generate_image_send_as_document_fallback(self, mock_assistant):
+    @patch("assistants.telegram_ui.commands.registry")
+    async def test_generate_image_send_as_document_fallback(self, mock_reg):
         """Test image generation fallback to document when photo fails."""
         update = MockUpdate(message_text="/image test")
         update.message.reply_photo = AsyncMock(side_effect=Exception("Photo failed"))
@@ -653,7 +735,9 @@ class TestImageGeneration:
         context = MockContext()
 
         test_image_b64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAFBAixnwgAAAABJRU5ErkJggg=="
+        mock_assistant = make_mock_assistant()
         mock_assistant.image_prompt = AsyncMock(return_value=test_image_b64)
+        mock_reg.get.return_value = mock_assistant
 
         await generate_image(update, context)
 
@@ -665,16 +749,15 @@ class TestVoiceResponse:
     """Test voice response functionality."""
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
+    @patch("assistants.telegram_ui.commands.registry")
     @patch("assistants.telegram_ui.commands.chat_data")
-    async def test_respond_voice_not_supported(self, mock_chat_data, mock_assistant):
+    async def test_respond_voice_not_supported(self, mock_chat_data, mock_reg):
         """Test voice response when not supported by assistant."""
         update = MockUpdate(message_text="/voice test")
         context = MockContext()
 
-        # Remove audio_response attribute to simulate unsupported feature
-        if hasattr(mock_assistant, "audio_response"):
-            delattr(mock_assistant, "audio_response")
+        mock_assistant = Mock(spec=[])  # no attributes
+        mock_reg.get.return_value = mock_assistant
 
         await respond_voice(update, context)
 
@@ -683,14 +766,16 @@ class TestVoiceResponse:
         )
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
+    @patch("assistants.telegram_ui.commands.registry")
     @patch("assistants.telegram_ui.commands.chat_data")
-    async def test_respond_voice_no_text(self, mock_chat_data, mock_assistant):
+    async def test_respond_voice_no_text(self, mock_chat_data, mock_reg):
         """Test voice response with no message text."""
         update = MockUpdate(message_text=None)
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
         mock_assistant.audio_response = AsyncMock()
+        mock_reg.get.return_value = mock_assistant
         mock_chat_data.get_chat_data = AsyncMock()
 
         result = await respond_voice(update, context)
@@ -699,21 +784,22 @@ class TestVoiceResponse:
         mock_assistant.audio_response.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
+    @patch("assistants.telegram_ui.commands.registry")
     @patch("assistants.telegram_ui.commands.chat_data")
-    async def test_respond_voice_success_bytes(self, mock_chat_data, mock_assistant):
+    async def test_respond_voice_success_bytes(self, mock_chat_data, mock_reg):
         """Test successful voice response with bytes."""
         update = MockUpdate(message_text="/voice hello")
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
+        mock_assistant.audio_response = AsyncMock(return_value=b"audio_data")
+        mock_reg.get.return_value = mock_assistant
         mock_chat_data.get_chat_data = AsyncMock(
             return_value=ChatData(
                 chat_id=12345, thread_id="existing_thread", auto_reply=True
             )
         )
         mock_chat_data.save_chat_data = AsyncMock()
-        mock_assistant.audio_response = AsyncMock(return_value=b"audio_data")
-        mock_assistant.conversation_id = "test_conversation_id"
 
         await respond_voice(update, context)
 
@@ -725,19 +811,21 @@ class TestVoiceResponse:
         )
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
+    @patch("assistants.telegram_ui.commands.registry")
     @patch("assistants.telegram_ui.commands.chat_data")
-    async def test_respond_voice_success_text(self, mock_chat_data, mock_assistant):
+    async def test_respond_voice_success_text(self, mock_chat_data, mock_reg):
         """Test voice response returning text instead of audio."""
         update = MockUpdate(message_text="/voice hello")
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
+        mock_assistant.audio_response = AsyncMock(return_value="Text response")
+        mock_reg.get.return_value = mock_assistant
         mock_chat_data.get_chat_data = AsyncMock(
             return_value=ChatData(
                 chat_id=12345, thread_id="existing_thread", auto_reply=True
             )
         )
-        mock_assistant.audio_response = AsyncMock(return_value="Text response")
 
         await respond_voice(update, context)
 
@@ -746,19 +834,21 @@ class TestVoiceResponse:
         )
 
     @pytest.mark.asyncio
-    @patch("assistants.telegram_ui.commands.assistant")
+    @patch("assistants.telegram_ui.commands.registry")
     @patch("assistants.telegram_ui.commands.chat_data")
-    async def test_respond_voice_new_thread(self, mock_chat_data, mock_assistant):
+    async def test_respond_voice_new_thread(self, mock_chat_data, mock_reg):
         """Test voice response creating new thread."""
         update = MockUpdate(message_text="/voice hello")
         context = MockContext()
 
+        mock_assistant = make_mock_assistant()
+        mock_assistant.audio_response = AsyncMock(return_value=b"audio_data")
+        mock_assistant.conversation_id = "new_conversation_id"
+        mock_reg.get.return_value = mock_assistant
         mock_chat_data.get_chat_data = AsyncMock(
             return_value=ChatData(chat_id=12345, thread_id=None, auto_reply=True)
         )
         mock_chat_data.save_chat_data = AsyncMock()
-        mock_assistant.audio_response = AsyncMock(return_value=b"audio_data")
-        mock_assistant.conversation_id = "new_conversation_id"
 
         await respond_voice(update, context)
 

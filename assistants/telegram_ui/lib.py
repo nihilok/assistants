@@ -5,9 +5,8 @@ from telegram import Update, Chat, User
 from telegram.ext import ContextTypes
 from telegram._message import Message
 
-from assistants.ai.universal import UniversalAssistant  # New unified assistant
+from assistants.ai.universal import UniversalAssistant
 from assistants.ai.types import (
-    AssistantInterface,
     ThinkingConfig,
 )
 from assistants.cli.assistant_config import AssistantParams
@@ -78,17 +77,23 @@ def requires_reply_to_message(f):
     return wrapper
 
 
-def build_telegram_specific_instructions():
+def build_telegram_specific_instructions(
+    bot_username: str = "", bot_name: str = ""
+) -> str:
     instructions = f"""\
 {environment.ASSISTANT_INSTRUCTIONS}
-N.B. All messages are prefixed with the name of the user who sent them. You should ignore this for the most part, 
-and you should not prefix your responses with your own name. You may use the users' names in your responses for clarity
+N.B. All messages are prefixed with the name of the user who sent them. You should ignore this for the most part, \
+and you should not prefix your responses with your own name. You may use the users' names in your responses for clarity \
 if/when there are multiple users involved.
 """
+    if bot_username and bot_name:
+        instructions += f"\nYour Telegram username is '{bot_username}' and your bot's name is '{bot_name}'."
     return instructions
 
 
-def build_assistant_params(model_name: str) -> AssistantParams:
+def build_assistant_params(
+    model_name: str, bot_username: str = "", bot_name: str = ""
+) -> AssistantParams:
     thinking_config = ThinkingConfig.get_thinking_config(
         0, environment.DEFAULT_MAX_RESPONSE_TOKENS
     )
@@ -98,7 +103,7 @@ def build_assistant_params(model_name: str) -> AssistantParams:
         max_history_tokens=environment.DEFAULT_MAX_HISTORY_TOKENS,
         max_response_tokens=environment.DEFAULT_MAX_RESPONSE_TOKENS,
         thinking=thinking_config,
-        instructions=build_telegram_specific_instructions(),
+        instructions=build_telegram_specific_instructions(bot_username, bot_name),
     )
 
     # TODO: UniversalAssistant ignores the `tools` kwarg (uses MCP via enable_mcp_tools instead).
@@ -108,9 +113,28 @@ def build_assistant_params(model_name: str) -> AssistantParams:
     return params
 
 
-def get_telegram_assistant() -> AssistantInterface:
-    params = build_assistant_params(environment.DEFAULT_MODEL)
+def get_telegram_assistant(
+    bot_username: str = "", bot_name: str = ""
+) -> UniversalAssistant:
+    params = build_assistant_params(environment.DEFAULT_MODEL, bot_username, bot_name)
     return UniversalAssistant(**params.to_dict())
 
 
-assistant = get_telegram_assistant()
+class AssistantRegistry:
+    """Per-chat assistant instances, keyed by chat_id."""
+
+    def __init__(self) -> None:
+        self._assistants: dict[int, UniversalAssistant] = {}
+
+    def get(
+        self, chat_id: int, bot_username: str = "", bot_name: str = ""
+    ) -> UniversalAssistant:
+        if chat_id not in self._assistants:
+            self._assistants[chat_id] = get_telegram_assistant(bot_username, bot_name)
+        return self._assistants[chat_id]
+
+    def reset(self, chat_id: int) -> None:
+        self._assistants.pop(chat_id, None)
+
+
+registry = AssistantRegistry()
