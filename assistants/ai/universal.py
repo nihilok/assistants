@@ -139,8 +139,8 @@ class UniversalAssistant(
         # Add user message to memory
         await self.remember(MessageDict(role="user", content=user_input))
 
-        # Convert memory to univllm format
-        messages = self._convert_memory_to_univllm_format()
+        # Convert memory to univllm format, prepending system instructions
+        messages = self._build_messages()
 
         # Get MCP tools if enabled
         mcp_handler = await self._get_mcp_tool_handler()
@@ -214,8 +214,8 @@ class UniversalAssistant(
         :param thread_id: Optional thread ID for conversation context.
         :yield: Response chunks as they become available.
         """
-        # Convert memory to univllm format
-        messages = self._convert_memory_to_univllm_format()
+        # Convert memory to univllm format, prepending system instructions
+        messages = self._build_messages()
         max_tokens = self.max_response_tokens if self.max_response_tokens > 0 else None
 
         # Get MCP tools if enabled
@@ -334,6 +334,15 @@ class UniversalAssistant(
             return None
         first = response.images[0]
         return first.b64_json or None
+
+    def _build_messages(self) -> list[Message]:
+        """Build the full messages list including system instructions."""
+        messages = self._convert_memory_to_univllm_format()
+        if self.instructions:
+            messages = [
+                Message(role=MessageRole.SYSTEM, content=self.instructions)
+            ] + messages
+        return messages
 
     def _convert_memory_to_univllm_format(self) -> list[Message]:
         """
