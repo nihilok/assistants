@@ -15,6 +15,7 @@ from univllm import UniversalLLMClient, is_unsupported_model  # type: ignore
 from univllm.models import Message, MessageRole  # type: ignore
 
 from assistants.ai.memory import ConversationHistoryMixin
+from assistants.config import environment
 from assistants.ai.types import (
     AssistantInterface,
     MessageData,
@@ -300,7 +301,7 @@ class UniversalAssistant(
     async def image_prompt(
         self,
         prompt: str,
-        model: Literal["gpt-image-1"] = "gpt-image-1",
+        model: Optional[str] = None,
         quality: Literal["low", "medium", "high", "auto"] = "low",
         size: Literal[
             "auto",
@@ -319,10 +320,11 @@ class UniversalAssistant(
         routes the request through the universal client. Returns the first
         image's base64 data (b64_json) if available.
         """
+        resolved_model = model or environment.IMAGE_MODEL
         try:
             response = await self.client.generate_image(
                 prompt=prompt,
-                model=model,
+                model=resolved_model,
                 size=size,
                 response_format="b64_json",
                 quality=quality,  # passed through extra_params
