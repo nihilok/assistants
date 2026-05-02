@@ -209,6 +209,11 @@ async def generate_image(update: StandardUpdate, context: ContextTypes.DEFAULT_T
         )
         return
 
+    user_name = update.message.from_user.first_name  # type: ignore
+    await chat_assistant.remember(
+        MessageDict(role="user", content=f"{user_name}: /image {prompt}")
+    )
+
     try:
         image_b64 = await chat_assistant.image_prompt(prompt)
     except Exception as e:  # pragma: no cover - defensive
@@ -217,6 +222,10 @@ async def generate_image(update: StandardUpdate, context: ContextTypes.DEFAULT_T
             text=f"Image generation failed: {e}",
         )
         return
+
+    await chat_assistant.remember(
+        MessageDict(role="assistant", content=f"[Generated image: {prompt}]")
+    )
 
     # image_b64 might be:
     # 1. A raw base64 string
