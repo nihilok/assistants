@@ -82,9 +82,13 @@ def build_telegram_specific_instructions(
 ) -> str:
     instructions = f"""\
 {environment.ASSISTANT_INSTRUCTIONS}
-N.B. All messages are prefixed with the name of the user who sent them. You should ignore this for the most part, \
-and you should not prefix your responses with your own name. You may use the users' names in your responses for clarity \
-if/when there are multiple users involved.
+N.B. All messages are prefixed with the Telegram first name of the user who sent them (e.g. "Alice: hello"). \
+This prefix is their account name, not a nickname they chose for you. Do not treat it as a name for yourself. \
+Do not prefix your own responses with your name. You may address users by their name for clarity \
+when there are multiple participants in the conversation.
+When the conversation history contains a message like "[Generated image: <prompt>]", it means an image was \
+successfully generated from that prompt and already sent to the chat as a photo. You do not need to regenerate \
+or describe it — you can refer to it naturally (e.g. "the image of <prompt> I just sent").
 """
     if bot_username and bot_name:
         instructions += f"\nYour Telegram username is '{bot_username}' and your bot's name is '{bot_name}'."

@@ -223,8 +223,9 @@ class TestInstructionBuilding:
         instructions = build_telegram_specific_instructions()
 
         assert "Base instructions" in instructions
-        assert "All messages are prefixed with the name of the user" in instructions
-        assert "you should not prefix your responses with your own name" in instructions
+        assert "Telegram first name of the user" in instructions
+        assert "Do not prefix your own responses" in instructions
+        assert "Generated image" in instructions
 
     @patch("assistants.telegram_ui.lib.environment")
     def test_build_telegram_specific_instructions_with_bot_info(self, mock_environment):
@@ -336,7 +337,7 @@ class TestEdgeCases:
         instructions = build_telegram_specific_instructions()
 
         # Should still contain the telegram-specific part
-        assert "All messages are prefixed with the name of the user" in instructions
+        assert "Telegram first name of the user" in instructions
 
     @pytest.mark.asyncio
     async def test_multiple_decorators_combination(self):
