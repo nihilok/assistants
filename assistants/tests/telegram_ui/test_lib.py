@@ -224,7 +224,7 @@ class TestInstructionBuilding:
 
         assert "Base instructions" in instructions
         assert "Telegram first name of the user" in instructions
-        assert "Do not prefix your own responses" in instructions
+        assert "Never start your response with your own name" in instructions
         assert "Generated image" in instructions
 
     @patch("assistants.telegram_ui.lib.environment")
