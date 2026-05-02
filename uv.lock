@@ -213,7 +213,7 @@ wheels = [
 
 [[package]]
 name = "assistants-framework"
-version = "0.9.6"
+version = "0.9.7"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -2716,7 +2716,7 @@ wheels = [
 
 [[package]]
 name = "univllm"
-version = "0.1.15"
+version = "0.2.0"
 source = { editable = "../univllm" }
 dependencies = [
     { name = "anthropic" },

@@ -11,7 +11,7 @@ Classes:
 import warnings
 from typing import TYPE_CHECKING, AsyncIterator, Optional, Sequence, Literal
 
-from univllm import UniversalLLMClient, is_unsupported_model, Message, MessageRole  # type: ignore
+from univllm import UniversalLLMClient, Message, MessageRole  # type: ignore
 
 from assistants.ai.memory import ConversationHistoryMixin
 from assistants.config import environment
@@ -72,9 +72,6 @@ class UniversalAssistant(
         :param enable_mcp_tools: Whether to enable MCP tool calling.
         :param kwargs: Additional parameters.
         """
-        if is_unsupported_model(model):
-            raise ConfigError(f"The model '{model}' is not supported by univllm.")
-
         # Initialise the mixin
         ConversationHistoryMixin.__init__(self, max_history_tokens)
 
