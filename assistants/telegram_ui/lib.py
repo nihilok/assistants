@@ -101,6 +101,9 @@ def build_assistant_params(model_name: str) -> AssistantParams:
         instructions=build_telegram_specific_instructions(),
     )
 
+    # TODO: UniversalAssistant ignores the `tools` kwarg (uses MCP via enable_mcp_tools instead).
+    # These OpenAI Assistants-style tool types are leftover from the previous implementation.
+    # Either wire up equivalent capabilities via MCP servers or remove this.
     params.tools = [{"type": "code_interpreter"}, {"type": "web_search"}]
     return params
 

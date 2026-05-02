@@ -134,16 +134,16 @@ class CLI:
             # Display the conversation history when continuing a thread using the shared function
             await display_conversation_history(self.assistant, self.thread_id)
 
-    def start_io_loop(self):
+    async def start_io_loop(self):
         """Start the IO loop."""
         try:
-            io_loop(self.assistant, self.initial_input, thread_id=self.thread_id)
+            await io_loop(self.assistant, self.initial_input, thread_id=self.thread_id)
         except EOFError:
             # Exit gracefully if ctrl+D is pressed
             sys.exit(0)
 
-    def run(self):
-        """Run the CLI application."""
+    async def run_async(self):
+        """Run the CLI application asynchronously."""
         self.set_process_title()
         self.parse_arguments()
         self.update_from_config()
@@ -153,14 +153,22 @@ class CLI:
 
         # Create assistant and get the last thread if one exists
         try:
-            self.assistant, self.thread_id = asyncio.run(self.create_assistant())
+            self.assistant, self.thread_id = await self.create_assistant()
         except ConfigError as e:
             output.fail(f"Error: {e}")
             sys.exit(1)
 
-        asyncio.run(self.handle_conversation_status())
+        await self.handle_conversation_status()
         try:
-            self.start_io_loop()
+            await self.start_io_loop()
         except ConfigError as e:
             output.fail(f"Error: {e}")
             sys.exit(1)
+
+    def run(self):
+        """Run the CLI application."""
+        try:
+            asyncio.run(self.run_async())
+        except KeyboardInterrupt:
+            # Handle user interrupt gracefully
+            sys.exit(130)

@@ -77,14 +77,28 @@ class MCPServerConnection:
 
     async def disconnect(self) -> None:
         """Disconnect from the MCP server."""
-        if self.session:
-            try:
-                await self.session.__aexit__(None, None, None)
-            except Exception as e:
-                logger.error(f"Error disconnecting from '{self.config.name}': {e}")
-            finally:
-                self.session = None
-                self._stdio_transport = None
+        try:
+            if self.session:
+                try:
+                    await self.session.__aexit__(None, None, None)
+                except Exception as e:
+                    logger.debug(f"Error closing session for '{self.config.name}': {e}")
+                finally:
+                    self.session = None
+
+            if self._stdio_transport:
+                try:
+                    await self._stdio_transport.__aexit__(None, None, None)
+                except Exception as e:
+                    logger.debug(
+                        f"Error closing transport for '{self.config.name}': {e}"
+                    )
+                finally:
+                    self._stdio_transport = None
+        except Exception as e:
+            logger.error(f"Error disconnecting from '{self.config.name}': {e}")
+            self.session = None
+            self._stdio_transport = None
 
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
         """

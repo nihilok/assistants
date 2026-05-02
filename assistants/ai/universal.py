@@ -168,30 +168,20 @@ class UniversalAssistant(
                     )
                     tool_results.append(f"[Tool: {tool_call.name}]\nResult: {result}")
 
-                # Store the assistant's response including tool call info
+                # Store the assistant's response (before tool execution)
                 tool_call_summary = "\n".join(
-                    [
-                        f"[Called tool: {tc.name} with args: {tc.arguments}]"
-                        for tc in response.tool_calls
-                    ]
+                    [f"[Called tool: {tc.name}]" for tc in response.tool_calls]
                 )
-                assistant_content = (
-                    f"{response.content}\n{tool_call_summary}"
-                    if response.content
-                    else tool_call_summary
-                )
-                await self.remember(
-                    MessageDict(role="assistant", content=assistant_content)
-                )
-
-                # Add tool results as a separate assistant message with results
-                tool_results_text = "\n\n".join(tool_results)
                 await self.remember(
                     MessageDict(
                         role="assistant",
-                        content=f"[Tool Results]\n{tool_results_text}",
+                        content=response.content or tool_call_summary,
                     )
                 )
+
+                # Add tool results as a user message (providing context to the model)
+                tool_results_text = "\n\n".join(tool_results)
+                await self.remember(MessageDict(role="user", content=tool_results_text))
 
                 # Get final response after tool execution
                 messages = self._convert_memory_to_univllm_format()
@@ -228,12 +218,81 @@ class UniversalAssistant(
         messages = self._convert_memory_to_univllm_format()
         max_tokens = self.max_response_tokens if self.max_response_tokens > 0 else None
 
+        # Get MCP tools if enabled
+        mcp_handler = await self._get_mcp_tool_handler()
+        tools = mcp_handler.get_tools_for_assistant() if mcp_handler else None
+
         try:
-            # Stream response from universal client
-            async for chunk in self.client.stream_complete(
-                messages=messages, model=self.model, max_tokens=max_tokens
-            ):
-                yield chunk
+            # When tools are available, we need to check for tool calls
+            # For now, use non-streaming mode with tools to properly handle tool calls
+            if tools and mcp_handler:
+                response = await self.client.complete(
+                    messages=messages,
+                    model=self.model,
+                    max_tokens=max_tokens,
+                    tools=tools,
+                    tool_choice="auto",
+                )
+
+                # Handle tool calls if present
+                if response.tool_calls:
+                    # Process each tool call
+                    tool_results = []
+                    for tool_call in response.tool_calls:
+                        result = await mcp_handler.execute_tool(
+                            tool_call.name, tool_call.arguments
+                        )
+                        tool_results.append(result)
+
+                    # Prepare tool results message for the model
+                    tool_results_text = "\n\n".join(
+                        [
+                            f"[Tool: {tc.name}]\nResult: {res}"
+                            for tc, res in zip(response.tool_calls, tool_results)
+                        ]
+                    )
+
+                    # Get final response after tool execution with results
+                    # Add assistant's tool call message to memory
+                    tool_call_summary = "\n".join(
+                        [f"[Called tool: {tc.name}]" for tc in response.tool_calls]
+                    )
+                    # Remove the user message we just added (it will be re-added by stream_converse)
+                    if self.memory and self.memory[-1].get("role") == "user":
+                        self.memory.pop()
+
+                    await self.remember(
+                        MessageDict(
+                            role="assistant",
+                            content=response.content or tool_call_summary,
+                        )
+                    )
+                    await self.remember(
+                        MessageDict(role="user", content=tool_results_text)
+                    )
+
+                    # Get final response
+                    messages = self._convert_memory_to_univllm_format()
+                    final_response = await self.client.complete(
+                        messages=messages,
+                        model=self.model,
+                        max_tokens=max_tokens,
+                    )
+
+                    if final_response.content:
+                        yield final_response.content
+                else:
+                    # No tool calls, just yield the content
+                    if response.content:
+                        yield response.content
+            else:
+                # No tools, use streaming mode as before
+                async for chunk in self.client.stream_complete(
+                    messages=messages,
+                    model=self.model,
+                    max_tokens=max_tokens,
+                ):
+                    yield chunk
 
         except Exception as e:
             raise ConfigError(f"Failed to get streaming completion: {e}") from e

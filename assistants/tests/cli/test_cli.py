@@ -259,10 +259,11 @@ def test_start_io_loop(mock_io_loop, cli):
 
 @patch("assistants.cli.cli.io_loop", side_effect=EOFError)
 @patch("sys.exit")
-def test_start_io_loop_ctrl_d_exits(mock_exit, mock_io_loop, cli):
+@pytest.mark.asyncio
+async def test_start_io_loop_ctrl_d_exits(mock_exit, mock_io_loop, cli):
     cli.assistant = MagicMock()
 
-    cli.start_io_loop()
+    await cli.start_io_loop()
 
     mock_exit.assert_called_once_with(0)
 

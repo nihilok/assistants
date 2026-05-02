@@ -18,6 +18,7 @@ class AssistantParams:
     thinking: ThinkingConfig
     instructions: Optional[str] = None
     tools: Optional[List[Dict[str, str]]] = None
+    enable_mcp_tools: bool = True  # Enable MCP tools by default
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the dataclass to a dictionary, excluding None values."""
@@ -26,6 +27,7 @@ class AssistantParams:
             "max_history_tokens": self.max_history_tokens,
             "max_response_tokens": self.max_response_tokens,
             "thinking": self.thinking,
+            "enable_mcp_tools": self.enable_mcp_tools,
         }
 
         if self.instructions is not None:

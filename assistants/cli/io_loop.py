@@ -2,7 +2,6 @@
 This module contains the main input/output loop for interacting with the assistant.
 """
 
-import asyncio
 from typing import Optional
 
 from assistants.ai.types import AssistantInterface, StreamingAssistantInterface
@@ -173,28 +172,40 @@ class AssistantIoHandler:
         self.last_message = message
 
 
-async def io_loop_async(assistant, initial_input, thread_id):
-    handler = AssistantIoHandler(assistant, thread_id)
-
-    if initial_input:
-        output.user_input(initial_input)
-        await handler.process_input(initial_input)
-
-    while True:
-        try:
-            user_input = get_user_input()
-            should_exit = await handler.process_input(user_input)
-            if should_exit:
-                break
-        except KeyboardInterrupt:
-            # Handle ctrl+C gracefully
-            output.new_line()
-            continue
+async def cleanup_assistant(assistant: AssistantInterface):
+    """Clean up assistant resources, including MCP connections."""
+    try:
+        # Check if assistant has MCP tool handler and disconnect
+        if hasattr(assistant, "_mcp_tool_handler") and assistant._mcp_tool_handler:
+            logger.debug("Disconnecting MCP tool handler...")
+            await assistant._mcp_tool_handler.disconnect()
+    except Exception as e:
+        logger.debug(f"Error during assistant cleanup: {e}")
 
 
-def io_loop(
+async def io_loop(
     assistant: AssistantInterface,
     initial_input: str = "",
     thread_id: Optional[str] = None,
 ):
-    asyncio.run(io_loop_async(assistant, initial_input, thread_id))
+    """Main IO loop for the CLI assistant."""
+    handler = AssistantIoHandler(assistant, thread_id)
+
+    try:
+        if initial_input:
+            output.user_input(initial_input)
+            await handler.process_input(initial_input)
+
+        while True:
+            try:
+                user_input = get_user_input()
+                should_exit = await handler.process_input(user_input)
+                if should_exit:
+                    break
+            except KeyboardInterrupt:
+                # Handle ctrl+C gracefully
+                output.new_line()
+                continue
+    finally:
+        # Clean up assistant resources
+        await cleanup_assistant(assistant)

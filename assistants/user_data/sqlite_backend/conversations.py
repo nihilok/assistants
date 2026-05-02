@@ -157,17 +157,21 @@ class ConversationsTable(Table[Conversation]):
         Args:
             record: The conversation record to update
         """
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute(
-                """
-                REPLACE INTO conversations (id, last_updated) VALUES (?, ?)
-                """,
-                (
-                    record.id,
-                    record.last_updated.isoformat(),
-                ),
-            )
-            await db.commit()
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute(
+                    """
+                    REPLACE INTO conversations (id, last_updated) VALUES (?, ?)
+                    """,
+                    (
+                        record.id,
+                        record.last_updated.isoformat(),
+                    ),
+                )
+                await db.commit()
+        except asyncio.exceptions.CancelledError:
+            # Silently handle cancellation during shutdown
+            pass
 
     async def delete(self, **kwargs) -> None:
         """

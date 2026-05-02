@@ -54,7 +54,7 @@ async def authorise_chat(update: StandardUpdate, context: ContextTypes.DEFAULT_T
 @requires_superuser
 @requires_reply_to_message
 async def authorise_user(update: StandardUpdate, context: ContextTypes.DEFAULT_TYPE):
-    await chat_data.authorise_chat(update.message.reply_to_message.from_user.id)  # type: ignore
+    await chat_data.authorise_user(update.message.reply_to_message.from_user.id)  # type: ignore
     await context.bot.send_message(
         chat_id=update.effective_chat.id, text="User authorised"
     )
@@ -134,10 +134,11 @@ async def message_handler(update: StandardUpdate, context: ContextTypes.DEFAULT_
 
     await assistant.load_conversation(str(chat_thread_id))
 
-    assistant.instructions = f"""\
-{assistant.instructions}
-Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'.
-"""
+    if bot_username not in (assistant.instructions or ""):
+        assistant.instructions = (
+            f"{assistant.instructions}\n"
+            f"Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'."
+        )
 
     response_message = await assistant.converse(message_text, existing_chat.thread_id)
 
@@ -170,6 +171,8 @@ Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'.
         return
 
     for i, part in enumerate(response_parts):
+        if not part.strip():
+            continue
         if i % 2:
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -317,10 +320,11 @@ async def respond_voice(update: StandardUpdate, context: ContextTypes.DEFAULT_TY
     bot_username = f"@{context.bot.username}"
     bot_name = context.bot.first_name or context.bot.username
 
-    assistant.instructions = f"""\
-{assistant.instructions}
-Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'.
-"""
+    if bot_username not in (assistant.instructions or ""):
+        assistant.instructions = (
+            f"{assistant.instructions}\n"
+            f"Your Telegram username is '{bot_username}' and your bot's name is '{bot_name}'."
+        )
 
     if not update.message.text:
         return

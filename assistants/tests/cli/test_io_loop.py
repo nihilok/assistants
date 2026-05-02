@@ -6,7 +6,7 @@ from assistants.ai.types import (
     AssistantInterface,
     MessageData,
 )
-from assistants.cli.io_loop import io_loop, io_loop_async, AssistantIoHandler
+from assistants.cli.io_loop import io_loop, AssistantIoHandler
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def setup_assistant(mock_assistant, mock_message):
 @patch("assistants.cli.io_loop.output")
 @patch("assistants.cli.io_loop.AssistantIoHandler.process_input")
 @pytest.mark.asyncio
-async def test_io_loop_async_with_initial_input(
+async def test_io_loop_with_initial_input(
     mock_process_input, mock_output, mock_get_input, setup_assistant
 ):
     # Setup to exit after processing initial input
@@ -47,7 +47,7 @@ async def test_io_loop_async_with_initial_input(
     ]  # First call returns False, second call returns True (exit)
 
     # Call the function with initial input
-    await io_loop_async(setup_assistant, "initial input", "thread-id")
+    await io_loop(setup_assistant, "initial input", "thread-id")
 
     # Verify user input was displayed
     mock_output.user_input.assert_called_once_with("initial input")
@@ -63,7 +63,7 @@ async def test_io_loop_async_with_initial_input(
 @patch("assistants.cli.io_loop.output")
 @patch("assistants.cli.io_loop.AssistantIoHandler.process_input")
 @pytest.mark.asyncio
-async def test_io_loop_async_with_user_input(
+async def test_io_loop_with_user_input(
     mock_process_input, mock_output, mock_get_input, setup_assistant
 ):
     # Setup to provide one input then exit
@@ -74,7 +74,7 @@ async def test_io_loop_async_with_user_input(
     ]  # First call returns False, second call returns True (exit)
 
     # Call the function without initial input
-    await io_loop_async(setup_assistant, "", "thread-id")
+    await io_loop(setup_assistant, "", "thread-id")
 
     # Verify process_input was called with user input
     mock_process_input.assert_any_call("user input")
@@ -87,7 +87,7 @@ async def test_io_loop_async_with_user_input(
 @patch("assistants.cli.io_loop.output")
 @patch("assistants.cli.io_loop.AssistantIoHandler.process_input")
 @pytest.mark.asyncio
-async def test_io_loop_async_with_empty_input(
+async def test_io_loop_with_empty_input(
     mock_process_input, mock_output, mock_get_input, setup_assistant
 ):
     # Setup to provide empty input then exit
@@ -98,7 +98,7 @@ async def test_io_loop_async_with_empty_input(
     ]  # First call returns False, second call returns True (exit)
 
     # Call the function without initial input
-    await io_loop_async(setup_assistant, "", "thread-id")
+    await io_loop(setup_assistant, "", "thread-id")
 
     # Verify process_input was called with empty input
     mock_process_input.assert_any_call("")
@@ -112,7 +112,7 @@ async def test_io_loop_async_with_empty_input(
 @patch("assistants.cli.io_loop.AssistantIoHandler._handle_command")
 @patch("assistants.cli.io_loop.AssistantIoHandler.process_input")
 @pytest.mark.asyncio
-async def test_io_loop_async_with_command(
+async def test_io_loop_with_command(
     mock_process_input,
     mock_handle_command,
     mock_output,
@@ -127,7 +127,7 @@ async def test_io_loop_async_with_command(
     ]  # First call returns False, second call returns True (exit)
 
     # Call the function
-    await io_loop_async(setup_assistant, "", "thread-id")
+    await io_loop(setup_assistant, "", "thread-id")
 
     # Verify process_input was called with command
     mock_process_input.assert_any_call("/command arg1 arg2")
@@ -140,7 +140,7 @@ async def test_io_loop_async_with_command(
 @patch("assistants.cli.io_loop.output")
 @patch("assistants.cli.io_loop.AssistantIoHandler.process_input")
 @pytest.mark.asyncio
-async def test_io_loop_async_with_invalid_command(
+async def test_io_loop_with_invalid_command(
     mock_process_input, mock_output, mock_get_input, setup_assistant
 ):
     # Setup to provide invalid command then exit
@@ -151,7 +151,7 @@ async def test_io_loop_async_with_invalid_command(
     ]  # First call returns False, second call returns True (exit)
 
     # Call the function
-    await io_loop_async(setup_assistant, "", "thread-id")
+    await io_loop(setup_assistant, "", "thread-id")
 
     # Verify process_input was called with invalid command
     mock_process_input.assert_any_call("/invalid")
@@ -285,16 +285,14 @@ async def test_assistant_io_handler_with_code_blocks(
     mock_output.default.assert_called_once_with("formatted response")
 
 
-@patch("assistants.cli.io_loop.io_loop_async")
+@patch("assistants.cli.io_loop.io_loop")
 @patch("asyncio.run")
-def test_io_loop(mock_asyncio_run, mock_io_loop_async, setup_assistant):
+def test_io_loop(mock_asyncio_run, mock_io_loop, setup_assistant):
     # Call the function
     io_loop(setup_assistant, "initial input", "thread-id")
 
-    # Verify asyncio.run was called with io_loop_async
+    # Verify asyncio.run was called with io_loop
     mock_asyncio_run.assert_called_once()
 
-    # Verify io_loop_async was called with correct parameters
-    mock_io_loop_async.assert_called_once_with(
-        setup_assistant, "initial input", "thread-id"
-    )
+    # Verify io_loop was called with correct parameters
+    mock_io_loop.assert_called_once_with(setup_assistant, "initial input", "thread-id")
