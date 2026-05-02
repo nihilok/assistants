@@ -11,8 +11,7 @@ Classes:
 import warnings
 from typing import TYPE_CHECKING, AsyncIterator, Optional, Sequence, Literal
 
-from univllm import UniversalLLMClient, is_unsupported_model  # type: ignore
-from univllm.models import Message, MessageRole  # type: ignore
+from univllm import UniversalLLMClient, is_unsupported_model, Message, MessageRole  # type: ignore
 
 from assistants.ai.memory import ConversationHistoryMixin
 from assistants.config import environment
