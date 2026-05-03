@@ -81,5 +81,3 @@ disable = ["too-many-instance-attributes", "too-many-arguments", "too-many-posit
 [tool.mypy]
 exclude = ["mypy_baseline.txt"]
 
-[tool.uv.sources]
-univllm = { path = "../univllm", editable = true }

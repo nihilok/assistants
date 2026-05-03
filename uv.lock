@@ -267,7 +267,7 @@ requires-dist = [
     { name = "types-aiofiles", specifier = "~=25.1.0.20260409" },
     { name = "types-pygments", specifier = "~=2.20.0.20260408" },
     { name = "types-pyyaml", specifier = "~=6.0.12.20260408" },
-    { name = "univllm", editable = "../univllm" },
+    { name = "univllm", specifier = "==0.2.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -2717,7 +2717,7 @@ wheels = [
 [[package]]
 name = "univllm"
 version = "0.2.0"
-source = { editable = "../univllm" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anthropic" },
     { name = "google-genai" },
@@ -2727,25 +2727,8 @@ dependencies = [
     { name = "pydantic" },
     { name = "python-dotenv" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "anthropic", specifier = "==0.97.0" },
-    { name = "google-genai", specifier = "==1.61.0" },
-    { name = "httpx", specifier = "==0.28.1" },
-    { name = "mistralai", specifier = "==2.4.4" },
-    { name = "openai", specifier = "==2.33.0" },
-    { name = "pydantic", specifier = "==2.13.3" },
-    { name = "python-dotenv", specifier = "==1.2.2" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "build", specifier = ">=1.3.0" },
-    { name = "pytest", specifier = "==8.4.2" },
-    { name = "pytest-asyncio", specifier = ">=1.2.0" },
-    { name = "ruff", specifier = ">=0.13.0" },
-    { name = "twine", specifier = ">=6.2.0" },
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/77/48/ccb4f526aceaa89722f83af53e3656e496b13348eec47fbc66e99c6e859e/univllm-0.2.0-py3-none-any.whl", hash = "sha256:5534a58ecccf541120fcd47f97f9a7d88ec870015f9a7d57e9cff9ee14ed989b", size = 24815, upload-time = "2026-05-02T20:27:54.194Z" },
 ]
 
 [[package]]
